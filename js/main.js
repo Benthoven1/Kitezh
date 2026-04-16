@@ -1,46 +1,53 @@
 import * as THREE from "three";
 
-const CLAY = 0xb87758;
-const CLAY_DEEP = 0x8f5a42;
-const CLAY_SOFT = 0xc88a6c;
+// Cream/ivory palette for the kinetic sculpture
+const CREAM = 0xede3c1;
+const CREAM_DEEP = 0xcdbe96;
+const CREAM_SHADOW = 0x8f825d;
 const PAPER = 0xffffff;
 
-const DIVISIONS = [
+// Four tilted orbit rings, gimbal-style. Radii kept modest so planets never
+// leave the frame; speeds tuned so orbits re-emerge quickly.
+const ORBITS = [
   {
     id: "ifo",
     name: "International Festival Orchestra",
     href: "pages/meet-mulvium/international-festival-orchestra.html",
-    orbit: 4.6,
-    size: 0.46,
-    speed: 0.22,
+    radius: 3.0,
+    planetSize: 0.32,
+    tilt: [0, 0, 0], // vertical ring facing the viewer (XY plane)
+    speed: 0.36,
     phase: 0.0,
   },
   {
     id: "castles",
     name: "Castles",
     href: "pages/meet-mulvium/castles.html",
-    orbit: 6.4,
-    size: 0.62,
-    speed: 0.16,
-    phase: 1.4,
+    radius: 3.8,
+    planetSize: 0.4,
+    tilt: [Math.PI / 2, 0, 0], // horizontal ring lying flat (XZ plane)
+    speed: 0.26,
+    phase: 1.1,
   },
   {
     id: "education",
     name: "Education",
     href: "pages/meet-mulvium/education.html",
-    orbit: 8.2,
-    size: 0.5,
-    speed: 0.11,
-    phase: 3.0,
+    radius: 4.5,
+    planetSize: 0.38,
+    tilt: [0, Math.PI / 2, 0], // vertical ring edge-on to viewer (YZ plane)
+    speed: 0.22,
+    phase: 2.4,
   },
   {
     id: "zones",
     name: "Economic Zones",
     href: "pages/meet-mulvium/economic-zones.html",
-    orbit: 10.0,
-    size: 0.56,
-    speed: 0.08,
-    phase: 4.6,
+    radius: 5.0,
+    planetSize: 0.42,
+    tilt: [Math.PI / 3.2, Math.PI / 5, 0], // oblique gimbal
+    speed: 0.18,
+    phase: 3.8,
   },
 ];
 
@@ -65,105 +72,118 @@ const renderer = new THREE.WebGLRenderer({
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.02;
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
 
-// ----- Lighting: soft studio feel for matte clay -----
-const hemi = new THREE.HemisphereLight(0xffffff, 0xe9d9cc, 0.85);
+// ---------- Lighting (soft, sculptural) ----------
+scene.add(new THREE.AmbientLight(0xfff7e8, 0.35));
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0xd9cfb0, 0.75);
 scene.add(hemi);
 
-const keyLight = new THREE.DirectionalLight(0xffffff, 1.05);
-keyLight.position.set(8, 12, 6);
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+keyLight.position.set(6, 10, 8);
 scene.add(keyLight);
 
-const fillLight = new THREE.DirectionalLight(0xfff3e8, 0.45);
-fillLight.position.set(-10, 4, -6);
+const fillLight = new THREE.DirectionalLight(0xfff1d8, 0.5);
+fillLight.position.set(-8, 3, -4);
 scene.add(fillLight);
 
-const rimLight = new THREE.DirectionalLight(0xffd9c2, 0.4);
-rimLight.position.set(0, -6, -10);
+const rimLight = new THREE.DirectionalLight(0xf1e4bf, 0.55);
+rimLight.position.set(-2, -6, -8);
 scene.add(rimLight);
 
-// ----- Shared clay material factory -----
-function clayMaterial(color = CLAY, roughness = 0.92) {
+// ---------- Material factory: polished cream stone ----------
+function creamMaterial({ color = CREAM, roughness = 0.42, metalness = 0.0 } = {}) {
   return new THREE.MeshStandardMaterial({
     color,
     roughness,
-    metalness: 0.02,
+    metalness,
     flatShading: false,
   });
 }
 
-// ----- Star (center) -----
-const starGroup = new THREE.Group();
-scene.add(starGroup);
-
-const starGeo = new THREE.SphereGeometry(1.7, 96, 96);
-const starMat = clayMaterial(CLAY_DEEP, 0.88);
+// ---------- Central star ----------
+const STAR_RADIUS = 0.95;
+const starGeo = new THREE.SphereGeometry(STAR_RADIUS, 96, 96);
+const starMat = creamMaterial({ color: CREAM, roughness: 0.38 });
 const star = new THREE.Mesh(starGeo, starMat);
 star.userData = { type: "star" };
-starGroup.add(star);
+scene.add(star);
 
-// Subtle halo ring around star to give presence
-const haloGeo = new THREE.RingGeometry(1.85, 2.05, 128);
-const haloMat = new THREE.MeshBasicMaterial({
-  color: CLAY_SOFT,
-  transparent: true,
-  opacity: 0.18,
-  side: THREE.DoubleSide,
-});
-const halo = new THREE.Mesh(haloGeo, haloMat);
-halo.rotation.x = Math.PI / 2;
-starGroup.add(halo);
+// ---------- Orbit rings + spokes + planets ----------
+const orbits = []; // { def, pivot, rotator, ring, spoke, planet, angle }
 
-// ----- Planets + orbit rings -----
-const planets = [];
-const orbits = [];
+ORBITS.forEach((def) => {
+  const pivot = new THREE.Group();
+  pivot.rotation.set(def.tilt[0], def.tilt[1], def.tilt[2]);
+  pivot.userData.baseTilt = [...def.tilt];
+  scene.add(pivot);
 
-DIVISIONS.forEach((d) => {
-  const pGeo = new THREE.SphereGeometry(d.size, 64, 64);
-  const pMat = clayMaterial(CLAY, 0.9);
-  const mesh = new THREE.Mesh(pGeo, pMat);
-  mesh.userData = { type: "planet", division: d };
-  scene.add(mesh);
-  planets.push({ def: d, mesh, angle: d.phase });
-
-  // Orbit path (thin ring on XZ plane)
-  const ringGeo = new THREE.RingGeometry(d.orbit - 0.008, d.orbit + 0.008, 256);
-  const ringMat = new THREE.MeshBasicMaterial({
-    color: 0x000000,
-    transparent: true,
-    opacity: 0.08,
-    side: THREE.DoubleSide,
+  // Thin ring (torus in XY plane, axis = Z)
+  const ringThickness = 0.04;
+  const ringGeo = new THREE.TorusGeometry(def.radius, ringThickness, 24, 256);
+  const ringMat = creamMaterial({
+    color: CREAM_DEEP,
+    roughness: 0.35,
+    metalness: 0.0,
   });
   const ring = new THREE.Mesh(ringGeo, ringMat);
-  ring.rotation.x = Math.PI / 2;
-  scene.add(ring);
-  orbits.push(ring);
+  pivot.add(ring);
+
+  // Rotator carries spoke + planet around the ring's axis (Z)
+  const rotator = new THREE.Group();
+  rotator.rotation.z = def.phase;
+  pivot.add(rotator);
+
+  // Spoke: thin cylinder from origin to the planet along +X
+  const spokeGeo = new THREE.CylinderGeometry(0.025, 0.025, def.radius, 24, 1);
+  const spokeMat = creamMaterial({
+    color: CREAM_DEEP,
+    roughness: 0.35,
+    metalness: 0.0,
+  });
+  const spoke = new THREE.Mesh(spokeGeo, spokeMat);
+  // Cylinder default axis is Y; rotate to X and translate so it spans origin→radius
+  spoke.rotation.z = -Math.PI / 2;
+  spoke.position.x = def.radius / 2;
+  rotator.add(spoke);
+
+  // Planet at the far end of the spoke
+  const planetGeo = new THREE.SphereGeometry(def.planetSize, 64, 64);
+  const planetMat = creamMaterial({
+    color: CREAM,
+    roughness: 0.35,
+    metalness: 0.0,
+  });
+  const planet = new THREE.Mesh(planetGeo, planetMat);
+  planet.position.x = def.radius;
+  planet.userData = { type: "planet", def };
+  rotator.add(planet);
+
+  orbits.push({ def, pivot, rotator, ring, spoke, planet, angle: def.phase });
 });
 
-// ----- Camera framing -----
-const CAM_3D = new THREE.Vector3(9, 6.2, 12);
-const CAM_2D = new THREE.Vector3(0, 22, 0.001);
+// ---------- Camera framing ----------
+const CAM_3D = new THREE.Vector3(0, 2.6, 14.5);
+const CAM_2D = new THREE.Vector3(0, 15, 0.001);
 const LOOK_AT = new THREE.Vector3(0, 0, 0);
-
-const state = {
-  mode: "3d", // "3d" | "transitioning" | "2d"
-  t: 0, // 0 = 3d, 1 = 2d
-  target: 0, // where t is heading
-  hoverStar: false,
-  hoverPlanet: null,
-  starDwell: 0, // seconds hovered on star, triggers 2D at threshold
-  clock: new THREE.Clock(),
-};
-
-const STAR_DWELL_THRESHOLD = 0.35; // seconds to hover before transition
 
 camera.position.copy(CAM_3D);
 camera.lookAt(LOOK_AT);
 
-// ----- Resize -----
+// ---------- State ----------
+const state = {
+  mode: "3d", // "3d" | "transitioning" | "2d"
+  t: 0, // 0 = 3d, 1 = 2d
+  target: 0,
+  hoverStar: false,
+  hoverPlanet: null, // the orbit record currently hovered
+  clock: new THREE.Clock(),
+};
+
+// ---------- Resize ----------
 let lastW = 0;
 let lastH = 0;
 function resize() {
@@ -179,16 +199,13 @@ function resize() {
 resize();
 window.addEventListener("resize", resize);
 
-// ----- Raycaster (pointer interaction) -----
+// ---------- Pointer / raycaster ----------
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
-let pointerClient = { x: 0, y: 0 };
 let pointerInside = false;
 
 canvas.addEventListener("pointermove", (e) => {
   const rect = canvas.getBoundingClientRect();
-  pointerClient.x = e.clientX;
-  pointerClient.y = e.clientY;
   pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
   pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
   pointerInside = true;
@@ -202,20 +219,22 @@ canvas.addEventListener("pointerleave", () => {
   canvas.style.cursor = "default";
 });
 
+// Click-only navigation
 canvas.addEventListener("click", () => {
-  if (state.hoverPlanet && state.mode === "3d") {
-    window.location.href = state.hoverPlanet.division.href;
-  } else if (state.hoverStar && state.mode === "3d") {
-    goTo2D(); // immediate on click; otherwise hover-dwell triggers it
+  if (state.mode !== "3d") return;
+  if (state.hoverPlanet) {
+    window.location.href = state.hoverPlanet.def.href;
+  } else if (state.hoverStar) {
+    goTo2D();
   }
 });
 
-// Keyboard accessibility: Enter / Space triggers star transition
+// Keyboard accessibility
 canvas.setAttribute("tabindex", "0");
 canvas.setAttribute("role", "application");
 canvas.setAttribute(
   "aria-label",
-  "Mulvium cosmos. Hover planets for divisions, hover center star to enter."
+  "Mulvium cosmos. Click a planet to open a division. Click the center star to enter Mulvium."
 );
 canvas.addEventListener("keydown", (e) => {
   if ((e.key === "Enter" || e.key === " ") && state.mode === "3d") {
@@ -224,9 +243,9 @@ canvas.addEventListener("keydown", (e) => {
   }
 });
 
-// ----- Transition controllers -----
+// ---------- Transition controllers ----------
 function goTo2D() {
-  if (state.mode === "2d" || state.mode === "transitioning") return;
+  if (state.mode !== "3d") return;
   state.mode = "transitioning";
   state.target = 1;
   navbar.classList.add("visible");
@@ -238,7 +257,7 @@ function goTo2D() {
 }
 
 function goTo3D() {
-  if (state.mode === "3d" || state.mode === "transitioning") return;
+  if (state.mode !== "2d") return;
   state.mode = "transitioning";
   state.target = 0;
   navbar.classList.remove("visible");
@@ -246,7 +265,6 @@ function goTo3D() {
   visionOverlay.classList.remove("visible");
   body.classList.add("cosmos-only");
   body.classList.remove("mode-2d");
-  // collapse any open dropdowns
   document
     .querySelectorAll(".nav-item.open")
     .forEach((el) => el.classList.remove("open"));
@@ -259,7 +277,7 @@ brandLink.addEventListener("click", (e) => {
   goTo3D();
 });
 
-// ----- Dropdown behaviour -----
+// ---------- Dropdown behaviour ----------
 document.querySelectorAll(".nav-item.has-dropdown").forEach((item) => {
   const trigger = item.querySelector(".nav-trigger");
   trigger.addEventListener("click", (e) => {
@@ -295,19 +313,33 @@ document.addEventListener("click", () => {
     .forEach((el) => el.classList.remove("open"));
 });
 
-// ----- Render loop -----
+// ---------- Helpers ----------
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
 function lerpVec(a, b, t, out) {
   out.x = a.x + (b.x - a.x) * t;
   out.y = a.y + (b.y - a.y) * t;
   out.z = a.z + (b.z - a.z) * t;
   return out;
 }
-
 function easeInOut(t) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
 const tmpVec = new THREE.Vector3();
+const worldPos = new THREE.Vector3();
+
+// Project a world position to pixel coords in the canvas.
+function projectToCanvas(pos) {
+  const v = pos.clone().project(camera);
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (v.x * 0.5 + 0.5) * rect.width,
+    y: (-v.y * 0.5 + 0.5) * rect.height,
+    behind: v.z > 1,
+  };
+}
 
 function updateHover() {
   if (!pointerInside || state.mode !== "3d") {
@@ -321,7 +353,7 @@ function updateHover() {
   }
 
   raycaster.setFromCamera(pointer, camera);
-  const targets = [star, ...planets.map((p) => p.mesh)];
+  const targets = [star, ...orbits.map((o) => o.planet)];
   const hits = raycaster.intersectObjects(targets, false);
 
   let hoverStar = false;
@@ -329,10 +361,9 @@ function updateHover() {
 
   if (hits.length > 0) {
     const obj = hits[0].object;
-    if (obj.userData.type === "star") {
-      hoverStar = true;
-    } else if (obj.userData.type === "planet") {
-      hoverPlanet = planets.find((p) => p.mesh === obj);
+    if (obj.userData.type === "star") hoverStar = true;
+    else if (obj.userData.type === "planet") {
+      hoverPlanet = orbits.find((o) => o.planet === obj);
     }
   }
 
@@ -340,17 +371,20 @@ function updateHover() {
   state.hoverPlanet = hoverPlanet;
 
   if (hoverPlanet) {
+    // Label follows the planet's current world position (along its orbit).
+    hoverPlanet.planet.getWorldPosition(worldPos);
+    const p = projectToCanvas(worldPos);
     label.textContent = hoverPlanet.def.name;
-    const rect = canvas.getBoundingClientRect();
-    label.style.left = pointerClient.x - rect.left + "px";
-    label.style.top = pointerClient.y - rect.top + "px";
+    label.style.left = p.x + "px";
+    label.style.top = p.y + "px";
     label.classList.add("visible");
     canvas.style.cursor = "pointer";
   } else if (hoverStar) {
+    star.getWorldPosition(worldPos);
+    const p = projectToCanvas(worldPos);
     label.textContent = "Enter Mulvium";
-    const rect = canvas.getBoundingClientRect();
-    label.style.left = pointerClient.x - rect.left + "px";
-    label.style.top = pointerClient.y - rect.top + "px";
+    label.style.left = p.x + "px";
+    label.style.top = p.y + "px";
     label.classList.add("visible");
     canvas.style.cursor = "pointer";
   } else {
@@ -359,77 +393,77 @@ function updateHover() {
   }
 }
 
+// Keep label anchored to moving planet even when not re-hovering each frame.
+function trackLabel() {
+  if (state.mode !== "3d") return;
+  if (state.hoverPlanet) {
+    state.hoverPlanet.planet.getWorldPosition(worldPos);
+    const p = projectToCanvas(worldPos);
+    label.style.left = p.x + "px";
+    label.style.top = p.y + "px";
+  } else if (state.hoverStar) {
+    star.getWorldPosition(worldPos);
+    const p = projectToCanvas(worldPos);
+    label.style.left = p.x + "px";
+    label.style.top = p.y + "px";
+  }
+}
+
+// ---------- Animation loop ----------
 function animate() {
   const dt = Math.min(state.clock.getDelta(), 0.05);
 
-  // Orbit motion — slower in 2D so content is calm to read
+  // Orbit motion — rotators spin around Z (in their tilted frame)
   const speedScale = state.t > 0.5 ? 0.55 : 1;
-  planets.forEach((p) => {
-    p.angle += p.def.speed * dt * speedScale;
-    const x = Math.cos(p.angle) * p.def.orbit;
-    const z = Math.sin(p.angle) * p.def.orbit;
-    p.mesh.position.set(x, 0, z);
-    p.mesh.rotation.y += 0.2 * dt;
+  orbits.forEach((o) => {
+    o.angle += o.def.speed * dt * speedScale;
+    o.rotator.rotation.z = o.angle;
+    o.planet.rotation.y += 0.25 * dt;
   });
 
-  star.rotation.y += 0.04 * dt;
-
-  // Hover bump for planet
-  planets.forEach((p) => {
-    const targetScale = state.hoverPlanet === p && state.mode === "3d" ? 1.15 : 1;
-    p.mesh.scale.lerp(
-      tmpVec.set(targetScale, targetScale, targetScale),
-      1 - Math.pow(0.001, dt)
-    );
+  // In 2D mode, flatten every pivot to horizontal so planets orbit a single plane
+  const eased = easeInOut(state.t);
+  orbits.forEach((o) => {
+    const [rx, ry, rz] = o.pivot.userData.baseTilt;
+    o.pivot.rotation.x = lerp(rx, 0, eased);
+    o.pivot.rotation.y = lerp(ry, 0, eased);
+    o.pivot.rotation.z = lerp(rz, 0, eased);
   });
 
-  // Star hover bump (and gentle pulsing idle)
-  const idlePulse = 1 + Math.sin(performance.now() * 0.0012) * 0.012;
+  // Star scale: idle pulse + hover bump
+  const idlePulse = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
   const starTarget =
-    state.hoverStar && state.mode === "3d" ? 1.14 : idlePulse;
+    state.hoverStar && state.mode === "3d" ? 1.1 : idlePulse;
   star.scale.lerp(
     tmpVec.set(starTarget, starTarget, starTarget),
     1 - Math.pow(0.0005, dt)
   );
-  halo.scale.copy(star.scale);
+  // Planet hover bump
+  orbits.forEach((o) => {
+    const target =
+      state.hoverPlanet === o && state.mode === "3d" ? 1.18 : 1;
+    o.planet.scale.lerp(
+      tmpVec.set(target, target, target),
+      1 - Math.pow(0.001, dt)
+    );
+  });
 
-  // Star hover-dwell triggers transition to 2D
-  if (state.mode === "3d") {
-    if (state.hoverStar) {
-      state.starDwell += dt;
-      if (state.starDwell >= STAR_DWELL_THRESHOLD) {
-        state.starDwell = 0;
-        goTo2D();
-      }
-    } else {
-      state.starDwell = 0;
-    }
-  } else {
-    state.starDwell = 0;
-  }
-
-  // Transition t
+  // Transition progress
   if (state.mode === "transitioning") {
     const dir = state.target > state.t ? 1 : -1;
-    state.t += dir * dt * 0.85; // ~1.2s transition
+    state.t += dir * dt * 0.85;
     if ((dir === 1 && state.t >= 1) || (dir === -1 && state.t <= 0)) {
       state.t = state.target;
       state.mode = state.target === 1 ? "2d" : "3d";
     }
   }
 
-  const eased = easeInOut(state.t);
   lerpVec(CAM_3D, CAM_2D, eased, camera.position);
   camera.lookAt(LOOK_AT);
 
-  // Fade orbit rings darker (more visible) in 2D mode
-  orbits.forEach((ring) => {
-    ring.material.opacity = 0.08 + 0.14 * eased;
-  });
-  halo.material.opacity = 0.18 * (1 - eased * 0.9);
-
   updateHover();
-  resize(); // cheap — only reconfigures when canvas box actually changed
+  trackLabel();
+  resize();
 
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
