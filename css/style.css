@@ -516,62 +516,6 @@ body.mode-2d .content-2d {
   text-align: center;
 }
 
-/* ---------- Paper rip section ---------- */
-#rip-section {
-  height: 300vh;
-  /* Visible only in 2D mode */
-  display: none;
-}
-
-body.mode-2d #rip-section {
-  display: block;
-}
-
-.rip-sticky-wrap {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  overflow: hidden;
-}
-
-/* Scrapbook background — dark surface, images like pinned photos */
-#scrapbook {
-  position: absolute;
-  inset: 0;
-  background: #1a0f08;
-}
-
-.scrap-photo {
-  position: absolute;
-  margin: 0;
-  padding: 0;
-  transform: rotate(var(--rot, 0deg));
-  box-shadow: 3px 6px 20px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0,0,0,0.3);
-  border: 7px solid #fff;
-  background: #fff;
-  transform-origin: center center;
-}
-
-.scrap-photo img {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 30vh;
-  object-fit: cover;
-}
-
-/* Paper rip panels — white, cover scrapbook, slide apart on scroll */
-.paper-rip-panel {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  width: 55%;
-  background: #ffffff;
-  will-change: transform;
-}
-
-#paper-rip-left { left: 0; }
-#paper-rip-right { right: 0; }
 
 /* ---------- Sub-pages ---------- */
 .page-shell {
