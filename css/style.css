@@ -9,14 +9,13 @@
   --hairline: rgba(27, 22, 19, 0.12);
   --nav-h: 72px;
   --ease: cubic-bezier(0.65, 0.05, 0.25, 1);
+  /* Pastel hover color — matches center star sphere */
+  --pastel-hover: #f0d5bb;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
-html,
-body {
+html, body {
   margin: 0;
   padding: 0;
   background: var(--paper);
@@ -27,18 +26,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body.nav-open {
-  overflow-y: auto;
-}
+body.cosmos-only { overflow: hidden; height: 100vh; }
 
-body.cosmos-only {
-  overflow: hidden;
-  height: 100vh;
-}
-
-a {
-  color: inherit;
-}
+a { color: inherit; }
 
 button {
   font-family: inherit;
@@ -52,9 +42,7 @@ button {
 /* ---------- Navbar ---------- */
 .navbar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: var(--nav-h);
   display: flex;
   align-items: center;
@@ -77,10 +65,9 @@ button {
   pointer-events: auto;
 }
 
-.navbar.hidden {
-  display: flex;
-}
+.navbar.hidden { display: flex; }
 
+/* Mulvium brand link — hover color signals it returns to landing */
 .nav-brand a {
   font-family: "Cormorant Garamond", serif;
   font-size: 26px;
@@ -88,6 +75,11 @@ button {
   letter-spacing: 0.08em;
   text-decoration: none;
   color: var(--ink);
+  transition: color 0.3s var(--ease);
+}
+
+.nav-brand a:hover {
+  color: var(--pastel-hover);
 }
 
 .nav-links {
@@ -112,9 +104,7 @@ button {
 .nav-trigger::after {
   content: "";
   position: absolute;
-  left: 4px;
-  right: 4px;
-  bottom: 4px;
+  left: 4px; right: 4px; bottom: 4px;
   height: 1px;
   background: var(--clay);
   transform: scaleX(0);
@@ -123,18 +113,12 @@ button {
 }
 
 .nav-trigger:hover,
-.nav-item.open .nav-trigger {
-  color: var(--ink);
-}
+.nav-item.open .nav-trigger { color: var(--ink); }
 
 .nav-trigger:hover::after,
-.nav-item.open .nav-trigger::after {
-  transform: scaleX(1);
-}
+.nav-item.open .nav-trigger::after { transform: scaleX(1); }
 
-.nav-item {
-  position: relative;
-}
+.nav-item { position: relative; }
 
 .dropdown {
   position: absolute;
@@ -169,36 +153,10 @@ button {
   transition: color 0.2s var(--ease), background 0.2s var(--ease);
 }
 
-.dropdown a:hover {
-  color: var(--clay-deep);
-  background: var(--paper-warm);
-}
-
-.return-cosmos {
-  border: 1px solid var(--clay);
-  color: var(--clay-deep);
-  padding: 10px 18px;
-  border-radius: 999px;
-  letter-spacing: 0.14em;
-  font-size: 12px;
-  text-transform: uppercase;
-  transition: background 0.25s var(--ease), color 0.25s var(--ease);
-}
-
-.return-cosmos::after {
-  display: none;
-}
-
-.return-cosmos:hover {
-  background: var(--clay);
-  color: var(--paper);
-}
+.dropdown a:hover { color: var(--clay-deep); background: var(--paper-warm); }
 
 /* ---------- Stage / canvas ---------- */
-main#stage {
-  position: relative;
-  width: 100%;
-}
+main#stage { position: relative; width: 100%; }
 
 #canvas-wrap {
   position: relative;
@@ -209,9 +167,7 @@ main#stage {
   transition: height 0.9s var(--ease);
 }
 
-body.mode-2d #canvas-wrap {
-  height: 92vh;
-}
+body.mode-2d #canvas-wrap { height: 92vh; }
 
 canvas#cosmos {
   position: absolute;
@@ -238,9 +194,7 @@ canvas#cosmos {
   box-shadow: 0 10px 24px rgba(27, 22, 19, 0.06);
 }
 
-.planet-label.visible {
-  opacity: 1;
-}
+.planet-label.visible { opacity: 1; }
 
 .cosmos-hint {
   position: absolute;
@@ -258,32 +212,31 @@ canvas#cosmos {
   pointer-events: none;
 }
 
-body.mode-2d .cosmos-hint {
-  opacity: 0;
-}
+body.mode-2d .cosmos-hint { opacity: 0; }
 
-.vision-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* ---------- Mission text below 2D orbit ---------- */
+.mission-text {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.8s var(--ease) 0.2s, transform 0.8s var(--ease) 0.2s;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.8s var(--ease) 0.4s;
-}
-
-.vision-overlay.visible {
-  opacity: 1;
-}
-
-.vision-inner {
+  background: var(--paper);
   text-align: center;
-  max-width: 520px;
-  padding: 0 24px;
+  padding: 80px clamp(22px, 5vw, 64px) 80px;
 }
 
-.vision-kicker {
+body.mode-2d .mission-text {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.mission-inner {
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+.mission-kicker {
   font-size: 12px;
   letter-spacing: 0.32em;
   text-transform: uppercase;
@@ -291,14 +244,33 @@ body.mode-2d .cosmos-hint {
   margin: 0 0 14px;
 }
 
-.vision-statement {
+.mission-statement {
   font-family: "Cormorant Garamond", serif;
   font-weight: 400;
-  font-size: clamp(28px, 3.6vw, 44px);
+  font-size: clamp(28px, 3.6vw, 48px);
   line-height: 1.18;
   letter-spacing: 0.01em;
-  margin: 0;
+  margin: 0 0 40px;
   color: var(--ink);
+}
+
+.mission-divider {
+  width: 40px;
+  height: 1px;
+  background: var(--hairline);
+  border: none;
+  margin: 0 auto 40px;
+  display: block;
+}
+
+.mission-vision {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: clamp(20px, 2.4vw, 30px);
+  line-height: 1.4;
+  color: var(--clay-deep);
+  margin: 0;
+  letter-spacing: 0.02em;
 }
 
 /* ---------- 2D content ---------- */
@@ -360,9 +332,7 @@ body.mode-2d .content-2d {
   margin: 0 0 36px;
 }
 
-.pillars {
-  margin-top: 120px;
-}
+.pillars { margin-top: 120px; }
 
 .pillar-grid {
   display: grid;
@@ -388,9 +358,7 @@ body.mode-2d .content-2d {
   margin: 0;
 }
 
-.divisions {
-  margin-top: 140px;
-}
+.divisions { margin-top: 140px; }
 
 .division-grid {
   display: grid;
@@ -409,10 +377,7 @@ body.mode-2d .content-2d {
   transition: background 0.35s var(--ease), transform 0.35s var(--ease);
 }
 
-.division-card:hover {
-  background: var(--paper-warm);
-  transform: translateY(-3px);
-}
+.division-card:hover { background: var(--paper-warm); transform: translateY(-3px); }
 
 .division-index {
   font-family: "Cormorant Garamond", serif;
@@ -439,9 +404,7 @@ body.mode-2d .content-2d {
   margin: 0;
 }
 
-.vision-longform {
-  margin-top: 140px;
-}
+.vision-longform { margin-top: 140px; }
 
 .longform-grid {
   display: grid;
@@ -470,9 +433,7 @@ body.mode-2d .content-2d {
   margin: 28px auto 0 !important;
 }
 
-.model {
-  margin-top: 140px;
-}
+.model { margin-top: 140px; }
 
 .model-grid {
   display: grid;
@@ -482,10 +443,7 @@ body.mode-2d .content-2d {
   border: 1px solid var(--hairline);
 }
 
-.model-card {
-  background: var(--paper);
-  padding: 40px 36px;
-}
+.model-card { background: var(--paper); padding: 40px 36px; }
 
 .model-tier {
   font-size: 12px;
@@ -543,9 +501,7 @@ body.mode-2d .content-2d {
   transition: color 0.25s var(--ease);
 }
 
-.closing-cta a:hover {
-  color: var(--clay);
-}
+.closing-cta a:hover { color: var(--clay); }
 
 .site-footer {
   margin-top: 140px;
@@ -558,6 +514,63 @@ body.mode-2d .content-2d {
   text-align: center;
 }
 
+/* ---------- Paper rip section ---------- */
+#rip-section {
+  height: 300vh;
+  /* Visible only in 2D mode */
+  display: none;
+}
+
+body.mode-2d #rip-section {
+  display: block;
+}
+
+.rip-sticky-wrap {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Scrapbook background — dark surface, images like pinned photos */
+#scrapbook {
+  position: absolute;
+  inset: 0;
+  background: #1a0f08;
+}
+
+.scrap-photo {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  transform: rotate(var(--rot, 0deg));
+  box-shadow: 3px 6px 20px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0,0,0,0.3);
+  border: 7px solid #fff;
+  background: #fff;
+  transform-origin: center center;
+}
+
+.scrap-photo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 30vh;
+  object-fit: cover;
+}
+
+/* Paper rip panels — white, cover scrapbook, slide apart on scroll */
+.paper-rip-panel {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 55%;
+  background: #ffffff;
+  will-change: transform;
+}
+
+#paper-rip-left { left: 0; }
+#paper-rip-right { right: 0; }
+
 /* ---------- Sub-pages ---------- */
 .page-shell {
   max-width: 880px;
@@ -565,9 +578,7 @@ body.mode-2d .content-2d {
   padding: calc(var(--nav-h) + 80px) clamp(22px, 5vw, 64px) 120px;
 }
 
-.page-shell .eyebrow {
-  margin-bottom: 18px;
-}
+.page-shell .eyebrow { margin-bottom: 18px; }
 
 .page-shell h1 {
   font-family: "Cormorant Garamond", serif;
@@ -599,9 +610,7 @@ body.mode-2d .content-2d {
 
 .static-nav {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 0; left: 0; right: 0;
   height: var(--nav-h);
   display: flex;
   align-items: center;
@@ -631,27 +640,14 @@ body.mode-2d .content-2d {
 }
 
 @media (max-width: 720px) {
-  .longform-grid,
-  .model-grid {
-    grid-template-columns: 1fr;
-  }
-  .nav-links {
-    gap: 14px;
-  }
-  .nav-trigger {
-    font-size: 11px;
-    letter-spacing: 0.1em;
-  }
-  .return-cosmos {
-    padding: 8px 12px;
-    font-size: 10px;
-  }
+  .longform-grid, .model-grid { grid-template-columns: 1fr; }
+  .nav-links { gap: 14px; }
+  .nav-trigger { font-size: 11px; letter-spacing: 0.1em; }
 }
 
 .hidden-text {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: 1px; height: 1px;
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
