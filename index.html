@@ -33,9 +33,6 @@
           <li><a href="pages/about/contact.html">Contact Us</a></li>
         </ul>
       </li>
-      <li class="nav-item">
-        <button class="nav-trigger return-cosmos" id="return-cosmos">Return to Cosmos</button>
-      </li>
     </ul>
   </nav>
 
@@ -45,17 +42,21 @@
 
       <div id="planet-label" class="planet-label" aria-live="polite"></div>
 
-      <div id="vision-overlay" class="vision-overlay hidden">
-        <div class="vision-inner">
-          <p class="vision-kicker">Mulvium&rsquo;s Mission</p>
-          <h1 class="vision-statement">Reimagine Social Responsibility</h1>
-        </div>
-      </div>
-
       <div id="cosmos-hint" class="cosmos-hint">
         <p>Click a sphere to explore our offerings and our mission.</p>
       </div>
     </div>
+
+    <!-- Mission text below 2D orbit -->
+    <section id="mission-text" class="mission-text">
+      <div class="mission-inner">
+        <p class="mission-kicker">Mulvium&rsquo;s Mission</p>
+        <h1 class="mission-statement">Reimagine Social Responsibility</h1>
+        <p class="mission-divider"></p>
+        <p class="mission-kicker">Mulvium&rsquo;s Vision</p>
+        <p class="mission-vision">Beauty should be all around us.</p>
+      </div>
+    </section>
 
     <section id="content-2d" class="content-2d" aria-hidden="true">
       <article class="intro-block">
@@ -198,6 +199,54 @@
       <footer class="site-footer">
         <p>&copy; <span id="year"></span> Mulvium Foundation. All rights reserved.</p>
       </footer>
+    </section>
+
+    <!-- Paper rip section — white panels slide apart revealing scrapbook images -->
+    <section id="rip-section">
+      <div class="rip-sticky-wrap">
+        <!-- Scrapbook layer behind the paper -->
+        <div id="scrapbook">
+          <figure class="scrap-photo" style="left:3%;top:4%;width:27%;--rot:-2.5deg">
+            <img src="image (1).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:33%;top:2%;width:31%;--rot:2deg">
+            <img src="image (2).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:67%;top:5%;width:27%;--rot:-1.5deg">
+            <img src="image (3).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:1%;top:42%;width:26%;--rot:3deg">
+            <img src="image (4).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:28%;top:40%;width:33%;--rot:-2deg">
+            <img src="image (5).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:64%;top:38%;width:29%;--rot:1.5deg">
+            <img src="image (6).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:7%;top:68%;width:24%;--rot:-3deg">
+            <img src="image (8).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:33%;top:70%;width:28%;--rot:2.5deg">
+            <img src="image (9).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:63%;top:66%;width:26%;--rot:-1.5deg">
+            <img src="image (10).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:48%;top:22%;width:19%;--rot:3.5deg">
+            <img src="image (11).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:13%;top:25%;width:21%;--rot:-2deg">
+            <img src="image (12).png" alt="Kitezh vision" loading="lazy" />
+          </figure>
+          <figure class="scrap-photo" style="left:70%;top:26%;width:24%;--rot:1deg">
+            <img src="Celestial Orbit.jpg" alt="Celestial Orbit" loading="lazy" />
+          </figure>
+        </div>
+        <!-- Paper panels — slide left/right on scroll to reveal scrapbook -->
+        <div id="paper-rip-left" class="paper-rip-panel"></div>
+        <div id="paper-rip-right" class="paper-rip-panel"></div>
+      </div>
     </section>
   </main>
 
