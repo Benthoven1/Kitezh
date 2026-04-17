@@ -14,6 +14,8 @@ const STAR_RADIUS = 0.95;
 
 // Economic Zones tilt: [π/3.2, π/5, 0]
 // Education is 90° inverted: same X tilt, +π/2 on Y — creates perpendicular orbital planes
+// oscillAmp: swing arc in radians; oscillFreq: rad/s (slow, dreamy);
+// oscillPhase: stagger so spheres don't all peak at the same moment
 const ORBITS = [
   {
     id: "ifo",
@@ -24,8 +26,9 @@ const ORBITS = [
     planetSize: 0.32,
     planetColor: PASTEL_IFO,
     tilt: [0, 0, 0],
-    speed: 0.36,
-    phase: 0.0,
+    oscillAmp: 2.8,
+    oscillFreq: 0.15,
+    oscillPhase: 0.0,
   },
   {
     id: "castles",
@@ -36,8 +39,9 @@ const ORBITS = [
     planetSize: 0.4,
     planetColor: PASTEL_CASTLES,
     tilt: [Math.PI / 2, 0, 0],
-    speed: 0.26,
-    phase: 1.1,
+    oscillAmp: 2.2,
+    oscillFreq: 0.10,
+    oscillPhase: 1.2,
   },
   {
     id: "education",
@@ -47,9 +51,10 @@ const ORBITS = [
     radius2D: 6.5,
     planetSize: 0.38,
     planetColor: PASTEL_EDU,
-    tilt: [Math.PI / 3.2, Math.PI / 5 + Math.PI / 2, 0], // 90° offset from Economic Zones
-    speed: 0.22,
-    phase: 2.4,
+    tilt: [Math.PI / 3.2, Math.PI / 5 + Math.PI / 2, 0],
+    oscillAmp: 3.0,
+    oscillFreq: 0.20,
+    oscillPhase: 2.5,
   },
   {
     id: "zones",
@@ -60,8 +65,9 @@ const ORBITS = [
     planetSize: 0.42,
     planetColor: PASTEL_ZONES,
     tilt: [Math.PI / 3.2, Math.PI / 5, 0],
-    speed: 0.18,
-    phase: 3.8,
+    oscillAmp: 1.8,
+    oscillFreq: 0.08,
+    oscillPhase: 3.8,
   },
 ];
 
@@ -160,9 +166,9 @@ const state = {
   target: 0,
   hoverStar: false,
   hoverPlanet: null,
-  // Label persists until another sphere is hovered
   labelPlanet: null,
   labelStar: false,
+  elapsed: 0, // total time for pendulum oscillation
   clock: new THREE.Clock(),
 };
 
@@ -342,19 +348,19 @@ function trackLabel() {
 // ---------- Animation loop ----------
 function animate() {
   const dt = Math.min(state.clock.getDelta(), 0.05);
+  state.elapsed += dt;
   const eased = easeInOut(state.t);
 
-  const speedScale = state.t > 0.5 ? 0.55 : 1;
+  // Pendulum oscillation — sinusoidal swing on each ring (Celestial Orbit style)
   orbits.forEach((o) => {
-    o.angle += o.def.speed * dt * speedScale;
-    o.rotator.rotation.z = o.angle;
-    o.planet.rotation.y += 0.25 * dt;
+    o.rotator.rotation.z = o.def.oscillAmp * Math.sin(state.elapsed * o.def.oscillFreq + o.def.oscillPhase);
+    o.planet.rotation.y += 0.06 * dt;
   });
 
-  // Flatten tilts for 2D and scale pivots for solar-system spacing
+  // Flatten tilts to XZ plane (pivot X→π/2) so overhead 2D camera sees concentric circles
   orbits.forEach((o) => {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
-    o.pivot.rotation.x = lerp(rx, 0, eased);
+    o.pivot.rotation.x = lerp(rx, Math.PI / 2, eased);
     o.pivot.rotation.y = lerp(ry, 0, eased);
     o.pivot.rotation.z = lerp(rz, 0, eased);
 

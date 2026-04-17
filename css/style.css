@@ -167,7 +167,7 @@ main#stage { position: relative; width: 100%; }
   transition: height 0.9s var(--ease);
 }
 
-body.mode-2d #canvas-wrap { height: 92vh; }
+body.mode-2d #canvas-wrap { height: 80vh; }
 
 canvas#cosmos {
   position: absolute;
@@ -221,8 +221,8 @@ body.mode-2d .cosmos-hint { opacity: 0; }
   transition: opacity 0.8s var(--ease) 0.2s, transform 0.8s var(--ease) 0.2s;
   pointer-events: none;
   background: var(--paper);
-  text-align: center;
-  padding: 80px clamp(22px, 5vw, 64px) 80px;
+  padding: 44px clamp(22px, 5vw, 64px) 44px;
+  border-top: 1px solid var(--hairline);
 }
 
 body.mode-2d .mission-text {
@@ -232,8 +232,23 @@ body.mode-2d .mission-text {
 }
 
 .mission-inner {
-  max-width: 580px;
+  max-width: 960px;
   margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(32px, 5vw, 80px);
+}
+
+.mission-col {
+  flex: 1;
+  text-align: center;
+}
+
+.mission-divider-vert {
+  width: 1px;
+  align-self: stretch;
+  background: var(--hairline);
+  flex-shrink: 0;
 }
 
 .mission-kicker {
@@ -241,36 +256,23 @@ body.mode-2d .mission-text {
   letter-spacing: 0.32em;
   text-transform: uppercase;
   color: var(--clay-deep);
-  margin: 0 0 14px;
+  margin: 0 0 16px;
 }
 
+/* Both mission and vision use the same large Cormorant heading */
 .mission-statement {
   font-family: "Cormorant Garamond", serif;
   font-weight: 400;
-  font-size: clamp(28px, 3.6vw, 48px);
+  font-size: clamp(26px, 3.2vw, 44px);
   line-height: 1.18;
   letter-spacing: 0.01em;
-  margin: 0 0 40px;
+  margin: 0;
   color: var(--ink);
 }
 
-.mission-divider {
-  width: 40px;
-  height: 1px;
-  background: var(--hairline);
-  border: none;
-  margin: 0 auto 40px;
-  display: block;
-}
-
-.mission-vision {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: clamp(20px, 2.4vw, 30px);
-  line-height: 1.4;
-  color: var(--clay-deep);
-  margin: 0;
-  letter-spacing: 0.02em;
+@media (max-width: 600px) {
+  .mission-inner { flex-direction: column; }
+  .mission-divider-vert { width: auto; height: 1px; align-self: stretch; }
 }
 
 /* ---------- 2D content ---------- */
