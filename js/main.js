@@ -9,7 +9,7 @@ const PASTEL_ZONES   = 0xB8DDD8;
 const CREAM_DEEP     = 0xcdbe96;
 const PAPER          = 0xffffff;
 
-const STAR_RADIUS = 0.95;
+const STAR_RADIUS = 1.25;
 
 // ringTube is set per-orbit so that after 2D pivot scaling all rings appear the same
 // line weight from the overhead camera (tube_initial × scale_2D ≈ 0.04 for every ring).
@@ -26,8 +26,8 @@ const ORBITS = [
     id: "ifo",
     name: "International Festival Orchestra",
     href: "pages/meet-mulvium/international-festival-orchestra.html",
-    radius: 3.0,  radius2D: 2.5,  ellipseX: 1,  ringTube: 0.048,
-    planetSize: 0.32, planetColor: PASTEL_IFO,
+    radius: 3.0,  radius2D: 2.5,  ellipseX: 0.6,  ringTube: 0.048,
+    planetSize: 0.42, planetColor: PASTEL_IFO,
     tilt: [0, 0, 0],
     speed: 0.36,  phase: 0.0,
   },
@@ -35,8 +35,8 @@ const ORBITS = [
     id: "castles",
     name: "Castles",
     href: "pages/meet-mulvium/castles.html",
-    radius: 3.8,  radius2D: 4.5,  ellipseX: 1,  ringTube: 0.034,
-    planetSize: 0.4,  planetColor: PASTEL_CASTLES,
+    radius: 3.8,  radius2D: 4.5,  ellipseX: 0.6,  ringTube: 0.034,
+    planetSize: 0.42,  planetColor: PASTEL_CASTLES,
     tilt: [Math.PI / 2, 0, 0],
     speed: 0.26,  phase: 1.1,
   },
@@ -44,8 +44,8 @@ const ORBITS = [
     id: "education",
     name: "Education",
     href: "pages/meet-mulvium/education.html",
-    radius: 4.5,  radius2D: 6.5,  ellipseX: 1,  ringTube: 0.028,
-    planetSize: 0.38, planetColor: PASTEL_EDU,
+    radius: 4.5,  radius2D: 6.5,  ellipseX: 0.6,  ringTube: 0.028,
+    planetSize: 0.42, planetColor: PASTEL_EDU,
     tilt: [Math.PI / 3.2, Math.PI / 5 + Math.PI / 2, 0],
     speed: 0.22,  phase: 2.4,
   },
@@ -53,7 +53,7 @@ const ORBITS = [
     id: "zones",
     name: "Economic Zones",
     href: "pages/meet-mulvium/economic-zones.html",
-    radius: 5.0,  radius2D: 8.5,  ellipseX: 1,  ringTube: 0.024,
+    radius: 5.0,  radius2D: 8.5,  ellipseX: 0.6,  ringTube: 0.024,
     planetSize: 0.42, planetColor: PASTEL_ZONES,
     tilt: [Math.PI / 3.2, Math.PI / 5, 0],
     speed: 0.18,  phase: 3.8,
