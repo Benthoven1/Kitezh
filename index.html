@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mulvium &mdash; Reimagine Social Responsibility</title>
+  <title>Mulvium &mdash; Reimagine Arts Patronage</title>
   <link rel="stylesheet" href="css/style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
 </head>
 <body>
   <nav id="navbar" class="navbar hidden" aria-hidden="true">
@@ -39,179 +39,132 @@
   <main id="stage">
     <div id="canvas-wrap">
       <canvas id="cosmos"></canvas>
-
       <div id="planet-label" class="planet-label" aria-live="polite"></div>
-
       <div id="cosmos-hint" class="cosmos-hint">
         <p>Click a sphere to explore our offerings and our mission.</p>
       </div>
     </div>
 
-    <!-- Mission text below 2D orbit — two columns, side by side -->
-    <section id="mission-text" class="mission-text">
-      <div class="mission-inner">
-        <div class="mission-col">
-          <p class="mission-kicker">Mulvium&rsquo;s Mission</p>
-          <p class="mission-statement">Reimagine Social Responsibility</p>
+    <!-- Marble pillars — slide in from opposite sides on scroll -->
+    <section id="pillar-section">
+      <div class="pillar-bar" id="pillar-left">
+        <div class="pillar-bar-inner">
+          <p class="pillar-kicker">Mulvium&rsquo;s Mission</p>
+          <p class="pillar-statement">Reimagine Arts Patronage</p>
         </div>
-        <div class="mission-divider-vert"></div>
-        <div class="mission-col">
-          <p class="mission-kicker">Mulvium&rsquo;s Vision</p>
-          <p class="mission-statement">Beauty should be all around us.</p>
+      </div>
+      <div class="pillar-bar" id="pillar-right">
+        <div class="pillar-bar-inner">
+          <p class="pillar-kicker">Mulvium&rsquo;s Vision</p>
+          <p class="pillar-statement">Beauty should be all around us.</p>
         </div>
       </div>
     </section>
 
-    <section id="content-2d" class="content-2d" aria-hidden="true">
-      <article class="intro-block">
-        <p class="eyebrow">21st Century Patronage</p>
-        <h2>Building castles. Reclaiming beauty.</h2>
-        <p class="lede">
-          Mulvium is a non-profit foundation that funnels personal wealth into global impact&mdash;
-          incubating the creative process, commissioning master craftsmen, and restoring aspiration
-          to public life.
-        </p>
+    <!-- Letter section — text drawn from Kitezh, The Vision (pp. 2, 4, 5) -->
+    <section id="letter-section">
+      <article class="letter-article">
+        <header class="letter-header">
+          <p class="letter-to">To those who stop and smell the roses,</p>
+        </header>
+
+        <div class="letter-body">
+          <!-- p. 2 -->
+          <p>
+            Mulvium is a non-profit foundation built to funnel personal wealth into global
+            impact&mdash;incubating the creative process, commissioning master craftsmen, and
+            restoring aspiration to public life. Its premise is simple: the vast resources
+            accumulated in this century belong, in some measure, to beauty.
+          </p>
+          <p>
+            We believe in three constituencies. To the <em>Patron</em>, Mulvium aligns the
+            Overton window in favor of accumulated wealth powering the frontier&mdash;wealth
+            inexorably tied to artistic achievement. To the <em>Artist</em>, it redirects
+            creative energy toward problem-solving rather than exclusively self-expression,
+            through polymathy and humanist&ndash;technologist collaboration. To the <em>Citizen</em>,
+            it will manifest and maintain the framework of social humility that society needs
+            to reconcile divisiveness and engender harmony.
+          </p>
+
+          <!-- p. 4 -->
+          <p>
+            Most things that are profoundly beautiful are wrapped up in the canon of the
+            past and in the splendor of the natural world. Why can&rsquo;t we find this
+            level of beauty in our globalized, cosmopolitan lives&mdash;in the vast art of
+            our time?
+          </p>
+          <p>
+            Historically, societies made their deepest values visible. Medieval Europe
+            externalized faith through cathedrals. Renaissance Italy materialized influence
+            through palazzi, frescoes, and sculpture. Even industrial modernity expressed
+            itself through monumental infrastructure&mdash;bridges and train stations&mdash;that
+            were not merely functional, but aspirational. The built world was a mirror of
+            what people believed mattered.
+          </p>
+          <p>
+            Today, the political and technological classes obfuscate beauty more than shape
+            it. Power accumulates without leaving a legible mark on civilization. The patron
+            class has lost its idiom. Mulvium exists to give it one back.
+          </p>
+
+          <!-- p. 5 -->
+          <p>
+            There needs to exist a funnel where personal wealth comes in and global impact
+            comes out&mdash;where creative ideation and the creative process can be
+            incubated. A non-profit foundation that directly controls real estate, castle
+            operations, and brand&mdash;where patrons contribute their wealth. And a public
+            benefit corporation beneath it: a subsidiary that develops the technology and
+            media that carries this vision into daily life.
+          </p>
+          <p>
+            If people can&rsquo;t tolerate aesthetic differences, how will they tolerate
+            each other? Mulvium&rsquo;s hope is to help the world stop and smell the
+            roses&mdash;one artwork at a time.
+          </p>
+        </div>
+
+        <footer class="letter-close">
+          <p>With sincerity,</p>
+          <p class="letter-sig">Mulvium</p>
+        </footer>
       </article>
-
-      <section class="pillars">
-        <h3 class="section-title">Three Constituencies</h3>
-        <div class="pillar-grid">
-          <div class="pillar">
-            <h4>The Patron</h4>
-            <p>
-              Mulvium aligns the Overton window in favor of accumulated wealth powering
-              the frontier, which should be inexorably tied to artistic achievement.
-            </p>
-          </div>
-          <div class="pillar">
-            <h4>The Artist</h4>
-            <p>
-              Mulvium redirects artistic creativity toward problem solving rather than
-              exclusively self-expression&mdash;through polymathy and humanist-technologist
-              collaboration.
-            </p>
-          </div>
-          <div class="pillar">
-            <h4>The Citizen</h4>
-            <p>
-              Through art and technology, Mulvium will manifest and maintain the framework
-              of social humility society needs to reconcile divisiveness and engender harmony.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="divisions">
-        <h3 class="section-title">Meet the Divisions</h3>
-        <div class="division-grid">
-          <a class="division-card" href="pages/meet-mulvium/international-festival-orchestra.html">
-            <span class="division-index">01</span>
-            <h4>International Festival Orchestra</h4>
-            <p>
-              A travelling Kappellmeister-led ensemble writing compositions for regular service&mdash;
-              in the tradition of J.S. Bach as Konzertmeister&mdash;so that beauty can be all around us.
-            </p>
-          </a>
-          <a class="division-card" href="pages/meet-mulvium/castles.html">
-            <span class="division-index">02</span>
-            <h4>Castles</h4>
-            <p>
-              Modular civic landmarks that host political forums, theater, and educational summits.
-              Fine artists are commissioned to design and adorn them with frescos, mosaics, reliefs,
-              and free-standing sculpture.
-            </p>
-          </a>
-          <a class="division-card" href="pages/meet-mulvium/education.html">
-            <span class="division-index">03</span>
-            <h4>Education</h4>
-            <p>
-              Wielding technology in the pursuit of perfect polymathy&mdash;wandering freely and with
-              unbridled speed through all the fields of the disciplines, as Johannes Wower defined
-              it in 1603.
-            </p>
-          </a>
-          <a class="division-card" href="pages/meet-mulvium/economic-zones.html">
-            <span class="division-index">04</span>
-            <h4>Economic Zones</h4>
-            <p>
-              Castles as piazze: tolls, small businesses, and a B2C suite that empowers scholars,
-              artists, and independent thinkers to co-create a technological system intelligible,
-              pluralistic, and beneficial to humanity.
-            </p>
-          </a>
-        </div>
-      </section>
-
-      <section class="vision-longform">
-        <h3 class="section-title">The Vision</h3>
-        <div class="longform-grid">
-          <p>
-            Most things that are profoundly beautiful are wrapped up in the canon of the past and
-            in the splendor of the natural world. Why can&rsquo;t we find this level of beauty in our
-            globalized, cosmopolitan lives&mdash;in the vast art of our time?
-          </p>
-          <p>
-            Historically, societies made their deepest values visible. Medieval Europe externalized
-            faith through cathedrals. Renaissance Italy materialized influence through palazzi,
-            frescoes, and sculpture. Even industrial modernity expressed itself through monumental
-            infrastructure&mdash;bridges and train stations&mdash;that were not merely functional,
-            but aspirational.
-          </p>
-          <p>
-            Today, the political and technological classes obfuscate beauty more than shape it.
-            There needs to exist a funnel where personal wealth comes in and global impact comes out&mdash;
-            where creative ideation and the creative process can be incubated.
-          </p>
-          <p class="pullquote">
-            If people can&rsquo;t tolerate aesthetic differences, how will people tolerate each other?
-          </p>
-        </div>
-      </section>
-
-      <section class="model">
-        <h3 class="section-title">Two-Tier Model</h3>
-        <div class="model-grid">
-          <div class="model-card">
-            <p class="model-tier">Tier I</p>
-            <h4>Non-Profit Foundation</h4>
-            <p>
-              Directly controls real estate, castle operations, and brand.
-              This is where patrons contribute their wealth.
-            </p>
-          </div>
-          <div class="model-card">
-            <p class="model-tier">Tier II</p>
-            <h4>Public Benefit Corporation</h4>
-            <p>
-              A subsidiary controlled by the non-profit board and other investors.
-              This arm develops technology and media.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section class="closing">
-        <p class="closing-quote">
-          Mulvium&rsquo;s hope is to help the world stop and smell the roses&mdash;one artwork at a time.
-        </p>
-        <p class="closing-cta">
-          If you want to power the frontier and not the simulacrum,
-          <a href="pages/about/contact.html">let&rsquo;s talk.</a>
-        </p>
-      </section>
-
-      <footer class="site-footer">
-        <p>&copy; <span id="year"></span> Mulvium Foundation. All rights reserved.</p>
-      </footer>
     </section>
+
+    <!-- Site footer with expanded nav menu and copyright -->
+    <footer id="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-wordmark">Mulvium</span>
+        </div>
+        <nav class="footer-nav" aria-label="Footer navigation">
+          <div class="footer-col">
+            <p class="footer-col-title">Offerings</p>
+            <ul class="footer-links">
+              <li><a href="pages/meet-mulvium/international-festival-orchestra.html">International Festival Orchestra</a></li>
+              <li><a href="pages/meet-mulvium/castles.html">Castles</a></li>
+              <li><a href="pages/meet-mulvium/education.html">Education</a></li>
+              <li><a href="pages/meet-mulvium/economic-zones.html">Economic Zones</a></li>
+              <li><a href="pages/meet-mulvium/meaning-of-mulvium.html">Meaning of Mulvium</a></li>
+            </ul>
+          </div>
+          <div class="footer-col">
+            <p class="footer-col-title">About Us</p>
+            <ul class="footer-links">
+              <li><a href="pages/about/people.html">People</a></li>
+              <li><a href="pages/about/careers.html">Careers</a></li>
+              <li><a href="pages/about/contact.html">Contact Us</a></li>
+            </ul>
+          </div>
+        </nav>
+      </div>
+      <div class="footer-copy">
+        <p>&copy; <span id="year"></span> Mulvium Foundation. All rights reserved.</p>
+      </div>
+    </footer>
   </main>
 
   <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.161.0/build/three.module.js"
-      }
-    }
+    { "imports": { "three": "https://unpkg.com/three@0.161.0/build/three.module.js" } }
   </script>
   <script type="module" src="js/main.js"></script>
   <script>

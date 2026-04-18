@@ -383,3 +383,20 @@ function animate() {
 }
 
 animate();
+
+(function initPillars() {
+  const section = document.getElementById("pillar-section");
+  const left    = document.getElementById("pillar-left");
+  const right   = document.getElementById("pillar-right");
+  if (!section || !left || !right) return;
+  function update() {
+    const rect     = section.getBoundingClientRect();
+    const progress = Math.max(0, Math.min(1, 1 - rect.top / window.innerHeight));
+    const e        = 1 - Math.pow(1 - progress, 3);
+    const offset   = (1 - e) * 100;
+    left.style.transform  = `translateX(${-offset}%)`;
+    right.style.transform = `translateX(${offset}%)`;
+  }
+  window.addEventListener("scroll", update, { passive: true });
+  update();
+})();
