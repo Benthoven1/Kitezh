@@ -191,36 +191,102 @@ canvas.addEventListener("pointerleave", () => {
 canvas.addEventListener("click", () => {
   if (state.mode !== "3d") return;
   if (state.hoverPlanet) {
-    if (state.hoverPlanet.def.id === "ifo") runIFOTransition(state.hoverPlanet);
+    if (state.hoverPlanet.def.id === "ifo") goToIFO(state.hoverPlanet);
     else window.location.href = state.hoverPlanet.def.href;
   } else if (state.hoverStar) goTo2D();
 });
 
-// IFO "sphere becomes a circle" transition:
-// - Projects the planet's screen position
-// - Places a pastel disc at that location and grows it while fading to white
-// - Navigates once the page is fully covered so the IFO hero animation can pick up
-function runIFOTransition(orbit) {
-  state.mode = "ifo-exit";
-  label.classList.remove("visible");
+// IFO mode: the planet flattens into the central radiant of an upside-down
+// Music-of-the-Spheres engraving rendered inline on this page. The transition
+// mirrors the star → 2D orbit pivot — a single in-place animation, no
+// navigation. A pastel disc expands from the planet's screen position and
+// settles at the center of the engraving before the prose fades in.
+const ifoModeEl  = document.getElementById("ifo-mode");
+const ifoReturn  = document.getElementById("ifo-return");
 
-  orbit.planet.getWorldPosition(worldPos);
-  const p = projectToCanvas(worldPos);
+function goToIFO(orbit) {
+  if (state.mode !== "3d") return;
+  state.mode = "ifo-enter";
+  label.classList.remove("visible");
+  state.labelPlanet = null;
+  state.labelStar = false;
+  document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+
+  const startPoint = orbit
+    ? (orbit.planet.getWorldPosition(worldPos), projectToCanvas(worldPos))
+    : { x: window.innerWidth / 2, y: window.innerHeight * 0.42 };
+
+  // Target = center of where the engraving's central radiant will render
+  // (horizontal center of the viewport, ~40% from the top).
+  const targetX = window.innerWidth  * 0.5;
+  const targetY = window.innerHeight * 0.40;
 
   const overlay = document.createElement("div");
-  overlay.className = "ifo-exit-overlay";
+  overlay.className = "ifo-enter-overlay";
+  overlay.id = "ifo-enter-overlay";
   document.body.appendChild(overlay);
 
   const disc = document.createElement("div");
-  disc.className = "ifo-exit-disc";
-  disc.style.left = p.x + "px";
-  disc.style.top  = p.y + "px";
+  disc.className = "ifo-enter-disc";
+  disc.style.left = startPoint.x + "px";
+  disc.style.top  = startPoint.y + "px";
+  disc.style.setProperty("--ifo-dx", (targetX - startPoint.x) + "px");
+  disc.style.setProperty("--ifo-dy", (targetY - startPoint.y) + "px");
   overlay.appendChild(disc);
 
-  requestAnimationFrame(() => overlay.classList.add("active"));
+  requestAnimationFrame(() => overlay.classList.add("fade"));
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add("flatten")));
 
-  setTimeout(() => { window.location.href = orbit.def.href; }, 780);
+  // Swap the body into IFO mode once the disc has flattened.
+  setTimeout(() => {
+    body.classList.add("mode-ifo");
+    body.classList.remove("cosmos-only");
+    navbar.classList.add("visible");
+    navbar.setAttribute("aria-hidden", "false");
+    ifoModeEl.setAttribute("aria-hidden", "false");
+    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  }, 620);
+
+  // Remove the transition overlay after the engraving has faded in.
+  setTimeout(() => {
+    overlay.classList.add("lift");
+  }, 900);
+  setTimeout(() => {
+    overlay.remove();
+    state.mode = "ifo";
+  }, 1400);
 }
+
+function returnFromIFO() {
+  if (state.mode !== "ifo") return;
+  state.mode = "ifo-exit";
+  body.classList.remove("mode-ifo");
+  body.classList.add("cosmos-only");
+  navbar.classList.remove("visible");
+  navbar.setAttribute("aria-hidden", "true");
+  ifoModeEl.setAttribute("aria-hidden", "true");
+  window.scrollTo({ top: 0, behavior: "auto" });
+  state.mode = "3d";
+}
+
+if (ifoReturn) ifoReturn.addEventListener("click", returnFromIFO);
+
+// Also wire up the "International Festival Orchestra" links in the navbar and
+// footer so they trigger the in-page transition rather than navigating away.
+document.querySelectorAll("[data-ifo-link]").forEach((el) => {
+  el.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (state.mode === "ifo" || state.mode === "ifo-enter") return;
+    if (state.mode === "2d" || state.mode === "transitioning") {
+      // Bring the camera back to 3D first (so the disc can originate from the
+      // IFO planet's projected position), then enter IFO mode.
+      goTo3D();
+      setTimeout(() => goToIFO(orbits.find((o) => o.def.id === "ifo")), 850);
+    } else {
+      goToIFO(orbits.find((o) => o.def.id === "ifo"));
+    }
+  });
+});
 
 canvas.setAttribute("tabindex", "0");
 canvas.setAttribute("role", "application");

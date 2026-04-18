@@ -491,419 +491,193 @@ body.mode-2d .cosmos-hint { opacity: 0; }
 }
 
 /* =====================================================================
-   INTERNATIONAL FESTIVAL ORCHESTRA
-   "The sphere becomes a circle." An upside-down Music of Spheres:
-   a porcelain hero disc at the top, concentric arcs opening downward,
-   a monochord spine of musical notes, ending in a marble violin scroll.
+   INTERNATIONAL FESTIVAL ORCHESTRA — IFO MODE
+   Clicking the IFO planet (or any IFO link) swaps the cosmos for a
+   single compact upside-down "Music of the Spheres" engraving rendered
+   inline on index.html, followed by the Vision Memo prose.
    ===================================================================== */
 
-/* Exit transition from landing — pastel IFO disc expands to cover the page
-   before navigation so the IFO hero picks up seamlessly. */
-.ifo-exit-overlay {
+/* ---- Transition overlay: a pastel IFO disc expands from the planet's
+   screen position, flattens to its target in the engraving, then lifts. */
+.ifo-enter-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 120;
   pointer-events: none;
-  background: rgba(255, 255, 255, 0);
-  transition: background 0.75s var(--ease);
+  background: rgba(252, 246, 230, 0);
+  transition: background 0.55s var(--ease), opacity 0.45s var(--ease);
 }
-.ifo-exit-overlay.active { background: rgba(255, 255, 255, 1); }
+.ifo-enter-overlay.fade { background: rgba(252, 246, 230, 1); }
+.ifo-enter-overlay.lift { opacity: 0; }
 
-.ifo-exit-disc {
+.ifo-enter-disc {
   position: absolute;
   width: 120px;
   height: 120px;
   margin: -60px 0 0 -60px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #e4efd8 0%, #c4ddb8 55%, #a6bf96 100%);
+  background: radial-gradient(circle at 35% 30%, #e9f2da 0%, #c4ddb8 55%, #9fba91 100%);
   box-shadow:
-    inset -10px -14px 28px rgba(120, 148, 100, 0.35),
-    inset  8px 10px 22px rgba(255, 255, 255, 0.55),
+    inset -10px -14px 26px rgba(120, 148, 100, 0.32),
+    inset  8px 10px 22px rgba(255, 255, 255, 0.6),
     0 18px 40px rgba(90, 110, 80, 0.2);
-  transform: scale(0.35);
-  opacity: 0.9;
-  transition:
-    transform 0.78s cubic-bezier(0.6, 0.02, 0.2, 1),
-    opacity  0.78s cubic-bezier(0.6, 0.02, 0.2, 1);
+  transform: translate(0, 0) scale(0.32);
+  transition: transform 0.7s cubic-bezier(0.55, 0.04, 0.2, 1);
 }
-.ifo-exit-overlay.active .ifo-exit-disc {
-  transform: scale(18);
-  opacity: 1;
+.ifo-enter-overlay.flatten .ifo-enter-disc {
+  transform: translate(var(--ifo-dx, 0), var(--ifo-dy, 0)) scale(0.4);
 }
 
-/* ----- Page frame ----- */
-body.ifo-page {
+/* ---- IFO mode body toggles: hide cosmos, pillars, letter; show ifo-mode ---- */
+.ifo-mode {
+  display: none;
+  min-height: 100vh;
+  padding-top: calc(var(--nav-h) + 28px);
   background:
-    radial-gradient(1200px 800px at 50% 0%, #faf5ea 0%, #f3ecdd 55%, #ece4d0 100%);
+    radial-gradient(1200px 700px at 50% 10%, #fcf7e8 0%, #f2ead3 55%, #e6dabc 100%);
+}
+
+body.mode-ifo #canvas-wrap,
+body.mode-ifo #pillar-section,
+body.mode-ifo #letter-section { display: none; }
+
+body.mode-ifo .ifo-mode {
+  display: block;
+  animation: ifoModeFade 0.6s var(--ease) 0.2s both;
+}
+
+@keyframes ifoModeFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Return-to-cosmos pill */
+.ifo-return-btn {
+  position: fixed;
+  top: calc(var(--nav-h) + 16px);
+  left: clamp(20px, 4vw, 56px);
+  z-index: 30;
+  font-family: "Inter", sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--clay-deep);
+  background: rgba(252, 246, 230, 0.85);
+  border: 1px solid rgba(152, 138, 115, 0.35);
+  padding: 8px 14px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: color 0.25s var(--ease), border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+
+.ifo-return-btn:hover {
   color: var(--ink);
-  overflow-x: hidden;
+  border-color: var(--ink);
+  background: rgba(252, 246, 230, 1);
 }
 
-.ifo-stage {
-  position: relative;
-  padding-top: var(--nav-h);
-}
-
-/* ----- HERO: sphere → circle arrival ----- */
-.ifo-hero {
-  position: relative;
-  min-height: calc(100vh - var(--nav-h));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* ---- The engraving figure (compact, JPG-proportioned) ---- */
+.ifo-engraving {
+  margin: 0 auto;
+  padding: 16px clamp(12px, 3vw, 32px) 24px;
+  max-width: 540px;
   text-align: center;
-  padding: 40px clamp(20px, 5vw, 64px) 40px;
+  animation: ifoEngravingRise 0.9s var(--ease) 0.35s both;
 }
+
+@keyframes ifoEngravingRise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ifo-engraving-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(78vh, 780px);
+  filter:
+    drop-shadow(0 18px 36px rgba(80, 60, 30, 0.14))
+    drop-shadow(0 2px 4px rgba(80, 60, 30, 0.1));
+}
+
+/* ---- Prose below the engraving (full Vision Memo) ---- */
+.ifo-prose {
+  max-width: 680px;
+  margin: 32px auto 0;
+  padding: 0 clamp(22px, 5vw, 48px) 120px;
+  animation: ifoProseRise 0.9s var(--ease) 0.55s both;
+}
+
+@keyframes ifoProseRise {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ifo-prose-header { text-align: center; margin: 48px 0 40px; }
 
 .ifo-eyebrow {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.34em;
   text-transform: uppercase;
   color: var(--clay-deep);
-  margin: 0 0 32px;
+  margin: 0 0 14px;
 }
 
-.ifo-circle-wrap {
-  perspective: 1000px;
-  margin-bottom: 48px;
-}
-
-.ifo-circle {
-  position: relative;
-  width: clamp(240px, 34vw, 380px);
-  height: clamp(240px, 34vw, 380px);
-  border-radius: 50%;
-  background: radial-gradient(circle at 36% 30%, #e8f1da 0%, #c4ddb8 52%, #9fba91 100%);
-  box-shadow:
-    inset -16px -22px 48px rgba(110, 140, 92, 0.32),
-    inset  10px 14px 32px rgba(255, 255, 255, 0.65),
-    0 34px 70px rgba(90, 110, 80, 0.18);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: ifoArrive 1.5s cubic-bezier(0.2, 0.72, 0.18, 1) both;
-}
-
-/* Opens with a sphere feel (scale + depth rotation), then flattens into a 2D circle. */
-@keyframes ifoArrive {
-  0%   { transform: scale(0.05) rotateX(55deg); opacity: 0; box-shadow: none; }
-  40%  { transform: scale(0.6)  rotateX(30deg); opacity: 1; }
-  70%  { transform: scale(1.03) rotateX(6deg);  }
-  100% { transform: scale(1)    rotateX(0deg);  }
-}
-
-.ifo-circle-core {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  color: rgba(52, 68, 44, 0.85);
-  letter-spacing: 0.18em;
-}
-
-.ifo-circle-glyph {
-  margin: 0;
-  font-size: clamp(40px, 5vw, 68px);
-  font-weight: 500;
-  letter-spacing: 0.24em;
-}
-
-.ifo-circle-rim {
-  position: absolute;
-  inset: -14px;
-  border-radius: 50%;
-  border: 1px solid rgba(152, 138, 115, 0.35);
-  pointer-events: none;
-  animation: rimFade 1.8s ease-out 0.4s both;
-}
-
-@keyframes rimFade {
-  from { opacity: 0; transform: scale(0.85); }
-  to   { opacity: 1; transform: scale(1); }
-}
-
-.ifo-title {
+.ifo-prose-title {
   font-family: "Cormorant Garamond", serif;
   font-weight: 400;
-  font-size: clamp(34px, 5.2vw, 64px);
-  line-height: 1.08;
+  font-size: clamp(34px, 4.6vw, 52px);
+  line-height: 1.1;
   color: var(--ink);
-  margin: 0 0 20px;
-  max-width: 18ch;
+  margin: 0 0 14px;
 }
 
-.ifo-tagline {
-  max-width: 560px;
-  font-size: clamp(15px, 1.2vw, 17px);
-  line-height: 1.75;
-  color: var(--ink-soft);
-  margin: 0 0 64px;
-}
-
-.ifo-scroll-hint {
-  font-size: 11px;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-  color: var(--clay-deep);
-  margin: 0;
-  animation: hintBob 2.8s ease-in-out infinite;
-}
-
-@keyframes hintBob {
-  0%, 100% { transform: translateY(0); opacity: 0.7; }
-  50%      { transform: translateY(6px); opacity: 1; }
-}
-
-/* ----- UPSIDE-DOWN MUSIC OF SPHERES ----- */
-.ifo-spheres {
-  position: relative;
-  padding: 0 clamp(16px, 4vw, 48px) 0;
-  /* Subtle marble veining behind the arcs */
-  background:
-    repeating-linear-gradient(
-      73deg,
-      transparent 0px, transparent 28px,
-      rgba(160, 145, 120, 0.05) 28px, rgba(160, 145, 120, 0.05) 29px,
-      transparent 29px, transparent 64px
-    ),
-    repeating-linear-gradient(
-      161deg,
-      transparent 0px, transparent 42px,
-      rgba(195, 182, 158, 0.05) 42px, rgba(195, 182, 158, 0.05) 43px,
-      transparent 43px, transparent 88px
-    ),
-    linear-gradient(180deg, #f5eedd 0%, #ede4ce 50%, #e5dabe 100%);
-}
-
-/* Central monochord spine — runs behind every arc; musical notes hang off it.
-   Absolute full-height bar pinned to the center of the .ifo-spheres section. */
-.monochord {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 2px;
-  transform: translateX(-1px);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.monochord-line {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(152, 138, 115, 0) 0%,
-    rgba(152, 138, 115, 0.55) 8%,
-    rgba(152, 138, 115, 0.55) 92%,
-    rgba(152, 138, 115, 0) 100%
-  );
-}
-
-.note {
-  position: absolute;
-  left: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: translate(-50%, -50%);
-}
-
-.note-bar {
-  display: block;
-  width: 56px;
-  height: 1px;
-  background: rgba(152, 138, 115, 0.7);
-}
-
-.note-letter {
-  position: absolute;
-  left: calc(50% + 44px);
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: 15px;
-  color: #7a6a52;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-
-.note-letter.element {
+.ifo-prose-meta {
   font-size: 12px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  font-style: normal;
-  font-family: "Inter", sans-serif;
-  color: #8a7354;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+  margin: 0;
 }
 
-/* ----- Concentric arc layers ----- */
-.arc-layer {
-  position: relative;
-  z-index: 2;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: clamp(48px, 8vw, 100px) 0 clamp(32px, 6vw, 72px);
-  text-align: center;
-  opacity: 0;
-  transform: translateY(40px);
-  transition: opacity 1.1s var(--ease), transform 1.1s var(--ease);
-}
-
-.arc-layer.in-view {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.arc-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  margin: 0 auto 28px;
-  /* Arcs grow wider on successive layers to mimic the sphere fanning downward;
-     each layer's SVG viewBox handles the curvature. */
-  max-width: 1100px;
-  opacity: 0.9;
-}
-
-.arc-content {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 0 clamp(18px, 3vw, 32px);
-}
-
-.arc-kicker {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: 13px;
-  letter-spacing: 0.26em;
-  text-transform: uppercase;
-  color: var(--clay-deep);
-  margin: 0 0 16px;
-}
-
-.arc-body {
-  font-size: clamp(15px, 1.15vw, 17px);
+.ifo-prose-body p {
+  font-size: 17px;
   line-height: 1.85;
   color: var(--ink-soft);
+  margin: 0 0 24px;
+  text-indent: 1.6em;
+}
+
+.ifo-prose-body p:first-child { text-indent: 0; }
+
+.ifo-prose-body em {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 1.06em;
+  color: var(--ink);
+}
+
+.ifo-prose-footnote {
+  border-top: 1px solid var(--hairline);
+  margin-top: 40px;
+  padding-top: 20px;
+}
+
+.ifo-prose-footnote p {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-soft);
   margin: 0;
 }
 
-.arc-body em {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: 1.08em;
-  color: var(--ink);
-}
-
-/* Kitezh myth — center-indented italic footnote-feel */
-.arc-kitezh .arc-content { max-width: 540px; }
-.arc-kitezh .arc-kicker {
-  font-size: 11px;
-  letter-spacing: 0.44em;
-}
-.arc-kitezh .kitezh-myth {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: clamp(17px, 1.4vw, 21px);
-  line-height: 1.7;
-  color: var(--ink);
-}
-
-/* ----- VIOLIN SCROLL at the bottom ----- */
-.violin-scroll-figure {
-  position: relative;
-  z-index: 2;
-  max-width: 320px;
-  margin: 40px auto 0;
-  padding: 0 24px 80px;
-  text-align: center;
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 1.2s var(--ease), transform 1.2s var(--ease);
-}
-
-.violin-scroll-figure.in-view {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.violin-scroll-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  filter:
-    drop-shadow(0 18px 36px rgba(60, 50, 32, 0.18))
-    drop-shadow(0 2px 4px rgba(60, 50, 32, 0.12));
-}
-
-.violin-caption {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: 15px;
-  color: var(--ink-soft);
-  margin: 28px auto 0;
-  max-width: 420px;
-  line-height: 1.6;
-}
-
-/* ----- CODA / closing invitation ----- */
-.ifo-coda {
-  background: var(--paper);
-  border-top: 1px solid var(--hairline);
-  padding: clamp(72px, 10vw, 128px) clamp(24px, 6vw, 80px);
-  text-align: center;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 1s var(--ease), transform 1s var(--ease);
-}
-
-.ifo-coda.in-view { opacity: 1; transform: translateY(0); }
-
-.coda-inner {
-  max-width: 620px;
-  margin: 0 auto;
-}
-
-.coda-body {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: clamp(20px, 2.2vw, 28px);
-  line-height: 1.55;
-  color: var(--ink);
-  margin: 0 0 28px;
-}
-
-.coda-sig {
-  font-size: 12px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--clay-deep);
-  margin: 0 0 48px;
-}
-
-.ifo-return {
-  display: inline-block;
-  font-size: 12px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--clay-deep);
+.ifo-fnref {
   text-decoration: none;
-  border-bottom: 1px solid var(--clay);
-  padding-bottom: 2px;
-  transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
+  color: var(--clay-deep);
+  border-bottom: 1px dotted var(--clay);
 }
 
-.ifo-return:hover { color: var(--ink); border-color: var(--ink); }
-
-/* ----- Responsive ----- */
+/* ---- Responsive ---- */
 @media (max-width: 720px) {
-  .note-bar { width: 38px; }
-  .note-letter { left: calc(50% + 30px); font-size: 13px; }
-  .note-letter.element { font-size: 10px; letter-spacing: 0.18em; }
-  .arc-svg { margin-bottom: 18px; }
-  .ifo-tagline { margin-bottom: 48px; }
-}
-
-@media (max-width: 480px) {
-  .note { transform: translate(-50%, -50%) scale(0.8); }
-  .arc-layer { padding-top: 56px; padding-bottom: 32px; }
+  .ifo-engraving { max-width: 440px; }
+  .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
+  .ifo-return-btn { top: calc(var(--nav-h) + 8px); font-size: 10px; padding: 6px 10px; }
 }
