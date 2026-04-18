@@ -190,9 +190,37 @@ canvas.addEventListener("pointerleave", () => {
 
 canvas.addEventListener("click", () => {
   if (state.mode !== "3d") return;
-  if (state.hoverPlanet) window.location.href = state.hoverPlanet.def.href;
-  else if (state.hoverStar) goTo2D();
+  if (state.hoverPlanet) {
+    if (state.hoverPlanet.def.id === "ifo") runIFOTransition(state.hoverPlanet);
+    else window.location.href = state.hoverPlanet.def.href;
+  } else if (state.hoverStar) goTo2D();
 });
+
+// IFO "sphere becomes a circle" transition:
+// - Projects the planet's screen position
+// - Places a pastel disc at that location and grows it while fading to white
+// - Navigates once the page is fully covered so the IFO hero animation can pick up
+function runIFOTransition(orbit) {
+  state.mode = "ifo-exit";
+  label.classList.remove("visible");
+
+  orbit.planet.getWorldPosition(worldPos);
+  const p = projectToCanvas(worldPos);
+
+  const overlay = document.createElement("div");
+  overlay.className = "ifo-exit-overlay";
+  document.body.appendChild(overlay);
+
+  const disc = document.createElement("div");
+  disc.className = "ifo-exit-disc";
+  disc.style.left = p.x + "px";
+  disc.style.top  = p.y + "px";
+  overlay.appendChild(disc);
+
+  requestAnimationFrame(() => overlay.classList.add("active"));
+
+  setTimeout(() => { window.location.href = orbit.def.href; }, 780);
+}
 
 canvas.setAttribute("tabindex", "0");
 canvas.setAttribute("role", "application");
