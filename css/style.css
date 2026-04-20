@@ -497,35 +497,29 @@ body.mode-2d .cosmos-hint { opacity: 0; }
    inline on index.html, followed by the Vision Memo prose.
    ===================================================================== */
 
-/* ---- Transition overlay: a pastel IFO disc expands from the planet's
-   screen position, flattens to its target in the engraving, then lifts. */
-.ifo-enter-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-  pointer-events: none;
-  background: rgba(252, 246, 230, 0);
-  transition: background 0.55s var(--ease), opacity 0.45s var(--ease);
+/* ---- Animated ring breathing and star twinkle in the SVG diagram ---- */
+.ifo-ring {
+  animation: ifoRingBreathe 10s ease-in-out infinite;
 }
-.ifo-enter-overlay.fade { background: rgba(252, 246, 230, 1); }
-.ifo-enter-overlay.lift { opacity: 0; }
+.ifo-ring-1 { animation-duration: 14s; animation-delay:   0s; }
+.ifo-ring-2 { animation-duration: 11s; animation-delay:  -3s; }
+.ifo-ring-3 { animation-duration:  9s; animation-delay:  -5s; }
+.ifo-ring-4 { animation-duration:  8s; animation-delay:  -7s; }
+.ifo-ring-5 { animation-duration:  7s; animation-delay:  -2s; }
+.ifo-ring-6 { animation-duration:  6s; animation-delay:  -4s; }
 
-.ifo-enter-disc {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  margin: -60px 0 0 -60px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #e9f2da 0%, #c4ddb8 55%, #9fba91 100%);
-  box-shadow:
-    inset -10px -14px 26px rgba(120, 148, 100, 0.32),
-    inset  8px 10px 22px rgba(255, 255, 255, 0.6),
-    0 18px 40px rgba(90, 110, 80, 0.2);
-  transform: translate(0, 0) scale(0.32);
-  transition: transform 0.7s cubic-bezier(0.55, 0.04, 0.2, 1);
+@keyframes ifoRingBreathe {
+  0%, 100% { opacity: 0.9; }
+  50%       { opacity: 0.38; }
 }
-.ifo-enter-overlay.flatten .ifo-enter-disc {
-  transform: translate(var(--ifo-dx, 0), var(--ifo-dy, 0)) scale(0.4);
+
+.ifo-stars {
+  animation: ifoStarTwinkle 5s ease-in-out infinite alternate;
+}
+
+@keyframes ifoStarTwinkle {
+  from { opacity: 0.55; }
+  to   { opacity: 1; }
 }
 
 /* ---- IFO mode body toggles: hide cosmos, pillars, letter; show ifo-mode ---- */
