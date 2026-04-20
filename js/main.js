@@ -139,58 +139,91 @@ ORBITS.forEach((def) => {
 });
 
 // ── Circle of Fifths ──────────────────────────────────────────────────────────
-// Keys in circle-of-fifths order (C at top, going clockwise by perfect fifths)
-const COF_KEYS   = ["C","G","D","A","E","B","F♯","D♭","A♭","E♭","B♭","F"];
-// Accidental label paired with each key: count + symbol
-const COF_ACC_LABELS = [null,"1♯","2♯","3♯","4♯","5♯","6♯","5♭","4♭","3♭","2♭","1♭"];
+// Keys in circle-of-fifths order; alt = enharmonic equivalent where commonly used
+const COF_KEY_PAIRS = [
+  { key: "C",   alt: null  },
+  { key: "G",   alt: null  },
+  { key: "D",   alt: null  },
+  { key: "A",   alt: null  },
+  { key: "E",   alt: null  },
+  { key: "B",   alt: "C♭" },
+  { key: "F♯",  alt: "G♭" },
+  { key: "D♭",  alt: "C♯" },
+  { key: "A♭",  alt: null  },
+  { key: "E♭",  alt: null  },
+  { key: "B♭",  alt: null  },
+  { key: "F",   alt: null  },
+];
+const COF_ACC_PAIRS = [
+  { main: null,  alt: null  },
+  { main: "1♯", alt: null  },
+  { main: "2♯", alt: null  },
+  { main: "3♯", alt: null  },
+  { main: "4♯", alt: null  },
+  { main: "5♯", alt: "7♭" },
+  { main: "6♯", alt: "6♭" },
+  { main: "5♭", alt: "7♯" },
+  { main: "4♭", alt: null  },
+  { main: "3♭", alt: null  },
+  { main: "2♭", alt: null  },
+  { main: "1♭", alt: null  },
+];
 
-function makeCoFSprite(text, { canvasSize = 128, fontSize = 52, color = "#5a3e1b" } = {}) {
+// IFO and Castles orbit rings scale/flatten into the CoF reference rings
+const COF_RING_TARGETS = { ifo: 2.8, castles: 1.55 };
+
+function makeCoFSprite(mainText, altText, { canvasSize = 128, fontSize = 52, color = "#5a3e1b" } = {}) {
   const c = document.createElement("canvas");
   c.width = canvasSize; c.height = canvasSize;
   const ctx = c.getContext("2d");
   ctx.clearRect(0, 0, canvasSize, canvasSize);
-  ctx.fillStyle = color;
-  ctx.font = `${fontSize}px "Cormorant Garamond", serif`;
   ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, canvasSize / 2, canvasSize / 2);
+
+  if (altText) {
+    const fs1 = Math.round(fontSize * 0.82);
+    const fs2 = Math.round(fontSize * 0.60);
+    ctx.font = `${fs1}px "Cormorant Garamond", serif`;
+    ctx.fillStyle = color;
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(mainText, canvasSize / 2, canvasSize * 0.50);
+    ctx.font = `${fs2}px "Cormorant Garamond", serif`;
+    ctx.fillText(altText,  canvasSize / 2, canvasSize * 0.78);
+  } else {
+    ctx.font = `${fontSize}px "Cormorant Garamond", serif`;
+    ctx.fillStyle = color;
+    ctx.textBaseline = "middle";
+    ctx.fillText(mainText, canvasSize / 2, canvasSize / 2);
+  }
+
   const tex = new THREE.CanvasTexture(c);
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0 });
+  // depthTest: false ensures sprites render over all geometry (no white-box occlusion)
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false, opacity: 0 });
   return new THREE.Sprite(mat);
 }
 
 // Outer ring: key letter sprites
-const cofKeySprites = COF_KEYS.map((key) => {
-  const s = makeCoFSprite(key, { fontSize: 56 });
+const cofKeySprites = COF_KEY_PAIRS.map(({ key, alt }) => {
+  const s = makeCoFSprite(key, alt, { fontSize: 56 });
   s.scale.set(0.75, 0.75, 0.75);
   scene.add(s);
   return s;
 });
 
-// Inner ring: accidental sprites — index-matched to key sprites (same i = same angle)
-const cofAccSprites = COF_ACC_LABELS.map((label) => {
-  if (!label) return null;
-  const s = makeCoFSprite(label, { fontSize: 36, color: "#8a6030", canvasSize: 128 });
+// Inner ring: accidental sprites — index-matched so same i = same orbit angle as key
+const cofAccSprites = COF_ACC_PAIRS.map(({ main, alt }) => {
+  if (!main) return null;
+  const s = makeCoFSprite(main, alt, { fontSize: 36, color: "#8a6030" });
   s.scale.set(0.52, 0.52, 0.52);
   scene.add(s);
   return s;
 });
 
-// Thin torus rings in the XZ plane (horizontal, matching orbit ring aesthetic)
-const cofRingMats = [1.55, 2.8].map((r) => {
-  const mat  = new THREE.MeshBasicMaterial({ color: 0x9a7040, transparent: true, opacity: 0 });
-  const mesh = new THREE.Mesh(new THREE.TorusGeometry(r, 0.013, 8, 128), mat);
-  mesh.rotation.x = Math.PI / 2;
-  scene.add(mesh);
-  return mat;
-});
-
 // Track the actual IFO orbit for hub reparenting
 const ifoOrbit = orbits.find((o) => o.def.id === "ifo");
-let cofPlanetInScene = false;          // true while planet is detached from rotator
-const cofHubStartPos = new THREE.Vector3(); // world position at detach moment
+let cofPlanetInScene = false;
+const cofHubStartPos = new THREE.Vector3();
 
-let cofAngle = 0; // master rotation angle — drives all CoF elements at the same rate
+let cofAngle = 0; // single angle drives all CoF elements at the same rate
 
 // Camera — 2D is overhead; Y=24 gives visible radius ≈9.2 which frames max Z semi-axis (8.5)
 const CAM_3D  = new THREE.Vector3(0, 2.6, 14.5);
@@ -449,18 +482,32 @@ function animate() {
     o.planet.rotation.y += 0.08 * dt * (1 - easedIFO);
   });
 
-  // 3D↔2D tilt/scale transition
+  // 3D↔2D tilt/scale transition; IFO+Castles rings transform into CoF rings
   orbits.forEach((o) => {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
-    o.pivot.rotation.x = lerp(rx, Math.PI / 2, eased);
-    o.pivot.rotation.y = lerp(ry, 0, eased);
-    o.pivot.rotation.z = lerp(rz, 0, eased);
-    const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
-    const ex = lerp(1, o.def.ellipseX,                eased);
-    o.pivot.scale.set(s * ex, s, s);
-    // Non-IFO orbits fade out; IFO planet is handled via reparent below
-    o.ring.material.opacity      = lerp(1, 0, easedIFO);
-    o.ring.material.transparent  = true;
+    const cofR = COF_RING_TARGETS[o.def.id];
+
+    if (cofR !== undefined) {
+      // This ring becomes a CoF ring: flatten to XZ, scale toward cofR — never fades
+      const flatT  = Math.max(eased, easedIFO);
+      const scaleT = lerp(lerp(1, o.def.radius2D / o.def.radius, eased), cofR / o.def.radius, easedIFO);
+      o.pivot.rotation.x = lerp(rx, Math.PI / 2, flatT);
+      o.pivot.rotation.y = lerp(ry, 0, flatT);
+      o.pivot.rotation.z = lerp(rz, 0, flatT);
+      o.pivot.scale.setScalar(scaleT);
+    } else {
+      // Standard 3D↔2D transition + fade during IFO
+      o.pivot.rotation.x = lerp(rx, Math.PI / 2, eased);
+      o.pivot.rotation.y = lerp(ry, 0, eased);
+      o.pivot.rotation.z = lerp(rz, 0, eased);
+      const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
+      const ex = lerp(1, o.def.ellipseX,                eased);
+      o.pivot.scale.set(s * ex, s, s);
+      o.ring.material.opacity     = lerp(1, 0, easedIFO);
+      o.ring.material.transparent = true;
+    }
+
+    // IFO planet handled via reparent; all other planets fade out
     if (o.def.id !== "ifo") {
       o.planet.material.opacity     = lerp(1, 0, easedIFO);
       o.planet.material.transparent = true;
@@ -546,11 +593,9 @@ function animate() {
       s.material.opacity = easedIFO * 0.85;
     });
 
-    cofRingMats.forEach((m) => { m.opacity = easedIFO * 0.25; });
   } else {
     cofKeySprites.forEach((s) => { s.material.opacity = 0; });
     cofAccSprites.forEach((s) => { if (s) s.material.opacity = 0; });
-    cofRingMats.forEach((m) => { m.opacity = 0; });
   }
 
   // Camera: blend 3D→2D then blend toward CAM_IFO
