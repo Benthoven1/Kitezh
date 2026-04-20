@@ -141,8 +141,8 @@ ORBITS.forEach((def) => {
 // ── Circle of Fifths ──────────────────────────────────────────────────────────
 // Keys in circle-of-fifths order (C at top, going clockwise by perfect fifths)
 const COF_KEYS   = ["C","G","D","A","E","B","F♯","D♭","A♭","E♭","B♭","F"];
-const COF_ACC    = [null,"♯","♯","♯","♯","♯","♯","♭","♭","♭","♭","♭"];
-const COF_COUNTS = [0,    1,  2,  3,  4,  5,  6,   5,  4,  3,  2,  1];
+// Accidental label paired with each key: count + symbol
+const COF_ACC_LABELS = [null,"1♯","2♯","3♯","4♯","5♯","6♯","5♭","4♭","3♭","2♭","1♭"];
 
 function makeCoFSprite(text, { canvasSize = 128, fontSize = 52, color = "#5a3e1b" } = {}) {
   const c = document.createElement("canvas");
@@ -167,27 +167,30 @@ const cofKeySprites = COF_KEYS.map((key) => {
   return s;
 });
 
-// Middle ring: accidental sprites (one per key that has one)
-const cofAccSprites = COF_KEYS.map((_, i) => {
-  if (!COF_ACC[i]) return null;
-  const count = COF_COUNTS[i];
-  const sym   = COF_ACC[i].repeat(count > 3 ? 1 : count);
-  const label = count > 3 ? `${count}${COF_ACC[i]}` : sym;
-  const s = makeCoFSprite(label, { fontSize: 38, color: "#8a6030", canvasSize: 128 });
-  s.scale.set(0.55, 0.55, 0.55);
+// Inner ring: accidental sprites — index-matched to key sprites (same i = same angle)
+const cofAccSprites = COF_ACC_LABELS.map((label) => {
+  if (!label) return null;
+  const s = makeCoFSprite(label, { fontSize: 36, color: "#8a6030", canvasSize: 128 });
+  s.scale.set(0.52, 0.52, 0.52);
   scene.add(s);
   return s;
 });
 
-// Thin orbit torus rings for visual reference
-const cofRingMats = [1.6, 2.8].map((r) => {
-  const mat = new THREE.MeshBasicMaterial({ color: 0x9a7040, transparent: true, opacity: 0 });
-  const mesh = new THREE.Mesh(new THREE.TorusGeometry(r, 0.015, 8, 128), mat);
+// Thin torus rings in the XZ plane (horizontal, matching orbit ring aesthetic)
+const cofRingMats = [1.55, 2.8].map((r) => {
+  const mat  = new THREE.MeshBasicMaterial({ color: 0x9a7040, transparent: true, opacity: 0 });
+  const mesh = new THREE.Mesh(new THREE.TorusGeometry(r, 0.013, 8, 128), mat);
+  mesh.rotation.x = Math.PI / 2;
   scene.add(mesh);
   return mat;
 });
 
-let cofAngle = 0; // master rotation angle for the spinwheel
+// Track the actual IFO orbit for hub reparenting
+const ifoOrbit = orbits.find((o) => o.def.id === "ifo");
+let cofPlanetInScene = false;          // true while planet is detached from rotator
+const cofHubStartPos = new THREE.Vector3(); // world position at detach moment
+
+let cofAngle = 0; // master rotation angle — drives all CoF elements at the same rate
 
 // Camera — 2D is overhead; Y=24 gives visible radius ≈9.2 which frames max Z semi-axis (8.5)
 const CAM_3D  = new THREE.Vector3(0, 2.6, 14.5);
@@ -438,8 +441,8 @@ function animate() {
   const eased    = easeInOut(state.t);
   const easedIFO = easeInOut(Math.max(0, Math.min(1, state.ifoT)));
 
-  // Constant circular orbiting (pause while fully in ifo)
-  const orbitActive = state.mode !== "ifo";
+  // Constant circular orbiting (pause while in ifo)
+  const orbitActive = state.ifoT < 0.01;
   orbits.forEach((o) => {
     if (orbitActive) o.angle += o.def.speed * dt;
     o.rotator.rotation.z = o.angle;
@@ -455,16 +458,36 @@ function animate() {
     const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
     const ex = lerp(1, o.def.ellipseX,                eased);
     o.pivot.scale.set(s * ex, s, s);
-    // Fade orbit rings out as CoF comes in
-    o.ring.material.opacity    = lerp(1, 0, easedIFO);
-    o.ring.material.transparent = true;
-    o.planet.material.opacity  = lerp(1, easedIFO > 0.01 ? 0.12 : 1, easedIFO);
-    o.planet.material.transparent = true;
+    // Non-IFO orbits fade out; IFO planet is handled via reparent below
+    o.ring.material.opacity      = lerp(1, 0, easedIFO);
+    o.ring.material.transparent  = true;
+    if (o.def.id !== "ifo") {
+      o.planet.material.opacity     = lerp(1, 0, easedIFO);
+      o.planet.material.transparent = true;
+    }
   });
 
-  // Star fades out during ifo
-  star.material.opacity    = lerp(1, 0, easedIFO);
-  star.material.transparent = true;
+  // Star fully disappears during ifo
+  star.material.opacity     = lerp(1, 0, easedIFO);
+  star.material.transparent  = true;
+
+  // IFO planet: detach from orbit and fly to origin, no opacity change
+  if (easedIFO > 0 && !cofPlanetInScene) {
+    scene.attach(ifoOrbit.planet);            // preserves world transform
+    cofHubStartPos.copy(ifoOrbit.planet.position);
+    cofPlanetInScene = true;
+  }
+  if (cofPlanetInScene) {
+    ifoOrbit.planet.position.lerpVectors(cofHubStartPos, LOOK_AT, easedIFO);
+  }
+  // Re-attach to orbit once fully returned to 3D
+  if (cofPlanetInScene && state.ifoT <= 0 && state.mode === "3d") {
+    scene.remove(ifoOrbit.planet);
+    ifoOrbit.rotator.add(ifoOrbit.planet);
+    ifoOrbit.planet.position.set(ifoOrbit.def.radius, 0, 0);
+    ifoOrbit.planet.rotation.set(0, 0, 0);
+    cofPlanetInScene = false;
+  }
 
   // Star pulse + hover bump
   const pulse      = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
@@ -503,32 +526,27 @@ function animate() {
   if (easedIFO > 0.001) {
     cofAngle += dt * 0.18;
 
-    const R_KEY = 2.8;
-    const R_ACC = 1.65;
+    const R_KEY  = 2.8;
+    const R_ACC  = 1.55;
+    const now    = performance.now() * 0.0004;
 
     cofKeySprites.forEach((s, i) => {
-      const θ = cofAngle + (i / 12) * Math.PI * 2;
-      s.position.set(
-        Math.sin(θ) * R_KEY,
-        Math.sin(i * 1.3 + cofAngle * 0.4) * 0.22,
-        Math.cos(θ) * R_KEY
-      );
+      const θ   = cofAngle + (i / 12) * Math.PI * 2;
+      const yBob = Math.sin(now + i * 0.52) * 0.12;
+      s.position.set(Math.sin(θ) * R_KEY, yBob, Math.cos(θ) * R_KEY);
       s.material.opacity = easedIFO;
     });
 
+    // Accidentals share the exact same θ as their paired key (index i) at inner radius
     cofAccSprites.forEach((s, i) => {
       if (!s) return;
-      const θ = cofAngle * 1.25 + (i / 12) * Math.PI * 2 + Math.PI / 12;
-      s.position.set(
-        Math.sin(θ) * R_ACC,
-        Math.sin(i * 2.1 - cofAngle * 0.6) * 0.18,
-        Math.cos(θ) * R_ACC
-      );
-      s.material.opacity = easedIFO * 0.82;
+      const θ   = cofAngle + (i / 12) * Math.PI * 2;
+      const yBob = Math.sin(now + i * 0.52 + 0.3) * 0.08;
+      s.position.set(Math.sin(θ) * R_ACC, yBob, Math.cos(θ) * R_ACC);
+      s.material.opacity = easedIFO * 0.85;
     });
 
-    const ringOpacity = easedIFO * 0.28;
-    cofRingMats.forEach((m) => { m.opacity = ringOpacity; });
+    cofRingMats.forEach((m) => { m.opacity = easedIFO * 0.25; });
   } else {
     cofKeySprites.forEach((s) => { s.material.opacity = 0; });
     cofAccSprites.forEach((s) => { if (s) s.material.opacity = 0; });
