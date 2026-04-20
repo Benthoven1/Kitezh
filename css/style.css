@@ -210,7 +210,8 @@ canvas#cosmos {
   pointer-events: none;
 }
 
-body.mode-2d .cosmos-hint { opacity: 0; }
+body.mode-2d .cosmos-hint,
+body.mode-ifo .cosmos-hint { opacity: 0; }
 
 /* ---------- Marble Pillar Section ---------- */
 #pillar-section { overflow: hidden; }
