@@ -185,12 +185,10 @@ const cofRingMats = [1.55, 2.8].map((r) => {
   return mat;
 });
 
-// Hub sphere: IFO planet sitting at origin as the CoF center
-const hubSphere = new THREE.Mesh(
-  new THREE.SphereGeometry(0.42, 64, 64),
-  new THREE.MeshStandardMaterial({ color: PASTEL_IFO, roughness: 0.38, metalness: 0, transparent: true, opacity: 0 })
-);
-scene.add(hubSphere);
+// Track the actual IFO orbit for hub reparenting
+const ifoOrbit = orbits.find((o) => o.def.id === "ifo");
+let cofPlanetInScene = false;          // true while planet is detached from rotator
+const cofHubStartPos = new THREE.Vector3(); // world position at detach moment
 
 let cofAngle = 0; // master rotation angle — drives all CoF elements at the same rate
 
@@ -460,19 +458,36 @@ function animate() {
     const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
     const ex = lerp(1, o.def.ellipseX,                eased);
     o.pivot.scale.set(s * ex, s, s);
-    // Everything fades to 0 during IFO (including the IFO planet in its orbit)
-    o.ring.material.opacity     = lerp(1, 0, easedIFO);
+    // Non-IFO orbits fade out; IFO planet is handled via reparent below
+    o.ring.material.opacity      = lerp(1, 0, easedIFO);
     o.ring.material.transparent  = true;
-    o.planet.material.opacity   = lerp(1, 0, easedIFO);
-    o.planet.material.transparent = true;
+    if (o.def.id !== "ifo") {
+      o.planet.material.opacity     = lerp(1, 0, easedIFO);
+      o.planet.material.transparent = true;
+    }
   });
 
   // Star fully disappears during ifo
   star.material.opacity     = lerp(1, 0, easedIFO);
   star.material.transparent  = true;
 
-  // Hub sphere (IFO green planet at origin) fades in as CoF hub
-  hubSphere.material.opacity = easedIFO;
+  // IFO planet: detach from orbit and fly to origin, no opacity change
+  if (easedIFO > 0 && !cofPlanetInScene) {
+    scene.attach(ifoOrbit.planet);            // preserves world transform
+    cofHubStartPos.copy(ifoOrbit.planet.position);
+    cofPlanetInScene = true;
+  }
+  if (cofPlanetInScene) {
+    ifoOrbit.planet.position.lerpVectors(cofHubStartPos, LOOK_AT, easedIFO);
+  }
+  // Re-attach to orbit once fully returned to 3D
+  if (cofPlanetInScene && state.ifoT <= 0 && state.mode === "3d") {
+    scene.remove(ifoOrbit.planet);
+    ifoOrbit.rotator.add(ifoOrbit.planet);
+    ifoOrbit.planet.position.set(ifoOrbit.def.radius, 0, 0);
+    ifoOrbit.planet.rotation.set(0, 0, 0);
+    cofPlanetInScene = false;
+  }
 
   // Star pulse + hover bump
   const pulse      = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
