@@ -492,52 +492,22 @@ body.mode-2d .cosmos-hint { opacity: 0; }
 
 /* =====================================================================
    INTERNATIONAL FESTIVAL ORCHESTRA — IFO MODE
-   Clicking the IFO planet (or any IFO link) swaps the cosmos for a
-   single compact upside-down "Music of the Spheres" engraving rendered
-   inline on index.html, followed by the Vision Memo prose.
+   Clicking the IFO planet starts a Circle of Fifths animation in the
+   Three.js canvas. The canvas stays visible; prose appears below.
    ===================================================================== */
 
-/* ---- Animated ring breathing and star twinkle in the SVG diagram ---- */
-.ifo-ring {
-  animation: ifoRingBreathe 10s ease-in-out infinite;
-}
-.ifo-ring-1 { animation-duration: 14s; animation-delay:   0s; }
-.ifo-ring-2 { animation-duration: 11s; animation-delay:  -3s; }
-.ifo-ring-3 { animation-duration:  9s; animation-delay:  -5s; }
-.ifo-ring-4 { animation-duration:  8s; animation-delay:  -7s; }
-.ifo-ring-5 { animation-duration:  7s; animation-delay:  -2s; }
-.ifo-ring-6 { animation-duration:  6s; animation-delay:  -4s; }
-
-@keyframes ifoRingBreathe {
-  0%, 100% { opacity: 0.9; }
-  50%       { opacity: 0.38; }
-}
-
-.ifo-stars {
-  animation: ifoStarTwinkle 5s ease-in-out infinite alternate;
-}
-
-@keyframes ifoStarTwinkle {
-  from { opacity: 0.55; }
-  to   { opacity: 1; }
-}
-
-/* ---- IFO mode body toggles: hide cosmos, pillars, letter; show ifo-mode ---- */
+/* ---- IFO mode body toggles: keep canvas, hide pillars and letter ---- */
 .ifo-mode {
   display: none;
-  min-height: 100vh;
-  padding-top: calc(var(--nav-h) + 28px);
-  background:
-    radial-gradient(1200px 700px at 50% 10%, #fcf7e8 0%, #f2ead3 55%, #e6dabc 100%);
+  padding-top: 48px;
 }
 
-body.mode-ifo #canvas-wrap,
 body.mode-ifo #pillar-section,
 body.mode-ifo #letter-section { display: none; }
 
 body.mode-ifo .ifo-mode {
   display: block;
-  animation: ifoModeFade 0.6s var(--ease) 0.2s both;
+  animation: ifoModeFade 0.6s var(--ease) 0.5s both;
 }
 
 @keyframes ifoModeFade {
@@ -570,31 +540,7 @@ body.mode-ifo .ifo-mode {
   background: rgba(252, 246, 230, 1);
 }
 
-/* ---- The engraving figure (compact, JPG-proportioned) ---- */
-.ifo-engraving {
-  margin: 0 auto;
-  padding: 16px clamp(12px, 3vw, 32px) 24px;
-  max-width: 540px;
-  text-align: center;
-  animation: ifoEngravingRise 0.9s var(--ease) 0.35s both;
-}
-
-@keyframes ifoEngravingRise {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.ifo-engraving-svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: min(78vh, 780px);
-  filter:
-    drop-shadow(0 18px 36px rgba(80, 60, 30, 0.14))
-    drop-shadow(0 2px 4px rgba(80, 60, 30, 0.1));
-}
-
-/* ---- Prose below the engraving (full Vision Memo) ---- */
+/* ---- Prose below the canvas ---- */
 .ifo-prose {
   max-width: 680px;
   margin: 32px auto 0;
@@ -609,27 +555,12 @@ body.mode-ifo .ifo-mode {
 
 .ifo-prose-header { text-align: center; margin: 48px 0 40px; }
 
-.ifo-eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-  color: var(--clay-deep);
-  margin: 0 0 14px;
-}
-
 .ifo-prose-title {
   font-family: "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(34px, 4.6vw, 52px);
   line-height: 1.1;
   color: var(--ink);
-  margin: 0 0 14px;
-}
-
-.ifo-prose-meta {
-  font-size: 12px;
-  letter-spacing: 0.12em;
-  color: var(--ink-soft);
   margin: 0;
 }
 
@@ -671,7 +602,6 @@ body.mode-ifo .ifo-mode {
 
 /* ---- Responsive ---- */
 @media (max-width: 720px) {
-  .ifo-engraving { max-width: 440px; }
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
   .ifo-return-btn { top: calc(var(--nav-h) + 8px); font-size: 10px; padding: 6px 10px; }
 }

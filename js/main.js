@@ -138,9 +138,61 @@ ORBITS.forEach((def) => {
   orbits.push({ def, pivot, rotator, ring, planet, angle: def.phase });
 });
 
+// ── Circle of Fifths ──────────────────────────────────────────────────────────
+// Keys in circle-of-fifths order (C at top, going clockwise by perfect fifths)
+const COF_KEYS   = ["C","G","D","A","E","B","F♯","D♭","A♭","E♭","B♭","F"];
+const COF_ACC    = [null,"♯","♯","♯","♯","♯","♯","♭","♭","♭","♭","♭"];
+const COF_COUNTS = [0,    1,  2,  3,  4,  5,  6,   5,  4,  3,  2,  1];
+
+function makeCoFSprite(text, { canvasSize = 128, fontSize = 52, color = "#5a3e1b" } = {}) {
+  const c = document.createElement("canvas");
+  c.width = canvasSize; c.height = canvasSize;
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0, 0, canvasSize, canvasSize);
+  ctx.fillStyle = color;
+  ctx.font = `${fontSize}px "Cormorant Garamond", serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, canvasSize / 2, canvasSize / 2);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0 });
+  return new THREE.Sprite(mat);
+}
+
+// Outer ring: key letter sprites
+const cofKeySprites = COF_KEYS.map((key) => {
+  const s = makeCoFSprite(key, { fontSize: 56 });
+  s.scale.set(0.75, 0.75, 0.75);
+  scene.add(s);
+  return s;
+});
+
+// Middle ring: accidental sprites (one per key that has one)
+const cofAccSprites = COF_KEYS.map((_, i) => {
+  if (!COF_ACC[i]) return null;
+  const count = COF_COUNTS[i];
+  const sym   = COF_ACC[i].repeat(count > 3 ? 1 : count);
+  const label = count > 3 ? `${count}${COF_ACC[i]}` : sym;
+  const s = makeCoFSprite(label, { fontSize: 38, color: "#8a6030", canvasSize: 128 });
+  s.scale.set(0.55, 0.55, 0.55);
+  scene.add(s);
+  return s;
+});
+
+// Thin orbit torus rings for visual reference
+const cofRingMats = [1.6, 2.8].map((r) => {
+  const mat = new THREE.MeshBasicMaterial({ color: 0x9a7040, transparent: true, opacity: 0 });
+  const mesh = new THREE.Mesh(new THREE.TorusGeometry(r, 0.015, 8, 128), mat);
+  scene.add(mesh);
+  return mat;
+});
+
+let cofAngle = 0; // master rotation angle for the spinwheel
+
 // Camera — 2D is overhead; Y=24 gives visible radius ≈9.2 which frames max Z semi-axis (8.5)
-const CAM_3D = new THREE.Vector3(0, 2.6, 14.5);
-const CAM_2D = new THREE.Vector3(0, 24, 0.001);
+const CAM_3D  = new THREE.Vector3(0, 2.6, 14.5);
+const CAM_2D  = new THREE.Vector3(0, 24, 0.001);
+const CAM_IFO = new THREE.Vector3(0, 1.8, 6.8);
 const LOOK_AT = new THREE.Vector3(0, 0, 0);
 
 camera.position.copy(CAM_3D);
@@ -150,6 +202,8 @@ const state = {
   mode: "3d",
   t: 0,
   target: 0,
+  ifoT: 0,
+  ifoTarget: 0,
   hoverStar: false,
   hoverPlanet: null,
   labelPlanet: null,
@@ -199,30 +253,31 @@ canvas.addEventListener("click", () => {
 const ifoModeEl = document.getElementById("ifo-mode");
 const ifoReturn = document.getElementById("ifo-return");
 
-// IFO uses the same 3D→2D camera/ring transition as clicking the star,
-// then swaps the overhead cosmos for the animated Music-of-Spheres diagram.
 function goToIFO() {
   if (state.mode !== "3d") return;
   label.classList.remove("visible");
   state.labelPlanet = null;
   state.labelStar = false;
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
-  goTo2D();
-  setTimeout(() => {
-    body.classList.remove("mode-2d");
-    body.classList.add("mode-ifo");
-    ifoModeEl.setAttribute("aria-hidden", "false");
-    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-    state.mode = "ifo";
-  }, 1400);
+  navbar.classList.add("visible");
+  navbar.setAttribute("aria-hidden", "false");
+  body.classList.remove("cosmos-only");
+  body.classList.add("mode-ifo");
+  ifoModeEl.setAttribute("aria-hidden", "false");
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  state.ifoTarget = 1;
+  state.mode = "ifo-transitioning";
 }
 
 function returnFromIFO() {
-  if (state.mode !== "ifo") return;
+  if (state.mode !== "ifo" && state.mode !== "ifo-transitioning") return;
   body.classList.remove("mode-ifo");
   ifoModeEl.setAttribute("aria-hidden", "true");
-  state.mode = "2d";
-  goTo3D();
+  navbar.classList.remove("visible");
+  navbar.setAttribute("aria-hidden", "true");
+  body.classList.add("cosmos-only");
+  state.ifoTarget = 0;
+  state.mode = "ifo-transitioning";
 }
 
 if (ifoReturn) ifoReturn.addEventListener("click", returnFromIFO);
@@ -230,13 +285,10 @@ if (ifoReturn) ifoReturn.addEventListener("click", returnFromIFO);
 document.querySelectorAll("[data-ifo-link]").forEach((el) => {
   el.addEventListener("click", (e) => {
     e.preventDefault();
-    if (state.mode === "ifo") return;
+    if (state.mode === "ifo" || state.mode === "ifo-transitioning") return;
     if (state.mode === "2d") {
-      body.classList.remove("mode-2d");
-      body.classList.add("mode-ifo");
-      ifoModeEl.setAttribute("aria-hidden", "false");
-      window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-      state.mode = "ifo";
+      goTo3D();
+      setTimeout(() => goToIFO(), 1400);
     } else if (state.mode === "3d") {
       goToIFO();
     }
@@ -275,7 +327,11 @@ function goTo3D() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-brandLink.addEventListener("click", (e) => { e.preventDefault(); goTo3D(); });
+brandLink.addEventListener("click", (e) => {
+  e.preventDefault();
+  if (state.mode === "ifo" || state.mode === "ifo-transitioning") returnFromIFO();
+  else goTo3D();
+});
 
 document.querySelectorAll(".nav-item.has-dropdown").forEach((item) => {
   const trigger = item.querySelector(".nav-trigger");
@@ -379,27 +435,36 @@ function trackLabel() {
 // ---------- Animation loop ----------
 function animate() {
   const dt    = Math.min(state.clock.getDelta(), 0.05);
-  const eased = easeInOut(state.t);
+  const eased    = easeInOut(state.t);
+  const easedIFO = easeInOut(Math.max(0, Math.min(1, state.ifoT)));
 
-  // Constant circular orbiting
+  // Constant circular orbiting (pause while fully in ifo)
+  const orbitActive = state.mode !== "ifo";
   orbits.forEach((o) => {
-    o.angle += o.def.speed * dt;
+    if (orbitActive) o.angle += o.def.speed * dt;
     o.rotator.rotation.z = o.angle;
-    o.planet.rotation.y += 0.08 * dt;
+    o.planet.rotation.y += 0.08 * dt * (1 - easedIFO);
   });
 
-  // Transition: flatten tilts toward XZ plane (pivot.x → π/2) so overhead camera
-  // sees rings as circles/ellipses; apply per-orbit ellipseX for distinct shapes.
+  // 3D↔2D tilt/scale transition
   orbits.forEach((o) => {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
     o.pivot.rotation.x = lerp(rx, Math.PI / 2, eased);
     o.pivot.rotation.y = lerp(ry, 0, eased);
     o.pivot.rotation.z = lerp(rz, 0, eased);
-
     const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
     const ex = lerp(1, o.def.ellipseX,                eased);
     o.pivot.scale.set(s * ex, s, s);
+    // Fade orbit rings out as CoF comes in
+    o.ring.material.opacity    = lerp(1, 0, easedIFO);
+    o.ring.material.transparent = true;
+    o.planet.material.opacity  = lerp(1, easedIFO > 0.01 ? 0.12 : 1, easedIFO);
+    o.planet.material.transparent = true;
   });
+
+  // Star fades out during ifo
+  star.material.opacity    = lerp(1, 0, easedIFO);
+  star.material.transparent = true;
 
   // Star pulse + hover bump
   const pulse      = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
@@ -411,6 +476,7 @@ function animate() {
     o.planet.scale.lerp(tmpVec.set(target, target, target), 1 - Math.pow(0.001, dt));
   });
 
+  // 3D↔2D transition
   if (state.mode === "transitioning") {
     const dir = state.target > state.t ? 1 : -1;
     state.t += dir * dt * 0.85;
@@ -420,7 +486,59 @@ function animate() {
     }
   }
 
-  lerpVec(CAM_3D, CAM_2D, eased, camera.position);
+  // IFO entry/exit transition
+  if (state.mode === "ifo-transitioning") {
+    const dir = state.ifoTarget > state.ifoT ? 1 : -1;
+    state.ifoT += dir * dt * 0.75;
+    if (dir === 1 && state.ifoT >= 1) {
+      state.ifoT = 1;
+      state.mode = "ifo";
+    } else if (dir === -1 && state.ifoT <= 0) {
+      state.ifoT = 0;
+      state.mode = "3d";
+    }
+  }
+
+  // ── Circle of Fifths animation ───────────────────────────────────────────
+  if (easedIFO > 0.001) {
+    cofAngle += dt * 0.18;
+
+    const R_KEY = 2.8;
+    const R_ACC = 1.65;
+
+    cofKeySprites.forEach((s, i) => {
+      const θ = cofAngle + (i / 12) * Math.PI * 2;
+      s.position.set(
+        Math.sin(θ) * R_KEY,
+        Math.sin(i * 1.3 + cofAngle * 0.4) * 0.22,
+        Math.cos(θ) * R_KEY
+      );
+      s.material.opacity = easedIFO;
+    });
+
+    cofAccSprites.forEach((s, i) => {
+      if (!s) return;
+      const θ = cofAngle * 1.25 + (i / 12) * Math.PI * 2 + Math.PI / 12;
+      s.position.set(
+        Math.sin(θ) * R_ACC,
+        Math.sin(i * 2.1 - cofAngle * 0.6) * 0.18,
+        Math.cos(θ) * R_ACC
+      );
+      s.material.opacity = easedIFO * 0.82;
+    });
+
+    const ringOpacity = easedIFO * 0.28;
+    cofRingMats.forEach((m) => { m.opacity = ringOpacity; });
+  } else {
+    cofKeySprites.forEach((s) => { s.material.opacity = 0; });
+    cofAccSprites.forEach((s) => { if (s) s.material.opacity = 0; });
+    cofRingMats.forEach((m) => { m.opacity = 0; });
+  }
+
+  // Camera: blend 3D→2D then blend toward CAM_IFO
+  const basePos = new THREE.Vector3();
+  lerpVec(CAM_3D, CAM_2D, eased, basePos);
+  lerpVec(basePos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
 
   updateHover();
