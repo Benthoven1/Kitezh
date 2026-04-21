@@ -196,8 +196,7 @@ function makeCoFSprite(mainText, altText, { canvasSize = 128, fontSize = 52, col
   }
 
   const tex = new THREE.CanvasTexture(c);
-  // depthTest: false ensures sprites render over all geometry (no white-box occlusion)
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false, opacity: 0 });
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true, depthWrite: true, opacity: 0 });
   return new THREE.Sprite(mat);
 }
 
