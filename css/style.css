@@ -95,7 +95,7 @@ button {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  padding: 10px 4px;
+  padding: 12px 10px;
   position: relative;
   transition: color 0.25s var(--ease);
 }
@@ -144,7 +144,7 @@ button {
 
 .dropdown a {
   display: block;
-  padding: 12px 22px;
+  padding: 14px 26px;
   font-size: 14px;
   letter-spacing: 0.04em;
   text-decoration: none;
