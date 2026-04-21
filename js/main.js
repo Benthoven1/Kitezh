@@ -573,8 +573,8 @@ function animate() {
   if (easedIFO > 0.001) {
     cofAngle += dt * 0.18;
 
-    const R_KEY  = 2.8;
-    const R_ACC  = 1.55;
+    const R_KEY  = 3.6;  // orbit outside the outer ring (2.8)
+    const R_ACC  = 2.2;  // orbit between/outside the rings
     const now    = performance.now() * 0.0004;
 
     cofKeySprites.forEach((s, i) => {
