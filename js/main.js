@@ -632,6 +632,18 @@ function animate() {
 
 animate();
 
+// When the page is restored from the browser back-forward cache the WebGL
+// context may have been lost. Reload to reinitialise Three.js cleanly.
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) window.location.reload();
+});
+
+// Discard accumulated clock time so the first frame after a tab-switch or
+// page restore doesn't produce a massive dt spike.
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) state.clock.getDelta();
+});
+
 (function initPillars() {
   const section = document.getElementById("pillar-section");
   const left    = document.getElementById("pillar-left");
