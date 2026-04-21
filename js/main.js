@@ -578,15 +578,8 @@ function animate() {
   if (easedIFO > 0.001) {
     cofAngle += dt * 0.18;
 
-    // Calculate dynamic ring radii based on current transformation state
-    const ifoOrbit = orbits.find(o => o.def.id === "ifo");
-    const castlesOrbit = orbits.find(o => o.def.id === "castles");
-
-    const ifoScaleT = lerp(lerp(1, ifoOrbit.def.radius2D / ifoOrbit.def.radius, eased), 2.8 / ifoOrbit.def.radius, easedIFO);
-    const castlesScaleT = lerp(lerp(1, castlesOrbit.def.radius2D / castlesOrbit.def.radius, eased), 1.55 / castlesOrbit.def.radius, easedIFO);
-
-    const R_KEY = 2.8 * ifoScaleT + 0.35;  // outer ring radius + offset
-    const R_ACC = 1.55 * castlesScaleT + 0.3; // inner ring radius + offset
+    const R_KEY  = 3.6;  // orbit outside the outer ring (2.8)
+    const R_ACC  = 2.2;  // orbit between/outside the rings
     const now    = performance.now() * 0.0004;
 
     cofKeySprites.forEach((s, i) => {
@@ -615,10 +608,6 @@ function animate() {
   lerpVec(CAM_3D, CAM_2D, eased, basePos);
   lerpVec(basePos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
-
-  // Dynamic lighting from camera/viewer direction
-  const lightDir = new THREE.Vector3().subVectors(camera.position, LOOK_AT).normalize().multiplyScalar(12);
-  keyLight.position.copy(lightDir);
 
   updateHover();
   trackLabel();
