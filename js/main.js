@@ -649,7 +649,16 @@ if (window.location.hash === '#ifo') {
 // When the page is restored from the browser back-forward cache the WebGL
 // context may have been lost. Reload to reinitialise Three.js cleanly.
 window.addEventListener('pageshow', (e) => {
-  if (e.persisted) window.location.reload();
+  if (e.persisted) {
+    // Immediately lock to clean cosmos state so the broken bfcache DOM
+    // (dead WebGL context, stale body classes) is never visible.
+    body.className = 'cosmos-only';
+    // Navigate to the canonical directory URL so the browser history entry
+    // never records the explicit /index.html form, which caused the apparent
+    // freeze: bfcache-restoring /index.html produced an inconsistent state
+    // before the reload fired.
+    window.location.replace(window.location.href.replace(/\/index\.html$/, '/'));
+  }
 });
 
 // Discard accumulated clock time so the first frame after a tab-switch or
