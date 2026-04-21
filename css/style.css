@@ -190,9 +190,15 @@ canvas#cosmos {
   transition: opacity 0.2s var(--ease);
   white-space: nowrap;
   box-shadow: 0 10px 24px rgba(27, 22, 19, 0.06);
+  will-change: opacity;
 }
 
 .planet-label.visible { opacity: 1; }
+
+body.mode-ifo .planet-label,
+body.mode-ifo.ifo-transitioning .planet-label {
+  opacity: 0 !important;
+}
 
 .cosmos-hint {
   position: absolute;
@@ -501,6 +507,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .ifo-mode {
   display: none;
   padding-top: 48px;
+  pointer-events: none;
 }
 
 body.mode-ifo #pillar-section,
@@ -522,6 +529,12 @@ body.mode-ifo .ifo-mode {
   margin: 32px auto 0;
   padding: 0 clamp(22px, 5vw, 48px) 120px;
   animation: ifoProseRise 0.9s var(--ease) 0.55s both;
+}
+
+body:not(.mode-ifo) .ifo-prose {
+  animation: none;
+  opacity: 0;
+  pointer-events: none;
 }
 
 @keyframes ifoProseRise {
