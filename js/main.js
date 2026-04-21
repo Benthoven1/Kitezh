@@ -196,7 +196,7 @@ function makeCoFSprite(mainText, altText, { canvasSize = 128, fontSize = 52, col
   }
 
   const tex = new THREE.CanvasTexture(c);
-  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true, depthWrite: true, opacity: 0 });
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: true, depthWrite: false, opacity: 0 });
   return new THREE.Sprite(mat);
 }
 
@@ -312,6 +312,9 @@ function returnFromIFO() {
   navbar.classList.remove("visible");
   navbar.setAttribute("aria-hidden", "true");
   body.classList.add("cosmos-only");
+  label.classList.remove("visible");
+  state.labelPlanet = null;
+  state.labelStar   = false;
   state.ifoTarget = 0;
   state.mode = "ifo-transitioning";
 }
@@ -421,7 +424,7 @@ function updateHover() {
 
   if (hits.length > 0) {
     const obj = hits[0].object;
-    state.hoverStar   = obj.userData.type === "star";
+    state.hoverStar   = !inCoFMode && obj.userData.type === "star";
     const hitPlanet   = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
     if (inCoFMode) {
       state.hoverPlanet = hitPlanet && hitPlanet.def.id === "ifo" ? hitPlanet : null;
@@ -430,12 +433,12 @@ function updateHover() {
     }
     canvas.style.cursor = (state.hoverPlanet || state.hoverStar) ? "pointer" : "default";
 
-    if (hitPlanet) {
-      state.labelPlanet = hitPlanet;
+    if (state.hoverPlanet) {
+      state.labelPlanet = state.hoverPlanet;
       state.labelStar   = false;
-      hitPlanet.planet.getWorldPosition(worldPos);
+      state.hoverPlanet.planet.getWorldPosition(worldPos);
       const p = projectToCanvas(worldPos);
-      label.textContent = hitPlanet.def.comingSoon ? "Coming Soon" : hitPlanet.def.name;
+      label.textContent = state.hoverPlanet.def.name;
       label.style.left = p.x + "px";
       label.style.top  = p.y + "px";
       label.classList.add("visible");
@@ -448,6 +451,8 @@ function updateHover() {
       label.style.left = p.x + "px";
       label.style.top  = p.y + "px";
       label.classList.add("visible");
+    } else {
+      label.classList.remove("visible");
     }
   } else {
     state.hoverStar   = false;
