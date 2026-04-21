@@ -66,6 +66,7 @@ const navbar   = document.getElementById("navbar");
 const brandLink = document.getElementById("brand-link");
 const body     = document.body;
 
+window.scrollTo(0, 0);
 body.classList.add("cosmos-only");
 
 const scene = new THREE.Scene();
@@ -658,175 +659,17 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) state.clock.getDelta();
 });
 
-(function initScrollEffects() {
-  const canvasWrap    = document.getElementById('canvas-wrap');
+(function initMantras() {
   const pillarSection = document.getElementById('pillar-section');
-  const letterSection = document.getElementById('letter-section');
   const missionEl     = document.getElementById('mantra-mission');
   const visionEl      = document.getElementById('mantra-vision');
-  const pollockEl     = document.getElementById('pollock');
-  if (!pollockEl || !pillarSection || !letterSection) return;
-
-  const pCtx = pollockEl.getContext('2d');
-  let pW = 0, pH = 0;
-
-  function resizePollock() {
-    pW = window.innerWidth;
-    pH = window.innerHeight;
-    pollockEl.width  = pW;
-    pollockEl.height = pH;
-    drawnCount = 0;
-    off.width  = pW;
-    off.height = pH;
-    offCtx.clearRect(0, 0, pW, pH);
-  }
-
-  // ── Stroke generation (seeded PRNG for deterministic painting) ──────────
-  function mkRand(seed) {
-    let s = seed >>> 0;
-    return () => {
-      s ^= s << 13; s ^= s >>> 17; s ^= s << 5;
-      return (s >>> 0) / 0x100000000;
-    };
-  }
-  const rand = mkRand(0xc0ffee42);
-
-  const COLORS = [
-    '#0d0d0d','#1a1410','#2b1e13',
-    '#8b2010','#c02818','#6b1008','#a01c10',
-    '#c89010','#d4a820','#b07808','#e6c030',
-    '#152060','#1a2878','#0c1440',
-    '#f0ece6','#e8e4dc',
-    '#b87758','#8f5a42','#c88a6c',
-    '#5a3a10','#7a5220',
-  ];
-
-  const TOTAL = 320;
-  const strokes = Array.from({ length: TOTAL }, () => {
-    const color = COLORS[Math.floor(rand() * COLORS.length)];
-    const alpha = 0.68 + rand() * 0.28;
-    const pick  = rand();
-
-    if (pick < 0.55) {
-      // Long bezier arc — primary Pollock gesture
-      const len   = rand() * 0.58 + 0.06;
-      const angle = rand() * Math.PI * 2;
-      const x1 = rand(), y1 = rand();
-      const x2 = x1 + Math.cos(angle) * len;
-      const y2 = y1 + Math.sin(angle) * len;
-      return {
-        t: 'arc', color, alpha,
-        w: rand() < 0.28 ? rand() * 7 + 3 : rand() * 2.5 + 0.5,
-        x1, y1, x2, y2,
-        cx1: x1 + (rand() - 0.5) * 0.38,
-        cy1: y1 + (rand() - 0.5) * 0.38,
-        cx2: x2 + (rand() - 0.5) * 0.38,
-        cy2: y2 + (rand() - 0.5) * 0.38,
-        drip: rand() < 0.32 ? rand() * 0.14 + 0.02 : 0,
-      };
-    } else if (pick < 0.78) {
-      // Splatter dot
-      return { t: 'dot', color, alpha, x1: rand(), y1: rand(), r: rand() * 0.013 + 0.002 };
-    } else {
-      // Drip — near-vertical thin line
-      const len   = rand() * 0.2 + 0.02;
-      const angle = Math.PI / 2 + (rand() - 0.5) * 0.55;
-      const x1 = rand(), y1 = rand();
-      return {
-        t: 'drip', color, alpha,
-        w: rand() * 1.6 + 0.4,
-        x1, y1,
-        x2: x1 + Math.cos(angle) * len,
-        y2: y1 + Math.sin(angle) * len,
-        drip: 0,
-      };
-    }
-  });
-
-  // ── Offscreen canvas for incremental drawing ────────────────────────────
-  const off    = document.createElement('canvas');
-  const offCtx = off.getContext('2d');
-  let drawnCount = 0;
-
-  resizePollock(); // set initial dimensions
-  window.addEventListener('resize', resizePollock, { passive: true });
-
-  function drawStroke(ctx, s) {
-    ctx.save();
-    ctx.globalAlpha  = s.alpha;
-    ctx.strokeStyle  = s.color;
-    ctx.fillStyle    = s.color;
-    ctx.lineCap      = 'round';
-    ctx.lineJoin     = 'round';
-    if (s.t === 'arc') {
-      ctx.lineWidth = s.w;
-      ctx.beginPath();
-      ctx.moveTo(s.x1 * pW, s.y1 * pH);
-      ctx.bezierCurveTo(s.cx1 * pW, s.cy1 * pH, s.cx2 * pW, s.cy2 * pH, s.x2 * pW, s.y2 * pH);
-      ctx.stroke();
-      if (s.drip > 0) {
-        ctx.lineWidth = s.w * 0.38;
-        ctx.beginPath();
-        ctx.moveTo(s.x2 * pW, s.y2 * pH);
-        ctx.lineTo(s.x2 * pW, (s.y2 + s.drip) * pH);
-        ctx.stroke();
-      }
-    } else if (s.t === 'dot') {
-      ctx.beginPath();
-      ctx.arc(s.x1 * pW, s.y1 * pH, s.r * pW, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.lineWidth = s.w;
-      ctx.beginPath();
-      ctx.moveTo(s.x1 * pW, s.y1 * pH);
-      ctx.lineTo(s.x2 * pW, s.y2 * pH);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  function redraw(target) {
-    if (target < drawnCount) {
-      offCtx.clearRect(0, 0, pW, pH);
-      for (let i = 0; i < target; i++) drawStroke(offCtx, strokes[i]);
-    } else {
-      for (let i = drawnCount; i < target; i++) drawStroke(offCtx, strokes[i]);
-    }
-    drawnCount = target;
-    pCtx.clearRect(0, 0, pW, pH);
-    pCtx.drawImage(off, 0, 0);
-  }
-
-  // ── Scroll driver ───────────────────────────────────────────────────────
-  let prevTarget = -1, rafPending = false;
+  if (!pillarSection || !missionEl || !visionEl) return;
 
   function update() {
-    const vpH    = window.innerHeight;
-    const inIFO  = body.classList.contains('mode-ifo');
-
-    // Mantra fade-in
-    if (missionEl && visionEl) {
-      const top = pillarSection.getBoundingClientRect().top;
-      if (top < vpH * 0.82) missionEl.classList.add('visible');
-      if (top < vpH * 0.82) visionEl.classList.add('visible');
-    }
-
-    // Hide pollock in IFO mode or when cosmos canvas is still in view
-    const cwBottom = canvasWrap.getBoundingClientRect().bottom;
-    const pollockOn = !inIFO && cwBottom <= 0;
-    pollockEl.style.opacity = pollockOn ? '1' : '0';
-    if (!pollockOn) return;
-
-    // Progress 0→1 across pillar + letter sections
-    const pillarTop = pillarSection.getBoundingClientRect().top;
-    const totalRange = pillarSection.offsetHeight + letterSection.offsetHeight;
-    const progress = Math.max(0, Math.min(1, (vpH - pillarTop) / (totalRange + vpH)));
-    const target   = Math.floor(progress * TOTAL);
-
-    if (target !== prevTarget && !rafPending) {
-      prevTarget = target;
-      rafPending = true;
-      requestAnimationFrame(() => { redraw(target); rafPending = false; });
+    const top = pillarSection.getBoundingClientRect().top;
+    if (top < window.innerHeight * 0.82) {
+      missionEl.classList.add('visible');
+      visionEl.classList.add('visible');
     }
   }
 
