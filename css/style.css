@@ -164,7 +164,7 @@ main#stage { position: relative; width: 100%; }
   height: 100dvh;
   overflow: hidden;
   background: var(--paper);
-  transition: height 0.9s var(--ease);
+  transition: height 0.9s var(--ease), margin-top 0.9s var(--ease);
 }
 
 body.mode-2d #canvas-wrap { height: 80vh; margin-top: var(--nav-h); }
