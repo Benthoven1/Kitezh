@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Cormorant+SC:wght@400;500&family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Italiana&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
 </head>
 <body>
   <nav id="navbar" class="navbar hidden" aria-hidden="true">
@@ -43,15 +43,24 @@
       </div>
     </div>
 
-    <!-- Mission / Vision — fade in on scroll -->
-    <section id="pillar-section">
-      <div class="mantra" id="mantra-mission">
-        <p class="mantra-kicker">Mulvium&rsquo;s Mission</p>
-        <p class="mantra-statement">Reimagine Arts Patronage</p>
-      </div>
-      <div class="mantra" id="mantra-vision">
-        <p class="mantra-kicker">Mulvium&rsquo;s Vision</p>
-        <p class="mantra-statement">Beauty should be all around us.</p>
+    <!-- Our Mission — scroll-pinned container: Reimagine _ Patronage -->
+    <section id="patronage-section" aria-labelledby="patronage-kicker">
+      <div class="patronage-pin">
+        <div class="patronage-container" id="patronage-container">
+          <div class="patronage-bg" data-bg="musical"       style="background-image:url('Musical.png');"></div>
+          <div class="patronage-bg" data-bg="literary"      style="background-image:url('Literary.png');"></div>
+          <div class="patronage-bg" data-bg="architectural" style="background-image:url('Architectural.png');"></div>
+          <div class="patronage-bg" data-bg="pictorial"     style="background-image:url('Pictorial.png');"></div>
+          <div class="patronage-bg" data-bg="sculptural"    style="background-image:url('Sculptural.png');"></div>
+          <div class="patronage-bg" data-bg="polymath"      style="background-image:url('Polymath.jpg');"></div>
+          <div class="patronage-scrim"></div>
+          <div class="patronage-content">
+            <p class="patronage-kicker" id="patronage-kicker">Our Mission</p>
+            <p class="patronage-statement">
+              Reimagine&nbsp;<span class="patronage-word" id="patronage-word" data-font="blank"></span>&nbsp;Patronage
+            </p>
+          </div>
+        </div>
       </div>
     </section>
 

@@ -665,20 +665,52 @@ document.addEventListener('visibilitychange', () => {
   if (!document.hidden) state.clock.getDelta();
 });
 
-(function initMantras() {
-  const pillarSection = document.getElementById('pillar-section');
-  const missionEl     = document.getElementById('mantra-mission');
-  const visionEl      = document.getElementById('mantra-vision');
-  if (!pillarSection || !missionEl || !visionEl) return;
+(function initPatronage() {
+  const section   = document.getElementById('patronage-section');
+  const container = document.getElementById('patronage-container');
+  const wordEl    = document.getElementById('patronage-word');
+  if (!section || !container || !wordEl) return;
+
+  const bgs = Array.from(section.querySelectorAll('.patronage-bg'));
+
+  // Sequence: blank → six disciplines → Arts (dissolve)
+  const STAGES = [
+    { word: '',              font: 'blank',         bg: null            },
+    { word: 'Musical',       font: 'musical',       bg: 'musical'       },
+    { word: 'Literary',      font: 'literary',      bg: 'literary'      },
+    { word: 'Architectural', font: 'architectural', bg: 'architectural' },
+    { word: 'Pictorial',     font: 'pictorial',     bg: 'pictorial'     },
+    { word: 'Sculptural',    font: 'sculptural',    bg: 'sculptural'    },
+    { word: 'Polymath',      font: 'polymath',      bg: 'polymath'      },
+    { word: 'Arts',          font: 'arts',          bg: null, dissolve: true },
+  ];
+
+  let currentIdx = -1;
+
+  function apply(idx) {
+    if (idx === currentIdx) return;
+    currentIdx = idx;
+    const stage = STAGES[idx];
+    wordEl.textContent = stage.word;
+    wordEl.dataset.font = stage.font;
+    bgs.forEach((el) => {
+      el.classList.toggle('active', stage.bg !== null && el.dataset.bg === stage.bg);
+    });
+    container.classList.toggle('has-bg', stage.bg !== null);
+    container.classList.toggle('dissolve', !!stage.dissolve);
+  }
 
   function update() {
-    const top = pillarSection.getBoundingClientRect().top;
-    if (top < window.innerHeight * 0.82) {
-      missionEl.classList.add('visible');
-      visionEl.classList.add('visible');
-    }
+    const rect = section.getBoundingClientRect();
+    const scrollRange = section.offsetHeight - window.innerHeight;
+    if (scrollRange <= 0) { apply(0); return; }
+    const progress = Math.max(0, Math.min(1, -rect.top / scrollRange));
+    // Snap to discrete stages — each occupies an equal slice of scroll.
+    const idx = Math.min(STAGES.length - 1, Math.floor(progress * STAGES.length));
+    apply(idx);
   }
 
   window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
   update();
 })();
