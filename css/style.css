@@ -26,7 +26,7 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body.cosmos-only { overflow: hidden; height: 100vh; }
+body.cosmos-only { overflow: hidden; height: 100vh; height: 100dvh; }
 
 a { color: inherit; }
 
@@ -54,7 +54,7 @@ button {
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--hairline);
   opacity: 0;
-  transform: translateY(-8px);
+  transform: translateY(-8px) translateZ(0);
   pointer-events: none;
   transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
   will-change: opacity, transform;
@@ -62,7 +62,7 @@ button {
 
 .navbar.visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) translateZ(0);
   pointer-events: auto;
 }
 
@@ -161,6 +161,7 @@ main#stage { position: relative; width: 100%; }
   position: relative;
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: var(--paper);
   transition: height 0.9s var(--ease);
@@ -516,6 +517,7 @@ body.mode-ifo #letter-section { display: none; }
 
 body.mode-ifo .ifo-mode {
   display: block;
+  pointer-events: auto;
   animation: ifoModeFade 0.6s var(--ease) 0.5s both;
 }
 
