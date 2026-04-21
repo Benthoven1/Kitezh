@@ -516,31 +516,6 @@ body.mode-ifo .ifo-mode {
   to   { opacity: 1; }
 }
 
-/* Return-to-cosmos pill */
-.ifo-return-btn {
-  position: fixed;
-  top: calc(var(--nav-h) + 16px);
-  left: clamp(20px, 4vw, 56px);
-  z-index: 30;
-  font-family: "Inter", sans-serif;
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--clay-deep);
-  background: rgba(252, 246, 230, 0.85);
-  border: 1px solid rgba(152, 138, 115, 0.35);
-  padding: 8px 14px;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  transition: color 0.25s var(--ease), border-color 0.25s var(--ease), background 0.25s var(--ease);
-}
-
-.ifo-return-btn:hover {
-  color: var(--ink);
-  border-color: var(--ink);
-  background: rgba(252, 246, 230, 1);
-}
-
 /* ---- Prose below the canvas ---- */
 .ifo-prose {
   max-width: 680px;
@@ -604,5 +579,4 @@ body.mode-ifo .ifo-mode {
 /* ---- Responsive ---- */
 @media (max-width: 720px) {
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
-  .ifo-return-btn { top: calc(var(--nav-h) + 8px); font-size: 10px; padding: 6px 10px; }
 }

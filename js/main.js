@@ -34,7 +34,7 @@ const ORBITS = [
   {
     id: "castles",
     name: "Castles",
-    href: "pages/meet-mulvium/castles.html",
+    comingSoon: true,
     radius: 3.8,  radius2D: 4.5,  ellipseX: 1,  ringTube: 0.045,
     planetSize: 0.42,  planetColor: PASTEL_CASTLES,
     tilt: [Math.PI / 2, 0, 0],
@@ -43,7 +43,7 @@ const ORBITS = [
   {
     id: "education",
     name: "Education",
-    href: "pages/meet-mulvium/education.html",
+    comingSoon: true,
     radius: 4.5,  radius2D: 6.5,  ellipseX: 1,  ringTube: 0.045,
     planetSize: 0.42, planetColor: PASTEL_EDU,
     tilt: [Math.PI / 3.2, Math.PI / 5 + Math.PI / 2, 0],
@@ -52,7 +52,7 @@ const ORBITS = [
   {
     id: "zones",
     name: "Economic Zones",
-    href: "pages/meet-mulvium/economic-zones.html",
+    comingSoon: true,
     radius: 5.0,  radius2D: 8.5,  ellipseX: 1,  ringTube: 0.045,
     planetSize: 0.42, planetColor: PASTEL_ZONES,
     tilt: [Math.PI / 3.2, Math.PI / 5, 0],
@@ -281,12 +281,10 @@ canvas.addEventListener("click", () => {
   if (state.mode !== "3d") return;
   if (state.hoverPlanet) {
     if (state.hoverPlanet.def.id === "ifo") goToIFO();
-    else window.location.href = state.hoverPlanet.def.href;
   } else if (state.hoverStar) goTo2D();
 });
 
 const ifoModeEl = document.getElementById("ifo-mode");
-const ifoReturn = document.getElementById("ifo-return");
 
 function goToIFO() {
   if (state.mode !== "3d") return;
@@ -314,8 +312,6 @@ function returnFromIFO() {
   state.ifoTarget = 0;
   state.mode = "ifo-transitioning";
 }
-
-if (ifoReturn) ifoReturn.addEventListener("click", returnFromIFO);
 
 document.querySelectorAll("[data-ifo-link]").forEach((el) => {
   el.addEventListener("click", (e) => {
@@ -422,15 +418,16 @@ function updateHover() {
   if (hits.length > 0) {
     const obj = hits[0].object;
     state.hoverStar   = obj.userData.type === "star";
-    state.hoverPlanet = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
-    canvas.style.cursor = "pointer";
+    const hitPlanet   = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
+    state.hoverPlanet = hitPlanet && !hitPlanet.def.comingSoon ? hitPlanet : null;
+    canvas.style.cursor = (state.hoverPlanet || state.hoverStar) ? "pointer" : "default";
 
-    if (state.hoverPlanet) {
-      state.labelPlanet = state.hoverPlanet;
+    if (hitPlanet) {
+      state.labelPlanet = hitPlanet;
       state.labelStar   = false;
-      state.hoverPlanet.planet.getWorldPosition(worldPos);
+      hitPlanet.planet.getWorldPosition(worldPos);
       const p = projectToCanvas(worldPos);
-      label.textContent = state.hoverPlanet.def.name;
+      label.textContent = hitPlanet.def.comingSoon ? "Coming Soon" : hitPlanet.def.name;
       label.style.left = p.x + "px";
       label.style.top  = p.y + "px";
       label.classList.add("visible");
