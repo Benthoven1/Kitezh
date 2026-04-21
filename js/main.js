@@ -417,11 +417,11 @@ function updateHover() {
   }
 
   raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects([star, ...orbits.map((o) => o.planet)], false);
+  const hits = raycaster.intersectObjects([star, ...orbits.map((o) => o.planet)], true);
 
   if (hits.length > 0) {
     const obj = hits[0].object;
-    state.hoverStar   = obj.userData.type === "star";
+    state.hoverStar   = obj.userData.type === "star" && !inCoFMode;
     const hitPlanet   = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
     if (inCoFMode) {
       state.hoverPlanet = hitPlanet && hitPlanet.def.id === "ifo" ? hitPlanet : null;
@@ -430,16 +430,20 @@ function updateHover() {
     }
     canvas.style.cursor = (state.hoverPlanet || state.hoverStar) ? "pointer" : "default";
 
-    if (inCoFMode && state.hoverPlanet) {
-      state.labelPlanet = state.hoverPlanet;
-      state.labelStar   = false;
-      state.hoverPlanet.planet.getWorldPosition(worldPos);
-      const p = projectToCanvas(worldPos);
-      label.textContent = state.hoverPlanet.def.name;
-      label.style.left = p.x + "px";
-      label.style.top  = p.y + "px";
-      label.classList.add("visible");
-    } else if (!inCoFMode && hitPlanet) {
+    if (inCoFMode) {
+      if (state.hoverPlanet) {
+        state.labelPlanet = state.hoverPlanet;
+        state.labelStar   = false;
+        state.hoverPlanet.planet.getWorldPosition(worldPos);
+        const p = projectToCanvas(worldPos);
+        label.textContent = state.hoverPlanet.def.name;
+        label.style.left = p.x + "px";
+        label.style.top  = p.y + "px";
+        label.classList.add("visible");
+      } else {
+        label.classList.remove("visible");
+      }
+    } else if (hitPlanet) {
       state.labelPlanet = hitPlanet;
       state.labelStar   = false;
       hitPlanet.planet.getWorldPosition(worldPos);
