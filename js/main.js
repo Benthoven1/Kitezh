@@ -278,10 +278,13 @@ canvas.addEventListener("pointerleave", () => {
 });
 
 canvas.addEventListener("click", () => {
-  if (state.mode !== "3d") return;
-  if (state.hoverPlanet) {
-    if (state.hoverPlanet.def.id === "ifo") goToIFO();
-  } else if (state.hoverStar) goTo2D();
+  if (state.mode === "3d") {
+    if (state.hoverPlanet) {
+      if (state.hoverPlanet.def.id === "ifo") goToIFO();
+    } else if (state.hoverStar) goTo2D();
+  } else if ((state.mode === "ifo" || state.mode === "ifo-transitioning") && state.hoverPlanet) {
+    returnFromIFO();
+  }
 });
 
 const ifoModeEl = document.getElementById("ifo-mode");
@@ -405,7 +408,8 @@ function projectToCanvas(pos) {
 }
 
 function updateHover() {
-  if (!pointerInside || state.mode !== "3d") {
+  const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
+  if (!pointerInside || (state.mode !== "3d" && !inCoFMode)) {
     state.hoverStar = false;
     state.hoverPlanet = null;
     canvas.style.cursor = "default";
@@ -419,7 +423,11 @@ function updateHover() {
     const obj = hits[0].object;
     state.hoverStar   = obj.userData.type === "star";
     const hitPlanet   = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
-    state.hoverPlanet = hitPlanet && !hitPlanet.def.comingSoon ? hitPlanet : null;
+    if (inCoFMode) {
+      state.hoverPlanet = hitPlanet && hitPlanet.def.id === "ifo" ? hitPlanet : null;
+    } else {
+      state.hoverPlanet = hitPlanet && !hitPlanet.def.comingSoon ? hitPlanet : null;
+    }
     canvas.style.cursor = (state.hoverPlanet || state.hoverStar) ? "pointer" : "default";
 
     if (hitPlanet) {
@@ -450,7 +458,8 @@ function updateHover() {
 }
 
 function trackLabel() {
-  if (state.mode !== "3d") return;
+  const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
+  if (state.mode !== "3d" && !inCoFMode) return;
   if (state.labelPlanet) {
     state.labelPlanet.planet.getWorldPosition(worldPos);
     const p = projectToCanvas(worldPos);
