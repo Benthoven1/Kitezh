@@ -66,6 +66,7 @@ const navbar   = document.getElementById("navbar");
 const brandLink = document.getElementById("brand-link");
 const body     = document.body;
 
+window.scrollTo(0, 0);
 body.classList.add("cosmos-only");
 
 const scene = new THREE.Scene();
