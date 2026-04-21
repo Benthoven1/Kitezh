@@ -430,7 +430,16 @@ function updateHover() {
     }
     canvas.style.cursor = (state.hoverPlanet || state.hoverStar) ? "pointer" : "default";
 
-    if (hitPlanet) {
+    if (inCoFMode && state.hoverPlanet) {
+      state.labelPlanet = state.hoverPlanet;
+      state.labelStar   = false;
+      state.hoverPlanet.planet.getWorldPosition(worldPos);
+      const p = projectToCanvas(worldPos);
+      label.textContent = state.hoverPlanet.def.name;
+      label.style.left = p.x + "px";
+      label.style.top  = p.y + "px";
+      label.classList.add("visible");
+    } else if (!inCoFMode && hitPlanet) {
       state.labelPlanet = hitPlanet;
       state.labelStar   = false;
       hitPlanet.planet.getWorldPosition(worldPos);
