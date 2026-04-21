@@ -165,6 +165,7 @@ main#stage { position: relative; width: 100%; }
   overflow: hidden;
   background: var(--paper);
   transition: height 0.9s var(--ease);
+  z-index: 2;
 }
 
 body.mode-2d #canvas-wrap { height: 80vh; }
@@ -221,69 +222,65 @@ body.mode-ifo.ifo-transitioning .planet-label {
 body.mode-2d .cosmos-hint,
 body.mode-ifo .cosmos-hint { opacity: 0; }
 
-/* ---------- Marble Pillar Section ---------- */
-#pillar-section { overflow: hidden; }
-
-.pillar-bar {
+/* ---------- Pollock paint canvas ---------- */
+#pollock {
+  position: fixed;
+  inset: 0;
   width: 100%;
-  padding: 56px clamp(32px, 6vw, 96px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  /* Multi-layer CSS marble texture */
-  background-color: #ede8de;
-  background-image:
-    linear-gradient(115deg, rgba(255,255,255,0.55) 0%, transparent 42%),
-    linear-gradient(252deg, rgba(195,180,155,0.28) 0%, transparent 38%),
-    repeating-linear-gradient(
-      73deg,
-      transparent 0px, transparent 18px,
-      rgba(160,145,120,0.13) 18px, rgba(160,145,120,0.13) 19px,
-      transparent 19px, transparent 42px
-    ),
-    repeating-linear-gradient(
-      161deg,
-      transparent 0px, transparent 26px,
-      rgba(195,182,158,0.16) 26px, rgba(195,182,158,0.16) 27px,
-      transparent 27px, transparent 56px
-    ),
-    linear-gradient(175deg, #f0ebe2 0%, #e3d9cc 50%, #eee9e0 100%);
-  border-top: 1px solid rgba(152, 138, 115, 0.38);
-  border-bottom: 1px solid rgba(152, 138, 115, 0.38);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.06),
-    0 4px 24px rgba(27, 22, 19, 0.07);
-  will-change: transform;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.9s ease;
 }
 
-#pillar-left  { transform: translateX(-100%); }
-#pillar-right { transform: translateX(100%); }
+/* ---------- Mission / Vision mantras ---------- */
+#pillar-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 48px;
+  padding: 120px clamp(40px, 8vw, 140px);
+  position: relative;
+  z-index: 2;
+}
 
-.pillar-bar-inner { text-align: center; }
+.mantra {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 1s var(--ease), transform 1s var(--ease);
+}
 
-.pillar-kicker {
+.mantra.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#mantra-vision { text-align: right; transition-delay: 0.18s; }
+
+.mantra-kicker {
   font-size: 11px;
   letter-spacing: 0.36em;
   text-transform: uppercase;
-  color: #7a6a52;
+  color: var(--clay-deep);
   margin: 0 0 14px;
 }
 
-.pillar-statement {
+.mantra-statement {
   font-family: "Cormorant Garamond", serif;
   font-weight: 400;
   font-size: clamp(28px, 3.4vw, 48px);
   line-height: 1.15;
-  letter-spacing: 0.01em;
-  color: #2e2418;
+  color: var(--ink);
   margin: 0;
 }
 
 /* ---------- Letter Section ---------- */
 #letter-section {
-  background: var(--paper);
+  background: rgba(255, 255, 255, 0.78);
   padding: 100px clamp(24px, 8vw, 160px);
+  position: relative;
+  z-index: 2;
 }
 
 .letter-article {
@@ -336,6 +333,8 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 #site-footer {
   background: var(--paper-warm);
   border-top: 1px solid var(--hairline);
+  position: relative;
+  z-index: 2;
 }
 
 .footer-inner {
@@ -510,6 +509,8 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   display: none;
   padding-top: 48px;
   pointer-events: none;
+  position: relative;
+  z-index: 2;
 }
 
 body.mode-ifo #pillar-section,
