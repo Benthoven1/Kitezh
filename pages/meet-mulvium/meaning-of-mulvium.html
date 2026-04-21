@@ -8,9 +8,27 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <nav class="static-nav">
-    <a href="../../index.html">Mulvium</a>
-    <a class="back-home" href="../../index.html">&larr; Return to Cosmos</a>
+  <nav class="navbar visible" aria-hidden="false">
+    <div class="nav-brand">
+      <a href="../../index.html" id="brand-link">Mulvium</a>
+    </div>
+    <ul class="nav-links">
+      <li class="nav-item has-dropdown">
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Offerings</button>
+        <ul class="dropdown">
+          <li><a href="../../index.html" data-ifo-link>International Festival Orchestra</a></li>
+          <li><a href="../../pages/meet-mulvium/meaning-of-mulvium.html">Meaning of Mulvium</a></li>
+        </ul>
+      </li>
+      <li class="nav-item has-dropdown">
+        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">About Us</button>
+        <ul class="dropdown">
+          <li><a href="../../pages/about/people.html">People</a></li>
+          <li><a href="../../pages/about/careers.html">Careers</a></li>
+          <li><a href="../../pages/about/contact.html">Contact Us</a></li>
+        </ul>
+      </li>
+    </ul>
   </nav>
   <main class="page-shell">
     <p class="eyebrow">Offerings</p>
@@ -22,7 +40,35 @@
     <p>
       More to come.
     </p>
-    <a class="back" href="../../index.html">Back to Mulvium</a>
   </main>
+  <footer id="site-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-wordmark">Mulvium</span>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <div class="footer-col">
+          <p class="footer-col-title">Offerings</p>
+          <ul class="footer-links">
+            <li><a href="../../index.html" data-ifo-link>International Festival Orchestra</a></li>
+            <li><a href="../../pages/meet-mulvium/meaning-of-mulvium.html">Meaning of Mulvium</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <p class="footer-col-title">About Us</p>
+          <ul class="footer-links">
+            <li><a href="../../pages/about/people.html">People</a></li>
+            <li><a href="../../pages/about/careers.html">Careers</a></li>
+            <li><a href="../../pages/about/contact.html">Contact Us</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="footer-copy">
+      <p>&copy; <span id="year"></span> Mulvium Foundation. All rights reserved.</p>
+    </div>
+  </footer>
+  <script src="../../js/nav.js"></script>
+  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
