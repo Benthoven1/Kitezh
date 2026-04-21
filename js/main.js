@@ -632,6 +632,13 @@ function animate() {
 
 animate();
 
+// If the page was reached via an IFO deep-link (e.g. from a sub-page navbar
+// or footer), strip the hash and immediately enter IFO mode.
+if (window.location.hash === '#ifo') {
+  history.replaceState(null, '', window.location.pathname);
+  goToIFO();
+}
+
 // When the page is restored from the browser back-forward cache the WebGL
 // context may have been lost. Reload to reinitialise Three.js cleanly.
 window.addEventListener('pageshow', (e) => {
