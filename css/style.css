@@ -167,7 +167,7 @@ main#stage { position: relative; width: 100%; }
   transition: height 0.9s var(--ease);
 }
 
-body.mode-2d #canvas-wrap { height: 80vh; }
+body.mode-2d #canvas-wrap { height: 80vh; margin-top: var(--nav-h); }
 
 canvas#cosmos {
   position: absolute;
