@@ -173,25 +173,26 @@ const COF_ACC_PAIRS = [
 // IFO and Castles orbit rings scale/flatten into the CoF reference rings
 const COF_RING_TARGETS = { ifo: 2.8, castles: 1.55 };
 
-function makeCoFSprite(mainText, altText, { canvasSize = 128, fontSize = 52, color = "#5a3e1b" } = {}) {
+function makeCoFSprite(mainText, altText, { canvasSize = 256, fontSize = 108, color = "#5a3e1b" } = {}) {
   const c = document.createElement("canvas");
   c.width = canvasSize; c.height = canvasSize;
   const ctx = c.getContext("2d");
   ctx.clearRect(0, 0, canvasSize, canvasSize);
   ctx.textAlign = "center";
+  ctx.fillStyle = color;
 
   if (altText) {
-    const fs1 = Math.round(fontSize * 0.82);
-    const fs2 = Math.round(fontSize * 0.60);
-    ctx.font = `${fs1}px "Cormorant Garamond", serif`;
-    ctx.fillStyle = color;
+    // Main letter stays at full fontSize — same size whether or not there's an alt
+    const fs2 = Math.round(fontSize * 0.44);
+    ctx.font = `${fontSize}px "Cormorant Garamond", serif`;
     ctx.textBaseline = "alphabetic";
-    ctx.fillText(mainText, canvasSize / 2, canvasSize * 0.50);
+    ctx.fillText(mainText, canvasSize / 2, canvasSize * 0.47);
     ctx.font = `${fs2}px "Cormorant Garamond", serif`;
-    ctx.fillText(altText,  canvasSize / 2, canvasSize * 0.78);
+    ctx.globalAlpha = 0.6;
+    ctx.fillText(altText, canvasSize / 2, canvasSize * 0.72);
+    ctx.globalAlpha = 1;
   } else {
     ctx.font = `${fontSize}px "Cormorant Garamond", serif`;
-    ctx.fillStyle = color;
     ctx.textBaseline = "middle";
     ctx.fillText(mainText, canvasSize / 2, canvasSize / 2);
   }
@@ -203,7 +204,7 @@ function makeCoFSprite(mainText, altText, { canvasSize = 128, fontSize = 52, col
 
 // Outer ring: key letter sprites
 const cofKeySprites = COF_KEY_PAIRS.map(({ key, alt }) => {
-  const s = makeCoFSprite(key, alt, { fontSize: 56 });
+  const s = makeCoFSprite(key, alt, { canvasSize: 256, fontSize: 108 });
   s.scale.set(0.75, 0.75, 0.75);
   scene.add(s);
   return s;
@@ -212,7 +213,7 @@ const cofKeySprites = COF_KEY_PAIRS.map(({ key, alt }) => {
 // Inner ring: accidental sprites — index-matched so same i = same orbit angle as key
 const cofAccSprites = COF_ACC_PAIRS.map(({ main, alt }) => {
   if (!main) return null;
-  const s = makeCoFSprite(main, alt, { fontSize: 36, color: "#8a6030" });
+  const s = makeCoFSprite(main, alt, { canvasSize: 256, fontSize: 72, color: "#8a6030" });
   s.scale.set(0.52, 0.52, 0.52);
   scene.add(s);
   return s;
@@ -371,20 +372,25 @@ brandLink.addEventListener("click", (e) => {
 
 document.querySelectorAll(".nav-item.has-dropdown").forEach((item) => {
   const trigger = item.querySelector(".nav-trigger");
+  let leaveTimer = null;
   trigger.addEventListener("click", (e) => {
     e.stopPropagation();
+    clearTimeout(leaveTimer);
     const wasOpen = item.classList.contains("open");
     document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
     if (!wasOpen) { item.classList.add("open"); trigger.setAttribute("aria-expanded", "true"); }
     else           { trigger.setAttribute("aria-expanded", "false"); }
   });
   item.addEventListener("mouseenter", () => {
+    clearTimeout(leaveTimer);
     if (window.matchMedia("(hover: hover)").matches) {
       document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
       item.classList.add("open");
     }
   });
-  item.addEventListener("mouseleave", () => item.classList.remove("open"));
+  item.addEventListener("mouseleave", () => {
+    leaveTimer = setTimeout(() => item.classList.remove("open"), 150);
+  });
 });
 
 document.addEventListener("click", () => {
