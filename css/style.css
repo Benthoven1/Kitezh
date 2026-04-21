@@ -57,6 +57,7 @@ button {
   transform: translateY(-8px);
   pointer-events: none;
   transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  will-change: opacity, transform;
 }
 
 .navbar.visible {
