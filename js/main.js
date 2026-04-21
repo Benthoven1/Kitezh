@@ -309,8 +309,6 @@ function returnFromIFO() {
   if (state.mode !== "ifo" && state.mode !== "ifo-transitioning") return;
   body.classList.remove("mode-ifo");
   ifoModeEl.setAttribute("aria-hidden", "true");
-  navbar.classList.remove("visible");
-  navbar.setAttribute("aria-hidden", "true");
   body.classList.add("cosmos-only");
   state.ifoTarget = 0;
   state.mode = "ifo-transitioning";
@@ -353,12 +351,10 @@ function goTo3D() {
   if (state.mode !== "2d") return;
   state.mode = "transitioning";
   state.target = 0;
-  navbar.classList.remove("visible");
-  navbar.setAttribute("aria-hidden", "true");
   body.classList.add("cosmos-only");
   body.classList.remove("mode-2d");
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
 
 brandLink.addEventListener("click", (e) => {
@@ -571,6 +567,10 @@ function animate() {
     if ((dir === 1 && state.t >= 1) || (dir === -1 && state.t <= 0)) {
       state.t    = state.target;
       state.mode = state.target === 1 ? "2d" : "3d";
+      if (state.mode === "3d") {
+        navbar.classList.remove("visible");
+        navbar.setAttribute("aria-hidden", "true");
+      }
     }
   }
 
@@ -584,6 +584,8 @@ function animate() {
     } else if (dir === -1 && state.ifoT <= 0) {
       state.ifoT = 0;
       state.mode = "3d";
+      navbar.classList.remove("visible");
+      navbar.setAttribute("aria-hidden", "true");
     }
   }
 
