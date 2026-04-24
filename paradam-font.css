@@ -1,0 +1,105 @@
+/* Paradam Font Styles */
+
+/* Font Face Definitions */
+@font-face {
+  font-family: 'Tan buster';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80f7757eaa9d1_TAN-BUSTER.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Additional Font Weights - Inconsolata */
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80fa332eaa9e5_Inconsolata-Medium.ttf') format('truetype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80f2969eaa9e4_Inconsolata-ExtraLight.ttf') format('truetype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80f0d09eaa9e3_Inconsolata-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80f1f67eaa9e2_Inconsolata-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80fee95eaa9e1_Inconsolata-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80f6a91eaa9e0_Inconsolata-ExtraBold.ttf') format('truetype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80f161aeaa9de_Inconsolata-Black.ttf') format('truetype');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inconsolata';
+  src: url('https://assets.website-files.com/622a7ac885d80f68b2eaa9a8/622a7ac885d80f6724eaa9df_Inconsolata-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Paradam Styles */
+.home-hero_heading {
+  margin-bottom: 0;
+  font-family: Tan buster, Impact, sans-serif;
+  font-size: 10rem;
+  font-weight: 400;
+  line-height: 1.4em;
+  display: flex;
+  overflow: hidden;
+}
+
+.paradam-letter {
+  letter-spacing: 2px;
+}
+
+.home-studios {
+  color: rgba(255, 255, 255, .8);
+  text-align: center;
+  letter-spacing: 2px;
+  font-family: Tan buster, Impact, sans-serif;
+  font-size: 6rem;
+  font-weight: 400;
+  line-height: 1.4em;
+}
+
+.home-subtitle {
+  height: 7rem;
+  margin-top: 2rem;
+}
