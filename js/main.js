@@ -685,6 +685,158 @@ document.addEventListener('visibilitychange', () => {
     { word: 'Arts',          font: 'arts',          bg: null, dissolve: true },
   ];
 
+  // Special:FilePath is a stable redirect that resolves the current thumbnail
+  // URL for a Commons filename, so hotlinks don't break when files are moved.
+  const wm = (filename, width = 1600) =>
+    `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(filename)}?width=${width}`;
+
+  const COLLAGES = {
+    musical: [
+      wm('Beethoven_Symphony_9_Finale_theme.png'),
+      wm('Bach_-_Toccata_and_Fugue_in_D_minor,_BWV_565_-_opening.png'),
+      wm('Mozart_Requiem_Kyrie_autograph.jpg'),
+      wm('Chopin_-_Nocturne_Op.9_No.2_page_1.png'),
+      wm('Beethoven_-_Moonlight_Sonata_opening.png'),
+      wm('Debussy_-_Clair_de_Lune_opening.png'),
+      wm('Schubert_Erlkonig_autograph.jpg'),
+      wm('Handel_-_Messiah_-_Hallelujah_Chorus_opening.png'),
+      wm('Gershwin_Rhapsody_in_Blue_opening.jpg'),
+      wm('Vivaldi_Four_Seasons_Spring_opening.png'),
+    ],
+    // Book covers from first editions / iconic editions
+    // Book covers from first / iconic editions
+    literary: [
+      wm('The_Great_Gatsby_Cover_1925_Retouched.jpg'),
+      wm('1984first.jpg'),
+      wm('El_ingenioso_hidalgo_don_Quijote_de_la_Mancha.jpg'),
+      wm('Moby-Dick_FE.png'),
+      wm('PrideAndPrejudiceTitlePage.jpg'),
+      wm('OneHundredYearsOfSolitude.jpg'),
+      wm('JoyceUlysses2.jpg'),
+      wm('Genji_emaki_azumaya.jpg'),
+      wm('Heart_of_Darkness_1902_Blackwood_binding.jpg'),
+      wm('Things_Fall_Apart_(1958_1st_ed_jacket_cover).jpg'),
+      wm('To_Kill_a_Mockingbird_(first_edition_cover).jpg'),
+    ],
+    // Castles around the world
+    architectural: [
+      wm('Schloss_Neuschwanstein_2013.jpg'),
+      wm('Himeji_Castle_The_Keep_Towers.jpg'),
+      wm('Edinburgh_Castle_from_the_south_east.jpg'),
+      wm('Chateau_de_Chambord_1.jpg'),
+      wm('Mont_Saint-Michel_vu_du_ciel.jpg'),
+      wm('Alhambra_evening_panorama_Mirador_San_Nicolas_sRGB-1.jpg'),
+      wm('Matsumoto_Castle_Keep_Tower.jpg'),
+      wm('Pena_National_Palace_(44819139241).jpg'),
+      wm('Bran_Castle_Romania.jpg'),
+      wm('Hohenzollern_Castle_2013.jpg'),
+      wm('Potala_Palace_August_2009.jpg'),
+      wm('Conwy_Castle_1.jpg'),
+    ],
+    // Most famous paintings — Western and non-Western
+    pictorial: [
+      wm('Mona_Lisa,_by_Leonardo_da_Vinci,_from_C2RMF_retouched.jpg'),
+      wm('Tsunami_by_hokusai_19th_century.jpg'),
+      wm('Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg'),
+      wm('"The_School_of_Athens"_by_Raffaello_Sanzio_da_Urbino.jpg'),
+      wm('Las_Meninas,_by_Diego_Velázquez,_from_Prado_in_Google_Earth.jpg'),
+      wm('Sandro_Botticelli_-_La_nascita_di_Venere_-_Google_Art_Project_-_edited.jpg'),
+      wm('Michelangelo_-_Creation_of_Adam_(cropped).jpg'),
+      wm('Johannes_Vermeer_-_The_Girl_With_the_Pearl_Earring.jpg'),
+      wm('The_Scream.jpg'),
+      wm('Guernica_by_Pablo_Picasso_(1937).jpg'),
+      wm('Along_the_River_During_the_Qingming_Festival_(detail_of_original).jpg'),
+      wm('Raja_Ravi_Varma,_Shakuntala_(1870).jpg'),
+    ],
+    // Most famous sculptures — Western and non-Western
+    sculptural: [
+      wm("'David'_by_Michelangelo_JBU0001.JPG"),
+      wm('The_Thinker,_Auguste_Rodin.jpg'),
+      wm('Venus_de_Milo_Louvre_Ma399_n4.jpg'),
+      wm('Nike_of_Samothrake_Louvre_Ma2369_n4.jpg'),
+      wm('Moai_Rano_raraku.jpg'),
+      wm('Terracotta_Army-China2.jpg'),
+      wm('Pieta_(Michelangelo).jpg'),
+      wm('Laocoon_and_His_Sons.jpg'),
+      wm('Ecstasy_of_Saint_Teresa_September_2015-2a.jpg'),
+      wm('Great_Sphinx_of_Giza_-_20080716a.jpg'),
+      wm('Daibutsu_of_Kamakura.jpg'),
+      wm('Benin_bronze_in_Ethnological_Museum,_Berlin_-_002.JPG'),
+    ],
+  };
+
+  // Preload probe so only filenames that resolve are appended. Any 404 silently drops.
+  const collageLayers = {};
+  bgs.forEach((el) => {
+    const key = el.dataset.bg;
+    if (!COLLAGES[key]) return;
+    collageLayers[key] = { el, items: [] };
+    COLLAGES[key].forEach((src) => {
+      const probe = new Image();
+      probe.onload = () => {
+        const item = document.createElement('div');
+        item.className = 'collage-item';
+        item.style.backgroundImage = `url("${src}")`;
+        el.appendChild(item);
+        collageLayers[key].items.push(item);
+      };
+      probe.onerror = () => { /* drop */ };
+      probe.src = src;
+    });
+  });
+
+  let cycleTimer = null;
+  let cycleKey = null;
+  let cycleIdx = 0;
+  let lastItem = null;
+
+  const STAGE_HOLD_MS = 2000;
+  const POP_OUT_MS    = 550;
+
+  function stopCycle() {
+    if (cycleTimer) {
+      clearTimeout(cycleTimer);
+      cycleTimer = null;
+    }
+    if (cycleKey && collageLayers[cycleKey]) {
+      collageLayers[cycleKey].items.forEach((it) => {
+        it.classList.remove('fade-in', 'pop-out');
+      });
+    }
+    lastItem = null;
+    cycleKey = null;
+  }
+
+  function startCycle(key) {
+    if (!collageLayers[key] || collageLayers[key].items.length === 0) return;
+    cycleKey = key;
+    cycleIdx = 0;
+    showNext();
+  }
+
+  function showNext() {
+    const layer = collageLayers[cycleKey];
+    if (!layer || layer.items.length === 0) return;
+    const items = layer.items;
+    const next = items[cycleIdx % items.length];
+    cycleIdx += 1;
+
+    const prev = lastItem;
+    if (prev && prev !== next) {
+      prev.classList.remove('fade-in');
+      prev.classList.add('pop-out');
+      setTimeout(() => prev.classList.remove('pop-out'), POP_OUT_MS + 50);
+    }
+    next.classList.remove('pop-out');
+    // Reflow so the fade-in transition restarts from the base state.
+    // eslint-disable-next-line no-unused-expressions
+    next.offsetWidth;
+    next.classList.add('fade-in');
+    lastItem = next;
+
+    cycleTimer = setTimeout(showNext, STAGE_HOLD_MS);
+  }
+
   let currentIdx = -1;
 
   function apply(idx) {
@@ -698,6 +850,11 @@ document.addEventListener('visibilitychange', () => {
     });
     container.classList.toggle('has-bg', stage.bg !== null);
     container.classList.toggle('dissolve', !!stage.dissolve);
+
+    stopCycle();
+    if (stage.bg && COLLAGES[stage.bg]) {
+      startCycle(stage.bg);
+    }
   }
 
   function update() {
