@@ -271,37 +271,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   transform: scale(1);
 }
 
-/* Animated collage: multiple images cycle inside a .patronage-collage layer.
-   Each image fades in (from slight zoom-in) and then pops outward on exit. */
-.patronage-collage {
-  background-image: none;
-  overflow: hidden;
-}
-
-.collage-item {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity: 0;
-  transform: scale(0.92);
-  transition: opacity 0.7s var(--ease), transform 1.1s var(--ease);
-  pointer-events: none;
-  will-change: opacity, transform;
-}
-
-.collage-item.fade-in {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.collage-item.pop-out {
-  opacity: 0;
-  transform: scale(1.14);
-  transition: opacity 0.55s var(--ease), transform 0.75s cubic-bezier(0.22, 1.2, 0.36, 1);
-}
-
 .patronage-scrim {
   position: absolute;
   inset: 0;
@@ -346,28 +315,11 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   color: var(--ink);
   margin: 0;
   transition: color 0.8s var(--ease), text-shadow 0.8s var(--ease);
-  white-space: nowrap;
-}
-
-/* Lock "Reimagine" and "Patronage" in fixed positions by giving the middle
-   word a fixed-width slot. The inner word can swap fonts / sizes freely
-   without pushing the outer static words around. */
-.patronage-static {
-  display: inline-block;
-  vertical-align: baseline;
-}
-
-.patronage-word-slot {
-  display: inline-block;
-  width: 8.5em;
-  margin: 0 0.25em;
-  text-align: center;
-  vertical-align: baseline;
-  font-size: 1em; /* anchor em so inner font-size changes don't resize the slot */
 }
 
 .patronage-word {
-  display: inline;
+  display: inline-block;
+  min-width: 2.5ch;
   font-style: italic;
   color: var(--clay-deep);
   transition: opacity 0.4s var(--ease), color 0.8s var(--ease), text-shadow 0.8s var(--ease);
@@ -413,12 +365,7 @@ body.mode-ifo #patronage-section { display: none; }
     height: min(520px, calc(100dvh - 120px));
   }
   .patronage-kicker { font-size: 11px; letter-spacing: 0.32em; margin-bottom: 20px; }
-  .patronage-statement {
-    font-size: clamp(28px, 8vw, 42px);
-    white-space: normal;
-  }
-  .patronage-word-slot { width: 6.5em; }
-  .patronage-static { display: inline; }
+  .patronage-statement { font-size: clamp(28px, 8vw, 42px); }
 }
 
 /* ---------- Letter Section ---------- */
