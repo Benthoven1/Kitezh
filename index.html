@@ -13,33 +13,60 @@
 <body>
   <nav id="navbar" class="navbar hidden" aria-hidden="true">
     <div class="nav-brand">
-      <a href="#" id="brand-link">Mulvium</a>
+      <a href="#" id="brand-link" class="brand-letters">
+        <span class="m-letter" data-letter="0">M</span><span class="m-letter" data-letter="1">u</span><span class="m-letter" data-letter="2">l</span><span class="m-letter" data-letter="3">v</span><span class="m-letter" data-letter="4">i</span><span class="m-letter" data-letter="5">u</span><span class="m-letter" data-letter="6">m</span>
+      </a>
     </div>
-    <ul class="nav-links">
-      <li class="nav-item has-dropdown">
-        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Offerings</button>
-        <ul class="dropdown">
-          <li><a href="#" data-ifo-link>International Festival Orchestra</a></li>
-          <li><a href="pages/meet-mulvium/meaning-of-mulvium.html">Meaning of Mulvium</a></li>
-        </ul>
-      </li>
-      <li class="nav-item has-dropdown">
-        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">About Us</button>
-        <ul class="dropdown">
-          <li><a href="pages/about/people.html">People</a></li>
-          <li><a href="pages/about/careers.html">Careers</a></li>
-          <li><a href="pages/about/contact.html">Contact Us</a></li>
-        </ul>
-      </li>
-    </ul>
+    <button class="nav-menu-toggle" id="nav-menu-toggle" aria-label="Toggle menu" aria-expanded="false">
+      <span class="menu-icon"></span>
+    </button>
   </nav>
+
+  <!-- Full-screen overlay menu -->
+  <div id="menu-overlay" class="menu-overlay" aria-hidden="true">
+    <nav class="menu-overlay-nav">
+      <div class="menu-overlay-inner">
+        <div class="menu-close-area">
+          <button class="menu-close" id="menu-close" aria-label="Close menu">
+            <span></span>
+          </button>
+        </div>
+        <div class="menu-content">
+          <div class="menu-section">
+            <h3 class="menu-title">Offerings</h3>
+            <ul class="menu-links">
+              <li><a href="#" data-ifo-link class="menu-link">International Festival Orchestra</a></li>
+              <li><a href="pages/meet-mulvium/meaning-of-mulvium.html" class="menu-link">Meaning of Mulvium</a></li>
+            </ul>
+          </div>
+          <div class="menu-section">
+            <h3 class="menu-title">About Us</h3>
+            <ul class="menu-links">
+              <li><a href="pages/about/people.html" class="menu-link">People</a></li>
+              <li><a href="pages/about/careers.html" class="menu-link">Careers</a></li>
+              <li><a href="pages/about/contact.html" class="menu-link">Contact Us</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </div>
 
   <main id="stage">
     <div id="canvas-wrap">
       <canvas id="cosmos"></canvas>
       <div id="planet-label" class="planet-label" aria-live="polite"></div>
       <div id="cosmos-hint" class="cosmos-hint">
-        <p>Click a sphere to explore our offerings and our mission.</p>
+        <svg class="cosmos-badge" viewBox="0 0 240 240" aria-hidden="true">
+          <defs>
+            <path id="cosmos-text-path" d="M 120,120 m -90,0 a 90,90 0 1,1 180,0 a 90,90 0 1,1 -180,0" fill="none" />
+          </defs>
+          <text class="cosmos-badge-text" font-size="14" letter-spacing="2">
+            <textPath href="#cosmos-text-path" startOffset="0%" text-anchor="middle">
+              · Reimagine Arts Patronage · Mulvium Foundation ·
+            </textPath>
+          </text>
+        </svg>
       </div>
     </div>
 
@@ -64,11 +91,21 @@
       </div>
     </section>
 
+    <!-- Decorative SVG shapes -->
+    <div class="deco-shapes" aria-hidden="true">
+      <svg class="deco-circle deco-circle-1" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="100" fill="none" stroke="currentColor" stroke-width="1" opacity="0.08" />
+      </svg>
+      <svg class="deco-circle deco-circle-2" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="100" fill="none" stroke="currentColor" stroke-width="1" opacity="0.06" />
+      </svg>
+    </div>
+
     <!-- Letter section — text drawn from Kitezh, The Vision (pp. 2, 4, 5) -->
     <section id="letter-section">
       <article class="letter-article">
         <header class="letter-header">
-          <p class="letter-to">To those who stop and smell the roses,</p>
+          <h2 class="letter-to" data-scroll-speed="0">To those who stop<br/>and smell the roses,</h2>
         </header>
 
         <div class="letter-body">
@@ -142,11 +179,16 @@
 
       <!-- Circle of Fifths animation runs in the Three.js canvas above; no HTML diagram here -->
       <article class="ifo-prose">
-        <header class="ifo-prose-header">
-          <h2 class="ifo-prose-title">International Festival Orchestra</h2>
-        </header>
+        <div class="ifo-prose-container">
+          <header class="ifo-prose-header">
+            <h2 class="ifo-prose-title" data-scroll-speed="-0.3">International Festival Orchestra</h2>
+          </header>
+          <footer class="ifo-prose-footnote-inline">
+            <p><sup>1</sup> Kitezh is a placeholder name, although it illustrates an important tenet of the initiative.</p>
+          </footer>
+        </div>
 
-        <div class="ifo-prose-body">
+        <div class="ifo-prose-body" data-scroll-speed="0.2">
           <p>
             The Kitezh<sup><a href="#ifo-fn-1" class="ifo-fnref">1</a></sup>
             Festival Orchestra is a proposed international ensemble in residence
@@ -191,16 +233,6 @@
             and to make a philanthropic contribution.
           </p>
         </div>
-
-        <footer class="ifo-prose-footnote" id="ifo-fn-1">
-          <p>
-            <sup>1</sup> Kitezh is a placeholder name, although it illustrates
-            an important tenet of the initiative. The original myth of Kitezh
-            describes a 13th century Russian city that submerged in a lake
-            following a Mongol invasion. The city remains invisible, but people
-            still can hear the city&rsquo;s celestial carillons and canticles.
-          </p>
-        </footer>
       </article>
     </section>
 
@@ -234,6 +266,24 @@
     </footer>
   </main>
 
+  <!-- Preloader -->
+  <div id="preloader" class="preloader" aria-hidden="true">
+    <div class="preloader-content">
+      <p class="preloader-text">Mulvium</p>
+    </div>
+  </div>
+
+  <!-- SVG definitions for noise and shapes -->
+  <svg class="defs-only" aria-hidden="true" style="display: none;">
+    <defs>
+      <filter id="noise">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="1" />
+        <feDisplacementMap in="SourceGraphic" scale="1" />
+      </filter>
+    </defs>
+  </svg>
+
+  <script src="https://cdn.jsdelivr.net/gh/darkroomengineering/lenis@latest"></script>
   <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.161.0/build/three.module.js" } }
   </script>
