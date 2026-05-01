@@ -646,6 +646,70 @@ function animate() {
 
 animate();
 
+// ── Preloader fade-out ────────────────────────────────────────────────────────
+function hidePreloader() {
+  const preloader = document.getElementById('preloader');
+  if (preloader) {
+    preloader.classList.add('fade-out');
+    setTimeout(() => preloader.remove(), 1400);
+  }
+}
+
+setTimeout(hidePreloader, 600);
+
+// ── Full-screen menu toggle ────────────────────────────────────────────────────
+const menuToggle = document.getElementById('nav-menu-toggle');
+const menuOverlay = document.getElementById('menu-overlay');
+const menuClose = document.getElementById('menu-close');
+
+if (menuToggle && menuOverlay) {
+  menuToggle.addEventListener('click', () => {
+    menuOverlay.classList.add('open');
+    menuToggle.setAttribute('aria-expanded', 'true');
+  });
+
+  menuClose.addEventListener('click', () => {
+    menuOverlay.classList.remove('open');
+    menuToggle.setAttribute('aria-expanded', 'false');
+  });
+
+  document.querySelectorAll('.menu-link').forEach((link) => {
+    link.addEventListener('click', () => {
+      menuOverlay.classList.remove('open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+}
+
+// ── Lenis smooth scroll initialization ──────────────────────────────────────
+if (typeof Lenis !== 'undefined') {
+  const lenis = new Lenis({
+    duration: 1.2,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    direction: 'vertical',
+    gestureDirection: 'vertical',
+    smooth: true,
+  });
+
+  function raf(time) {
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+  requestAnimationFrame(raf);
+
+  // Parallax scroll effect for elements with data-scroll-speed
+  lenis.on('scroll', () => {
+    document.querySelectorAll('[data-scroll-speed]').forEach((el) => {
+      const speed = parseFloat(el.getAttribute('data-scroll-speed')) || 0;
+      if (speed !== 0) {
+        const rect = el.getBoundingClientRect();
+        const offset = window.innerHeight - rect.top;
+        el.style.transform = `translateY(${offset * speed}px)`;
+      }
+    });
+  });
+}
+
 // If the page was reached via an IFO deep-link (e.g. from a sub-page navbar
 // or footer), strip the hash and immediately enter IFO mode.
 if (window.location.hash === '#ifo') {
