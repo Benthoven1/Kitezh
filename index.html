@@ -11,35 +11,81 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Cormorant+SC:wght@400;500&family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Italiana&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
 </head>
 <body>
+
+  <!-- Preloader overlay (Principle 10) -->
+  <div id="preloader" class="preloader" aria-hidden="true">
+    <span class="preloader-wordmark">Mulvium</span>
+  </div>
+
+  <!-- Full-screen overlay menu (Principle 6) -->
+  <div id="menu-overlay" class="menu-overlay" aria-hidden="true" role="dialog" aria-label="Full navigation">
+    <button id="menu-close" class="menu-close" aria-label="Close navigation">&#215;</button>
+    <nav class="menu-overlay-nav" aria-label="Full-screen navigation">
+      <ul>
+        <li><a href="#" data-ifo-link>International Festival Orchestra</a></li>
+        <li><a href="pages/meet-mulvium/meaning-of-mulvium.html">Meaning of Mulvium</a></li>
+        <li><a href="pages/about/people.html">People</a></li>
+        <li><a href="pages/about/careers.html">Careers</a></li>
+        <li><a href="pages/about/contact.html">Contact Us</a></li>
+      </ul>
+    </nav>
+  </div>
+
   <nav id="navbar" class="navbar hidden" aria-hidden="true">
     <div class="nav-brand">
-      <a href="#" id="brand-link">Mulvium</a>
+      <!-- Per-letter entrance (Principle 2) -->
+      <a href="#" id="brand-link"
+        ><span class="m-letter">M</span
+        ><span class="m-letter">u</span
+        ><span class="m-letter">l</span
+        ><span class="m-letter">v</span
+        ><span class="m-letter">i</span
+        ><span class="m-letter">u</span
+        ><span class="m-letter">m</span
+      ></a>
     </div>
-    <ul class="nav-links">
-      <li class="nav-item has-dropdown">
-        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Offerings</button>
-        <ul class="dropdown">
-          <li><a href="#" data-ifo-link>International Festival Orchestra</a></li>
-          <li><a href="pages/meet-mulvium/meaning-of-mulvium.html">Meaning of Mulvium</a></li>
-        </ul>
-      </li>
-      <li class="nav-item has-dropdown">
-        <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">About Us</button>
-        <ul class="dropdown">
-          <li><a href="pages/about/people.html">People</a></li>
-          <li><a href="pages/about/careers.html">Careers</a></li>
-          <li><a href="pages/about/contact.html">Contact Us</a></li>
-        </ul>
-      </li>
-    </ul>
+    <div class="nav-right">
+      <ul class="nav-links">
+        <li class="nav-item has-dropdown">
+          <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Offerings</button>
+          <ul class="dropdown">
+            <li><a href="#" data-ifo-link>International Festival Orchestra</a></li>
+            <li><a href="pages/meet-mulvium/meaning-of-mulvium.html">Meaning of Mulvium</a></li>
+          </ul>
+        </li>
+        <li class="nav-item has-dropdown">
+          <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">About Us</button>
+          <ul class="dropdown">
+            <li><a href="pages/about/people.html">People</a></li>
+            <li><a href="pages/about/careers.html">Careers</a></li>
+            <li><a href="pages/about/contact.html">Contact Us</a></li>
+          </ul>
+        </li>
+      </ul>
+      <button id="menu-open" class="menu-hamburger" aria-label="Open full navigation">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </nav>
 
   <main id="stage">
     <div id="canvas-wrap">
       <canvas id="cosmos"></canvas>
       <div id="planet-label" class="planet-label" aria-live="polite"></div>
+
+      <!-- Rotating circular text badge (Principle 4) -->
       <div id="cosmos-hint" class="cosmos-hint">
-        <p>Click a sphere to explore our offerings and our mission.</p>
+        <div class="cosmos-badge" aria-hidden="true">
+          <svg viewBox="0 0 200 200" width="190" height="190" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <path id="cosmos-circle-path" d="M100,100 m-72,0 a72,72 0 1,1 144,0 a72,72 0 1,1 -144,0"/>
+            </defs>
+            <text fill="currentColor" font-size="11" letter-spacing="2.5" font-family="Cinzel, serif">
+              <textPath href="#cosmos-circle-path">&middot; Reimagine Arts Patronage &middot; Mulvium Foundation &middot;</textPath>
+            </text>
+          </svg>
+        </div>
+        <span class="sr-only">Click a sphere to explore our offerings and our mission.</span>
       </div>
     </div>
 
@@ -64,11 +110,29 @@
       </div>
     </section>
 
-    <!-- Letter section — text drawn from Kitezh, The Vision (pp. 2, 4, 5) -->
+    <!-- Letter section -->
     <section id="letter-section">
+
+      <!-- Geometric SVG shape floats (Principle 3) -->
+      <div class="deco-shapes" aria-hidden="true">
+        <svg class="deco-shape deco-shape--a" viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="0.5" cy="0.5" r="0.5" fill="#b87758"/>
+        </svg>
+        <svg class="deco-shape deco-shape--b" viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="0.5" cy="0.5" r="0.5" fill="#b87758"/>
+        </svg>
+        <svg class="deco-shape deco-shape--c" viewBox="0 0 1 1" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="0.5" cy="0.5" rx="0.5" ry="0.32" fill="#b87758"/>
+        </svg>
+      </div>
+
       <article class="letter-article">
+        <!-- Big-type manifesto salutation (Principle 5) -->
         <header class="letter-header">
-          <p class="letter-to">To those who stop and smell the roses,</p>
+          <p class="letter-to">
+            <span class="manifesto-line manifesto-line--a">To those who</span>
+            <span class="manifesto-line manifesto-line--b">stop and smell the roses,</span>
+          </p>
         </header>
 
         <div class="letter-body">
@@ -134,77 +198,81 @@
     </section>
 
     <!-- ===========================================================
-         IFO MODE: shown when the IFO planet is clicked. The Three.js
-         canvas displays a Circle of Fifths animation around the IFO
-         planet; prose appears below by scrolling.
+         IFO MODE: two-column asymmetric layout (Principle 8).
+         Three.js canvas displays Circle of Fifths above; prose below.
          =========================================================== -->
     <section id="ifo-mode" class="ifo-mode" aria-hidden="true">
-
-      <!-- Circle of Fifths animation runs in the Three.js canvas above; no HTML diagram here -->
       <article class="ifo-prose">
-        <header class="ifo-prose-header">
-          <h2 class="ifo-prose-title">International Festival Orchestra</h2>
-        </header>
+        <div class="ifo-two-col">
 
-        <div class="ifo-prose-body">
-          <p>
-            The Kitezh<sup><a href="#ifo-fn-1" class="ifo-fnref">1</a></sup>
-            Festival Orchestra is a proposed international ensemble in residence
-            in Cambridge, MA dedicated to illuminating and revitalizing beauty
-            in the modern age. Given the recent transformation of Boston&rsquo;s
-            cultural scene, there is a new need for a galvanizing musical force
-            that is mission-focused, globally-oriented, and programmatically
-            courageous. Kitezh will present a week-long series of concerts,
-            talks, and world premieres every September&mdash;all tackling the
-            complex meaning and importance of aesthetic beauty. Every year will
-            have a different theme: in September 2027, it will memorialize the
-            200th anniversary of Beethoven&rsquo;s passing. The festival will
-            be bookended by Beethoven&rsquo;s <em>Eroica Symphony</em> and
-            <em>Missa Solemnis</em>. Kitezh also features <em>Reimaginings</em>:
-            classical and non-classical composers extend the symphonic genre by
-            composing an original symphonic movement&thinsp;/&thinsp;tone poem
-            that incorporates multimedia, different genres, voice, choreography,
-            cinema, etc. We need art that intertwines craftsmanship in form
-            with depth in content, akin to Beethoven. The orchestra will feature
-            world-class instrumentalists across generations and backgrounds.
-          </p>
-          <p>
-            This non-profit festival is the first reclamation of the beautiful.
-            However, this attention to beauty must extend beyond live music.
-            The end goal is to reshape patronage in the arts. Contemporary art
-            funded today, especially the entertainment industrial complex,
-            largely overlooks beauty as a source of social cohesion. People
-            need art that inspires deep feelings. Great art inspires the
-            spiritual, sublime, and transcendent within us.
-          </p>
-          <p>
-            The first step to reshaping arts patronage is to produce and sustain
-            this festival orchestra. An initial funding round will enable the
-            first hires: Executive Director, Artistic Producer and Administrator,
-            Orchestra Manager, principal musicians, and the commissioned
-            composers for <em>Reimaginings</em>. It will also support my work
-            as Artistic Director. This funding round will happen in tandem with
-            the creation of a Board of Advisors. The Board consists of artistic
-            luminaries and patrons who affirm the legitimacy of our operation
-            and attract top talent&mdash;both in music and business. This is an
-            invitation to join as the founding member of the Board of Advisors
-            and to make a philanthropic contribution.
-          </p>
+          <!-- Left column: title + footnote (sticky) -->
+          <div class="ifo-col-left">
+            <header class="ifo-prose-header">
+              <h2 class="ifo-prose-title">International<br>Festival<br>Orchestra</h2>
+            </header>
+            <footer class="ifo-prose-footnote" id="ifo-fn-1">
+              <p>
+                <sup>1</sup> Kitezh is a placeholder name, although it illustrates
+                an important tenet of the initiative. The original myth of Kitezh
+                describes a 13th century Russian city that submerged in a lake
+                following a Mongol invasion. The city remains invisible, but people
+                still can hear the city&rsquo;s celestial carillons and canticles.
+              </p>
+            </footer>
+          </div>
+
+          <!-- Right column: body prose -->
+          <div class="ifo-col-right ifo-prose-body">
+            <p>
+              The Kitezh<sup><a href="#ifo-fn-1" class="ifo-fnref">1</a></sup>
+              Festival Orchestra is a proposed international ensemble in residence
+              in Cambridge, MA dedicated to illuminating and revitalizing beauty
+              in the modern age. Given the recent transformation of Boston&rsquo;s
+              cultural scene, there is a new need for a galvanizing musical force
+              that is mission-focused, globally-oriented, and programmatically
+              courageous. Kitezh will present a week-long series of concerts,
+              talks, and world premieres every September&mdash;all tackling the
+              complex meaning and importance of aesthetic beauty. Every year will
+              have a different theme: in September 2027, it will memorialize the
+              200th anniversary of Beethoven&rsquo;s passing. The festival will
+              be bookended by Beethoven&rsquo;s <em>Eroica Symphony</em> and
+              <em>Missa Solemnis</em>. Kitezh also features <em>Reimaginings</em>:
+              classical and non-classical composers extend the symphonic genre by
+              composing an original symphonic movement&thinsp;/&thinsp;tone poem
+              that incorporates multimedia, different genres, voice, choreography,
+              cinema, etc. We need art that intertwines craftsmanship in form
+              with depth in content, akin to Beethoven. The orchestra will feature
+              world-class instrumentalists across generations and backgrounds.
+            </p>
+            <p>
+              This non-profit festival is the first reclamation of the beautiful.
+              However, this attention to beauty must extend beyond live music.
+              The end goal is to reshape patronage in the arts. Contemporary art
+              funded today, especially the entertainment industrial complex,
+              largely overlooks beauty as a source of social cohesion. People
+              need art that inspires deep feelings. Great art inspires the
+              spiritual, sublime, and transcendent within us.
+            </p>
+            <p>
+              The first step to reshaping arts patronage is to produce and sustain
+              this festival orchestra. An initial funding round will enable the
+              first hires: Executive Director, Artistic Producer and Administrator,
+              Orchestra Manager, principal musicians, and the commissioned
+              composers for <em>Reimaginings</em>. It will also support my work
+              as Artistic Director. This funding round will happen in tandem with
+              the creation of a Board of Advisors. The Board consists of artistic
+              luminaries and patrons who affirm the legitimacy of our operation
+              and attract top talent&mdash;both in music and business. This is an
+              invitation to join as the founding member of the Board of Advisors
+              and to make a philanthropic contribution.
+            </p>
+          </div>
+
         </div>
-
-        <footer class="ifo-prose-footnote" id="ifo-fn-1">
-          <p>
-            <sup>1</sup> Kitezh is a placeholder name, although it illustrates
-            an important tenet of the initiative. The original myth of Kitezh
-            describes a 13th century Russian city that submerged in a lake
-            following a Mongol invasion. The city remains invisible, but people
-            still can hear the city&rsquo;s celestial carillons and canticles.
-          </p>
-        </footer>
       </article>
     </section>
 
-    <!-- Site footer with expanded nav menu and copyright -->
+    <!-- Site footer — dark treatment (Principle 9) -->
     <footer id="site-footer">
       <div class="footer-inner">
         <div class="footer-brand">
@@ -240,6 +308,88 @@
   <script type="module" src="js/main.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Preloader: fade out when Three.js signals readiness via navbar gaining .visible (Principle 10)
+    (function () {
+      var preloader = document.getElementById('preloader');
+      var navbar    = document.getElementById('navbar');
+      var dismissed = false;
+
+      function dismiss() {
+        if (dismissed) return;
+        dismissed = true;
+        preloader.classList.add('preloader--done');
+        triggerLetterEntrance();
+      }
+
+      var mo = new MutationObserver(function () {
+        if (navbar.classList.contains('visible')) { dismiss(); mo.disconnect(); }
+      });
+      mo.observe(navbar, { attributes: true, attributeFilter: ['class'] });
+
+      // Fallback in case the mutation fires before the observer is attached
+      if (navbar.classList.contains('visible')) { dismiss(); mo.disconnect(); }
+
+      // Hard fallback: never block the user longer than 5s
+      setTimeout(dismiss, 5000);
+    })();
+
+    // Per-letter staggered brand entrance (Principle 2)
+    function triggerLetterEntrance() {
+      document.querySelectorAll('.m-letter').forEach(function (el, i) {
+        setTimeout(function () { el.classList.add('m-letter--visible'); }, i * 60);
+      });
+    }
+
+    // Full-screen overlay menu (Principle 6)
+    (function () {
+      var overlay = document.getElementById('menu-overlay');
+      var openBtn = document.getElementById('menu-open');
+      var closeBtn = document.getElementById('menu-close');
+
+      function openMenu()  { overlay.classList.add('menu-overlay--open');    overlay.setAttribute('aria-hidden', 'false'); document.body.classList.add('menu-is-open'); }
+      function closeMenu() { overlay.classList.remove('menu-overlay--open'); overlay.setAttribute('aria-hidden', 'true');  document.body.classList.remove('menu-is-open'); }
+
+      if (openBtn)  openBtn.addEventListener('click', openMenu);
+      if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+      overlay.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', closeMenu); });
+
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+    })();
+
+    // Scroll parallax — passive, no layout cost (Principles 1, 3, 5, 8)
+    (function () {
+      var letterParas = Array.from(document.querySelectorAll('.letter-body p'));
+      var shapeA      = document.querySelector('.deco-shape--a');
+      var shapeB      = document.querySelector('.deco-shape--b');
+      var shapeC      = document.querySelector('.deco-shape--c');
+      var mLineA      = document.querySelector('.manifesto-line--a');
+      var mLineB      = document.querySelector('.manifesto-line--b');
+      var ifoLeft     = document.querySelector('.ifo-col-left');
+      var ifoRight    = document.querySelector('.ifo-col-right');
+
+      window.addEventListener('scroll', function () {
+        var sy = window.scrollY;
+
+        // Letter body: subtle depth-of-field drift (Principle 1)
+        letterParas.forEach(function (p, i) {
+          p.style.transform = 'translateY(' + (sy * 0.007 * (i % 4)) + 'px)';
+        });
+
+        // Deco shapes (Principle 3)
+        if (shapeA) shapeA.style.transform = 'translateY(' + (sy * -0.11) + 'px)';
+        if (shapeB) shapeB.style.transform = 'translateY(' + (sy *  0.07) + 'px)';
+        if (shapeC) shapeC.style.transform = 'translateY(' + (sy * -0.05) + 'px)';
+
+        // Manifesto lines (Principle 5)
+        if (mLineA) mLineA.style.transform = 'translateY(' + (sy * -0.014) + 'px)';
+        if (mLineB) mLineB.style.transform = 'translateY(' + (sy * -0.024) + 'px)';
+
+        // IFO two-column opposing parallax (Principle 8)
+        if (ifoLeft)  ifoLeft.style.transform  = 'translateY(' + (sy * -0.035) + 'px)';
+        if (ifoRight) ifoRight.style.transform = 'translateY(' + (sy *  0.035) + 'px)';
+      }, { passive: true });
+    })();
   </script>
 </body>
 </html>
