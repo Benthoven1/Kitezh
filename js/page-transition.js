@@ -1,76 +1,62 @@
-// page-transition.js — loading-screen exit for sub-pages navigating TO index.html.
-// Only intercepts links whose resolved target is index.html (Mulvium home or #ifo).
-// Navigating between sub-pages (People ↔ Careers etc.) is plain browser navigation.
-// The entrance animation on index.html is handled by main.js via showLoadingScreen.
+// page-transition.js — fade transitions for sub-pages.
+// Body starts at opacity:0 in the HTML; this script fades it in on load.
+// All outgoing internal links get a fade-out before navigation.
+// Links to index.html also set the ls-entering flag so the loading screen plays.
 (function () {
-  // ── Overlay setup ─────────────────────────────────────────────────────────
-  var overlay = document.getElementById("loading-screen");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "loading-screen";
-    overlay.setAttribute("aria-hidden", "true");
-    overlay.innerHTML =
-      '<div id="ls-f1" class="ls-frame"></div>' +
-      '<div id="ls-f2" class="ls-frame"></div>' +
-      '<div id="ls-f3" class="ls-frame"></div>' +
-      '<div id="ls-border" class="ls-frame"></div>';
-    document.body.appendChild(overlay);
-  }
+  var active = false;
+  var FADE = 350;
 
-  var f1 = document.getElementById("ls-f1");
-  var f2 = document.getElementById("ls-f2");
-  var f3 = document.getElementById("ls-f3");
-  var fb = document.getElementById("ls-border");
-  var raf = null, active = false;
-
-  // ── Exit animation ────────────────────────────────────────────────────────
-  // Cover the page with a plain opaque overlay, set the sessionStorage flag,
-  // then navigate on the very next frame.  All loading animation is handled
-  // by main.js on the destination page — nothing should animate here.
-  function playExit(href) {
-    if (active) return;
-    active = true;
-    if (raf) { cancelAnimationFrame(raf); raf = null; }
-
-    // Reset frames to zero size so nothing leaks through
-    [f1, f2, f3, fb].forEach(function (el) {
-      el.style.width = "0"; el.style.height = "0";
-      el.style.transform = "translate(-50%,-50%)";
+  // ── Fade-in on load ───────────────────────────────────────────────────────
+  // Double rAF ensures the browser commits the initial opacity:0 before we
+  // start the transition, giving a clean fade from transparent to visible.
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      document.body.style.transition = 'opacity ' + FADE + 'ms ease';
+      document.body.style.opacity = '1';
     });
+  });
 
-    overlay.style.clipPath      = "";
-    overlay.style.opacity       = "1";
-    overlay.style.display       = "block";
-    overlay.style.pointerEvents = "all";
-    overlay.setAttribute("aria-hidden", "false");
-    sessionStorage.setItem("ls-entering", "1");
+  // Bfcache restore (browser back/forward): JS state is frozen, page may be
+  // opacity:0 — ensure it snaps back to visible immediately.
+  window.addEventListener('pageshow', function (ev) {
+    if (ev.persisted) {
+      document.body.style.transition = '';
+      document.body.style.opacity = '1';
+      active = false;
+    }
+  });
 
-    // Wait one frame so the opaque overlay is painted before the browser
-    // unloads this page, preventing a flash of the sub-page during navigation.
-    raf = requestAnimationFrame(function () {
-      window.location.href = href;
-    });
-  }
-
-  // ── Returns true if href resolves to index.html (with any hash) ───────────
-  function isHomePage(href) {
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  function isHome(href) {
     try {
-      var url = new URL(href, location.href);
-      return url.pathname.endsWith("/index.html") || url.pathname.endsWith("/");
+      var u = new URL(href, location.href);
+      return u.pathname.endsWith('/index.html') || u.pathname.endsWith('/');
     } catch (e) { return false; }
   }
 
-  // ── Nav link interception — index.html links only ─────────────────────────
-  document.addEventListener("click", function (ev) {
-    var link = ev.target.closest("a[href]");
-    if (!link) return;
-    var href = link.getAttribute("href");
-    if (!href || link.target === "_blank") return;
-    if (!isHomePage(href)) return;   // only intercept home / IFO navigation
-    // Skip links that resolve to the current page (already on index.html)
-    try { if (new URL(href, location.href).href === location.href) return; } catch (e) {}
+  // ── Link interception ─────────────────────────────────────────────────────
+  document.addEventListener('click', function (ev) {
+    var link = ev.target.closest('a[href]');
+    if (!link || link.target === '_blank') return;
+    var href = link.getAttribute('href');
+    if (!href) return;
+
+    var resolved;
+    try { resolved = new URL(href, location.href); } catch (e) { return; }
+    if (resolved.origin !== location.origin) return;        // external
+    if (resolved.href === location.href) return;            // same URL
+    if (resolved.pathname === location.pathname && resolved.hash) return; // same-page anchor
+
     ev.preventDefault();
-    if (active) { window.location.href = href; return; } // fall through if busy
-    playExit(href);
+    if (active) { window.location.href = href; return; }
+    active = true;
+
+    // Flag must be set synchronously so index.html sees it even if the
+    // browser is slow to unload this page.
+    if (isHome(href)) { sessionStorage.setItem('ls-entering', '1'); }
+
+    document.body.style.transition = 'opacity ' + FADE + 'ms ease';
+    document.body.style.opacity = '0';
+    setTimeout(function () { window.location.href = href; }, FADE);
   });
 }());
