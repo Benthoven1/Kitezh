@@ -411,6 +411,9 @@ const lsF1 = document.getElementById("ls-f1");
 const lsF2 = document.getElementById("ls-f2");
 const lsF3 = document.getElementById("ls-f3");
 const lsBorder = document.getElementById("ls-border");
+const lsF1img = lsF1.querySelector(".ls-img");
+const lsF2img = lsF2.querySelector(".ls-img");
+const lsF3img = lsF3.querySelector(".ls-img");
 let lsRaf    = null;
 let lsActive = false;
 
@@ -440,16 +443,23 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
   // Thin concentric borders: each gap is 2 vw / 1.5 vh per side.
   // WIN is the live-canvas hole (innermost); F1 is the outermost image frame.
+  // EFF scales phases 1–2 to 92 % of viewport so phase 3 can expand to 100 %.
   const WIN_W = vw * 0.68, WIN_H = vh * 0.62;   // canvas hole / final rectangle
   const F3_W  = vw * 0.72, F3_H  = vh * 0.65;   // Polymath
   const F2_W  = vw * 0.76, F2_H  = vh * 0.68;   // Pictorial
   const F1_W  = vw * 0.80, F1_H  = vh * 0.71;   // Musical (outermost)
+  const EFF   = 0.92;
+  const EWIN_W = WIN_W * EFF, EWIN_H = WIN_H * EFF;
+  const EF3_W  = F3_W  * EFF, EF3_H  = F3_H  * EFF;
+  const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
+  const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
 
   [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
     f.style.transform = "translate(-50%, -50%)";
     f.style.visibility = ""; // restore from CSS (visible) — clear any cover-nav hide
   });
+  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.2)"; });
   loadingScreen.style.clipPath  = "";
   loadingScreen.style.opacity   = startOpaque ? "1" : "0";
   loadingScreen.style.display   = "block";
@@ -483,6 +493,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       f.style.transform = "translate(-50%, -50%)";
       f.style.visibility = "hidden";
     });
+    [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = ""; });
     loadingScreen.style.opacity    = "0";
     loadingScreen.style.clipPath   = "";
     loadingScreen.style.display    = "none";
@@ -513,33 +524,45 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.10, 0.30));
       const cy_off = holeCY - vh / 2;
 
+      // Image inner divs: overflow by 20 % at phase 1, shrink to exact fit by phase 2 end
+      const imgScale = 1.2 - 0.2 * ph(t, 0.62, 0.80);
+      lsF1img.style.transform = `scale(${imgScale})`;
+      lsF2img.style.transform = `scale(${imgScale})`;
+      lsF3img.style.transform = `scale(${imgScale})`;
+
       if (t < 0.62) {
         // ── Phase 1 – staggered frame appearance; canvas hole + border grow in ──
-        setF(lsF1, F1_W * ph(t, 0.10, 0.30), F1_H * ph(t, 0.10, 0.30), cy_off);
-        setF(lsF2, F2_W * ph(t, 0.20, 0.42), F2_H * ph(t, 0.20, 0.42), cy_off);
-        setF(lsF3, F3_W * ph(t, 0.30, 0.52), F3_H * ph(t, 0.30, 0.52), cy_off);
+        // All sizes scaled by EFF (92 %) so the animation sits slightly small
+        setF(lsF1, EF1_W * ph(t, 0.10, 0.30), EF1_H * ph(t, 0.10, 0.30), cy_off);
+        setF(lsF2, EF2_W * ph(t, 0.20, 0.42), EF2_H * ph(t, 0.20, 0.42), cy_off);
+        setF(lsF3, EF3_W * ph(t, 0.30, 0.52), EF3_H * ph(t, 0.30, 0.52), cy_off);
         const winP = ph(t, 0.42, 0.62);
-        const winW = WIN_W * winP, winH = WIN_H * winP;
+        const winW = EWIN_W * winP, winH = EWIN_H * winP;
         lsSetHole(vw, vh, winW, winH, holeCY);
         setBorder(winW, winH, cy_off);
 
       } else if (t < 0.80) {
-        // ── Phase 2 – image frames shrink to match the final rectangle ──────────
+        // ── Phase 2 – image frames shrink to match the EFF-scaled rectangle ─────
         const cp = ph(t, 0.62, 0.80);
-        setF(lsF1, F1_W + (WIN_W - F1_W) * cp, F1_H + (WIN_H - F1_H) * cp, 0);
-        setF(lsF2, F2_W + (WIN_W - F2_W) * cp, F2_H + (WIN_H - F2_H) * cp, 0);
-        setF(lsF3, F3_W + (WIN_W - F3_W) * cp, F3_H + (WIN_H - F3_H) * cp, 0);
-        lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
-        setBorder(WIN_W, WIN_H);
+        setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
+        setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
+        setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
+        lsSetHole(vw, vh, EWIN_W, EWIN_H, vh / 2);
+        setBorder(EWIN_W, EWIN_H);
 
       } else {
-        // ── Phase 3 – border + hole expand outward, leaving the page ────────────
-        const ep = ph(t, 0.80, 1.0);
-        const hw = WIN_W + (vw - WIN_W) * ep;
-        const hh = WIN_H + (vh - WIN_H) * ep;
-        setF(lsF1, WIN_W, WIN_H, 0);
-        setF(lsF2, WIN_W, WIN_H, 0);
-        setF(lsF3, WIN_W, WIN_H, 0);
+        // ── Phase 3 – subtle expansion (92 %→100 %) then hole fills viewport ────
+        // t 0.80→0.85: all frames expand from EFF size to full WIN size
+        const expand = ph(t, 0.80, 0.85);
+        const curW = EWIN_W + (WIN_W - EWIN_W) * expand;
+        const curH = EWIN_H + (WIN_H - EWIN_H) * expand;
+        setF(lsF1, curW, curH, 0);
+        setF(lsF2, curW, curH, 0);
+        setF(lsF3, curW, curH, 0);
+        // t 0.85→1.0: hole + border expand to fill viewport (curW=WIN_W by then)
+        const ep = ph(t, 0.85, 1.0);
+        const hw = curW + (vw - curW) * ep;
+        const hh = curH + (vh - curH) * ep;
         lsSetHole(vw, vh, hw, hh, vh / 2);
         setBorder(hw, hh);
       }
