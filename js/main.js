@@ -78,20 +78,20 @@ scene.background = new THREE.Color(PAPER);
 const PAPER_COLOR = new THREE.Color(PAPER);
 const NIGHT_COLOR = new THREE.Color(0x060412);
 
-// Star-field particles — fade in during the night-sky phase
+// Star-field particles — scatter on the ground plane (y ≈ 0) so they are
+// visible from the overhead 2D camera (y = 24, looking straight down).
+// sizeAttenuation: false keeps them as crisp 2-px dots at any distance.
 const SKY_COUNT  = 1600;
 const skyPosArr  = new Float32Array(SKY_COUNT * 3);
 for (let i = 0; i < SKY_COUNT; i++) {
-  const θ = Math.random() * Math.PI * 2;
-  const r = 25 + Math.random() * 175;
-  skyPosArr[i * 3]     = Math.cos(θ) * r;
-  skyPosArr[i * 3 + 1] = Math.random() * 60;
-  skyPosArr[i * 3 + 2] = Math.sin(θ) * r;
+  skyPosArr[i * 3]     = (Math.random() - 0.5) * 240;
+  skyPosArr[i * 3 + 1] = Math.random() * 2;
+  skyPosArr[i * 3 + 2] = (Math.random() - 0.5) * 240;
 }
 const skyStarGeo = new THREE.BufferGeometry();
 skyStarGeo.setAttribute("position", new THREE.BufferAttribute(skyPosArr, 3));
 const skyStarMat = new THREE.PointsMaterial({
-  color: 0xffffff, size: 0.22, transparent: true, opacity: 0, sizeAttenuation: true,
+  color: 0xffffff, size: 2, transparent: true, opacity: 0, sizeAttenuation: false,
 });
 const skyStars = new THREE.Points(skyStarGeo, skyStarMat);
 scene.add(skyStars);
@@ -387,7 +387,7 @@ function goTo3D() {
   state.target = 0;
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   body.classList.add("cosmos-only");
-  body.classList.remove("mode-2d", "expansion-active");
+  body.classList.remove("mode-2d", "expansion-active", "night-mode");
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
   state.expansionP1 = 0;
   state.expansionP2 = 0;
@@ -545,7 +545,8 @@ function animate() {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
     const cofR = COF_RING_TARGETS[o.def.id];
 
-    const expF = 1 + easeInOut(state.expansionP1) * 10;
+    const expF         = 1 + easeInOut(state.expansionP1) * 10;
+    const expansionFade = 1 - easeInOut(state.expansionP1);
 
     if (cofR !== undefined) {
       // This ring becomes a CoF ring: flatten to XZ, scale toward cofR — never fades
@@ -555,21 +556,27 @@ function animate() {
       o.pivot.rotation.y = lerp(ry, 0, flatT);
       o.pivot.rotation.z = lerp(rz, 0, flatT);
       o.pivot.scale.setScalar(scaleT * expF);
+      o.ring.material.opacity     = expansionFade;
+      o.ring.material.transparent = true;
     } else {
-      // Standard 3D↔2D transition + fade during IFO
+      // Standard 3D↔2D transition + fade during IFO + scale-out during expansion
       o.pivot.rotation.x = lerp(rx, Math.PI / 2, eased);
       o.pivot.rotation.y = lerp(ry, 0, eased);
       o.pivot.rotation.z = lerp(rz, 0, eased);
       const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
       const ex = lerp(1, o.def.ellipseX,                eased);
-      o.pivot.scale.set(s * ex * expF, s, s * expF);
-      o.ring.material.opacity     = lerp(1, 0, easedIFO);
+      // All three axes scaled by expF so the ring expands radially in XZ
+      o.pivot.scale.set(s * ex * expF, s * expF, s * expF);
+      o.ring.material.opacity     = lerp(1, 0, easedIFO) * expansionFade;
       o.ring.material.transparent = true;
     }
 
-    // IFO planet handled via reparent; all other planets fade out
+    // All orbiting planets fade out during IFO and/or expansion
     if (o.def.id !== "ifo") {
-      o.planet.material.opacity     = lerp(1, 0, easedIFO);
+      o.planet.material.opacity     = lerp(1, 0, easedIFO) * expansionFade;
+      o.planet.material.transparent = true;
+    } else if (!cofPlanetInScene) {
+      o.planet.material.opacity     = lerp(1, 0, easedIFO) * expansionFade;
       o.planet.material.transparent = true;
     }
   });
@@ -607,7 +614,7 @@ function animate() {
     const camH  = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 24;
     const camW  = camH * camera.aspect;
     const p2e   = easeInOut(state.expansionP2);
-    star.position.set(camW * 0.72 * p2e, 0, camH * 0.68 * p2e);
+    star.position.set(-camW * 0.72 * p2e, 0, camH * 0.68 * p2e);
   } else {
     star.position.set(0, 0, 0);
   }
@@ -714,6 +721,13 @@ function updateExpansionScroll() {
   state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.25));
   // Phase 3 (83–100 %): mission text letters animate in
   const p3 = Math.max(0, (rawP - 0.83) / 0.17);
+
+  // Keep body background in sync with the Three.js night-sky transition
+  if (state.expansionP2 > 0) {
+    body.classList.add("night-mode");
+  } else {
+    body.classList.remove("night-mode");
+  }
 
   if (p3 > 0 && !state.missionFired) {
     state.missionFired = true;

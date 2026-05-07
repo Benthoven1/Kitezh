@@ -169,11 +169,14 @@ main#stage { position: relative; width: 100%; }
   background: var(--paper);
 }
 
-/* Once the Three.js 3D→2D transition completes, pin the canvas so scroll
-   drives the expansion sequence instead of revealing content below. */
+/* Once the Three.js 3D→2D transition completes, fix the canvas so it
+   stays in place while scroll drives the expansion sequence. */
 body.expansion-active #canvas-wrap {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 0;
 }
 
 #expansion-space {
@@ -181,8 +184,56 @@ body.expansion-active #canvas-wrap {
   pointer-events: none;
 }
 
+/* 480 vh keeps the same effective scroll distance (480 − 100 = 380 vh)
+   as the previous sticky approach because the fixed canvas no longer
+   contributes height to the wrapper. */
 body.expansion-active #expansion-space {
-  height: 380vh;
+  height: 480vh;
+}
+
+/* ---------- Night-mode (phase 2 of expansion) ---------- */
+body { transition: background-color 0.6s ease; }
+
+body.night-mode { background: #060412; }
+
+body.night-mode #letter-section {
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+body.night-mode .letter-to,
+body.night-mode .letter-sig {
+  color: rgba(220, 212, 245, 0.88);
+}
+
+body.night-mode .letter-body p,
+body.night-mode .letter-close p {
+  color: rgba(200, 195, 230, 0.70);
+}
+
+body.night-mode .letter-close {
+  border-top-color: rgba(220, 212, 245, 0.18);
+}
+
+body.night-mode #site-footer {
+  background: transparent;
+  border-top-color: rgba(220, 212, 245, 0.12);
+  position: relative;
+  z-index: 1;
+}
+
+body.night-mode .footer-wordmark {
+  color: rgba(220, 212, 245, 0.80);
+}
+
+body.night-mode .footer-links a,
+body.night-mode .footer-col-title {
+  color: rgba(190, 180, 225, 0.65);
+}
+
+body.night-mode .footer-copy p {
+  color: rgba(170, 160, 210, 0.45);
 }
 
 /* ---------- Mission text overlay ---------- */
