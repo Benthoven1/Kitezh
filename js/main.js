@@ -373,12 +373,23 @@ canvas.addEventListener("pointermove", (e) => {
   pointerInside = true;
 });
 
-canvas.addEventListener("pointerleave", () => {
+canvas.addEventListener("pointerleave", (e) => {
+  if (e.pointerType === "touch") return; // touch: let the click handler fire first
   pointerInside = false;
   state.hoverStar = false;
   state.hoverPlanet = null;
   canvas.style.cursor = "default";
   // Label persists — only cleared when another sphere is hovered or 2D mode starts
+});
+
+// Touch: update pointer on tap so the click handler finds the right object via raycasting
+canvas.addEventListener("pointerdown", (e) => {
+  if (e.pointerType !== "touch") return;
+  const rect = canvas.getBoundingClientRect();
+  pointer.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+  pointer.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+  pointerInside = true;
+  updateHover();
 });
 
 canvas.addEventListener("click", () => {
@@ -624,7 +635,11 @@ document.querySelectorAll("[data-ifo-link]").forEach((el) => {
 
 canvas.setAttribute("tabindex", "0");
 canvas.setAttribute("role", "application");
-canvas.setAttribute("aria-label", "Mulvium cosmos. Click a planet to explore. Click the center to enter.");
+canvas.setAttribute("aria-label", "Mulvium cosmos. Click or tap a planet to explore. Click or tap the center to enter.");
+if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+  const hint = document.querySelector("#cosmos-hint p");
+  if (hint) hint.textContent = "Tap a sphere to explore our offerings and our mission.";
+}
 canvas.addEventListener("keydown", (e) => {
   if ((e.key === "Enter" || e.key === " ") && state.mode === "3d") { goTo2D(); e.preventDefault(); }
 });
