@@ -237,6 +237,22 @@ body.night-mode .footer-copy p {
   color: rgba(170, 160, 210, 0.45);
 }
 
+/* ---------- Mission overlay (cinematic, inside fixed canvas) ---------- */
+#mission-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+#mission-overlay.visible { opacity: 1; }
+
 /* ---------- Mission text section (scrolls naturally after expansion space) ---------- */
 #mission-section {
   position: relative;
