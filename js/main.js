@@ -465,61 +465,68 @@ function showLoadingScreen(onReady, duration) {
     el.style.transform = `translate(-50%, calc(-50% + ${cy_off}px))`;
   }
 
+  function lsCleanup() {
+    loadingScreen.style.opacity    = "0";
+    loadingScreen.style.clipPath   = "";
+    loadingScreen.style.display    = "none";
+    loadingScreen.style.pointerEvents = "none";
+    loadingScreen.setAttribute("aria-hidden", "true");
+    lsActive = false;
+  }
+
   function tick(ts) {
-    if (!t0) t0 = ts;
-    const t = Math.min(1, (ts - t0) / dur);
+    try {
+      if (!t0) t0 = ts;
+      const t = Math.min(1, (ts - t0) / dur);
 
-    // ── Trigger the Three.js mode transition early so it runs under the overlay ──
-    if (t >= 0.12 && !readyCalled) {
-      readyCalled = true;
-      try { if (onReady) onReady(); } catch (err) { console.error(err); }
-    }
+      // ── Trigger the Three.js mode transition early so it runs under the overlay ──
+      if (t >= 0.12 && !readyCalled) {
+        readyCalled = true;
+        try { if (onReady) onReady(); } catch (err) { console.error(err); }
+      }
 
-    // ── Opacity: fade white in [0→0.18], hold, fade out [0.90→1.0] ──
-    loadingScreen.style.opacity = String(
-      t < 0.90 ? ph(t, 0, 0.18) : 1 - ph(t, 0.90, 1.0)
-    );
+      // ── Opacity: fade white in [0→0.18], hold, fade out [0.90→1.0] ──
+      loadingScreen.style.opacity = String(
+        t < 0.90 ? ph(t, 0, 0.18) : 1 - ph(t, 0.90, 1.0)
+      );
 
-    // Group rises from below viewport [0.18→0.38]; holeCY tracks with it
-    const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.18, 0.38));
+      // Group rises from below viewport [0.18→0.38]; holeCY tracks with it
+      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.18, 0.38));
 
-    if (t < 0.68) {
-      // ── Phase 1 – rise from bottom + frames appear staggered ──────────────
-      // f1 (Musical) leads; each successive frame appears slightly after.
-      setF(lsF1, F1_W * ph(t, 0.18, 0.32), F1_H * ph(t, 0.18, 0.32), holeCY - vh/2);
-      setF(lsF2, F2_W * ph(t, 0.28, 0.44), F2_H * ph(t, 0.28, 0.44), holeCY - vh/2);
-      setF(lsF3, F3_W * ph(t, 0.38, 0.54), F3_H * ph(t, 0.38, 0.54), holeCY - vh/2);
-      lsSetHole(vw, vh, WIN_W * ph(t, 0.48, 0.62), WIN_H * ph(t, 0.48, 0.62), holeCY);
+      if (t < 0.68) {
+        // ── Phase 1 – rise from bottom + frames appear staggered ──────────────
+        setF(lsF1, F1_W * ph(t, 0.18, 0.32), F1_H * ph(t, 0.18, 0.32), holeCY - vh/2);
+        setF(lsF2, F2_W * ph(t, 0.28, 0.44), F2_H * ph(t, 0.28, 0.44), holeCY - vh/2);
+        setF(lsF3, F3_W * ph(t, 0.38, 0.54), F3_H * ph(t, 0.38, 0.54), holeCY - vh/2);
+        lsSetHole(vw, vh, WIN_W * ph(t, 0.48, 0.62), WIN_H * ph(t, 0.48, 0.62), holeCY);
 
-    } else if (t < 0.80) {
-      // ── Phase 2 – all three image frames compress into the canvas window ──
-      const cp = ph(t, 0.68, 0.80);
-      setF(lsF1, F1_W + (WIN_W - F1_W) * cp, F1_H + (WIN_H - F1_H) * cp, 0);
-      setF(lsF2, F2_W + (WIN_W - F2_W) * cp, F2_H + (WIN_H - F2_H) * cp, 0);
-      setF(lsF3, F3_W + (WIN_W - F3_W) * cp, F3_H + (WIN_H - F3_H) * cp, 0);
-      lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
+      } else if (t < 0.80) {
+        // ── Phase 2 – all three image frames compress into the canvas window ──
+        const cp = ph(t, 0.68, 0.80);
+        setF(lsF1, F1_W + (WIN_W - F1_W) * cp, F1_H + (WIN_H - F1_H) * cp, 0);
+        setF(lsF2, F2_W + (WIN_W - F2_W) * cp, F2_H + (WIN_H - F2_H) * cp, 0);
+        setF(lsF3, F3_W + (WIN_W - F3_W) * cp, F3_H + (WIN_H - F3_H) * cp, 0);
+        lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
 
-    } else {
-      // ── Phase 3 – canvas window expands to fill the screen ─────────────────
-      const ep = ph(t, 0.80, 0.90);
-      const hw = WIN_W + (vw - WIN_W) * ep;
-      const hh = WIN_H + (vh - WIN_H) * ep;
-      // Image frames stay compressed at WIN size; they vanish inside the growing hole
-      setF(lsF1, WIN_W, WIN_H, 0);
-      setF(lsF2, WIN_W, WIN_H, 0);
-      setF(lsF3, WIN_W, WIN_H, 0);
-      lsSetHole(vw, vh, hw, hh, vh / 2);
-    }
+      } else {
+        // ── Phase 3 – canvas window expands to fill the screen ─────────────────
+        const ep = ph(t, 0.80, 0.90);
+        const hw = WIN_W + (vw - WIN_W) * ep;
+        const hh = WIN_H + (vh - WIN_H) * ep;
+        setF(lsF1, WIN_W, WIN_H, 0);
+        setF(lsF2, WIN_W, WIN_H, 0);
+        setF(lsF3, WIN_W, WIN_H, 0);
+        lsSetHole(vw, vh, hw, hh, vh / 2);
+      }
 
-    if (t < 1) {
-      lsRaf = requestAnimationFrame(tick);
-    } else {
-      loadingScreen.style.opacity = "0";
-      loadingScreen.style.clipPath = "";
-      loadingScreen.style.display  = "none";
-      loadingScreen.style.pointerEvents = "none";
-      loadingScreen.setAttribute("aria-hidden", "true");
-      lsActive = false;
+      if (t < 1) {
+        lsRaf = requestAnimationFrame(tick);
+      } else {
+        lsCleanup();
+      }
+    } catch (err) {
+      console.error("Loading screen animation error:", err);
+      lsCleanup();
     }
   }
 
