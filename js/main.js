@@ -410,88 +410,114 @@ const loadingScreen = document.getElementById("loading-screen");
 const lsF1 = document.getElementById("ls-f1");
 const lsF2 = document.getElementById("ls-f2");
 const lsF3 = document.getElementById("ls-f3");
-const lsKO = document.getElementById("ls-knockout");
 let lsRaf    = null;
 let lsActive = false;
+
+// Sets a transparent canvas-window hole in the loading screen via a nonzero-
+// winding clip-path: outer CW rectangle + inner CCW rectangle = hole.
+// Works with hardware-accelerated WebGL canvases (unlike mix-blend-mode).
+function lsSetHole(vw, vh, hW, hH, hCY) {
+  if (hW < 2 || hH < 2) { loadingScreen.style.clipPath = ""; return; }
+  const cx = vw / 2;
+  const x1 = cx - hW / 2, y1 = hCY - hH / 2;
+  const x2 = cx + hW / 2, y2 = hCY + hH / 2;
+  // Outer CW: 0,0 → vw,0 → vw,vh → 0,vh → 0,0
+  // Inner CCW: x1,y1 → x1,y2 → x2,y2 → x2,y1 → x1,y1  (opposite winding = hole)
+  loadingScreen.style.clipPath =
+    `polygon(0px 0px,${vw}px 0px,${vw}px ${vh}px,0px ${vh}px,0px 0px,` +
+    `${x1}px ${y1}px,${x1}px ${y2}px,${x2}px ${y2}px,${x2}px ${y1}px,${x1}px ${y1}px)`;
+}
 
 function showLoadingScreen(onReady, duration) {
   if (lsActive) return;
   lsActive = true;
-  const dur = duration || 2200;
+  const dur = duration || 2400;
   if (lsRaf) { cancelAnimationFrame(lsRaf); lsRaf = null; }
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const FRAMES = [
-    { el: lsF1, iw: vw * 0.56, ih: vh * 0.38 },
-    { el: lsF2, iw: vw * 0.40, ih: vh * 0.27 },
-    { el: lsF3, iw: vw * 0.26, ih: vh * 0.18 },
-    { el: lsKO, iw: vw * 0.14, ih: vh * 0.10 },
-  ];
 
-  FRAMES.forEach(f => {
-    f.el.style.width  = "0";
-    f.el.style.height = "0";
-    f.el.style.transform = "translate(-50%, -50%)";
+  // Thin concentric borders: each gap is 2 vw and 1.5 vh per side.
+  // Canvas window (the live-canvas hole) is the innermost rectangle.
+  const WIN_W = vw * 0.40, WIN_H = vh * 0.26;   // canvas hole
+  const F3_W  = vw * 0.44, F3_H  = vh * 0.29;   // Polymath  (+2vw/+1.5vh each side)
+  const F2_W  = vw * 0.48, F2_H  = vh * 0.32;   // Pictorial
+  const F1_W  = vw * 0.52, F1_H  = vh * 0.35;   // Musical
+
+  [lsF1, lsF2, lsF3].forEach(f => {
+    f.style.width = "0"; f.style.height = "0";
+    f.style.transform = "translate(-50%, -50%)";
   });
-  loadingScreen.style.opacity = "0";
-  loadingScreen.style.display = "block";
+  loadingScreen.style.clipPath  = "";
+  loadingScreen.style.opacity   = "0";
+  loadingScreen.style.display   = "block";
+  loadingScreen.style.pointerEvents = "all";
   loadingScreen.setAttribute("aria-hidden", "false");
 
-  let readyCalled = false;
-  let t0 = null;
+  let readyCalled = false, t0 = null;
 
-  function lsEase(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2; }
-  function lsPhase(t, a, b) { return lsEase(Math.max(0, Math.min(1, (t - a) / (b - a)))); }
+  function e(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2; }
+  function ph(t, a, b) { return e(Math.max(0, Math.min(1, (t - a) / (b - a)))); }
 
-  function setFrame(f, w, h, yOff) {
-    f.el.style.width  = w + "px";
-    f.el.style.height = h + "px";
-    f.el.style.transform = `translate(-50%, calc(-50% + ${yOff}px))`;
+  function setF(el, w, h, cy_off) {
+    el.style.width     = w + "px";
+    el.style.height    = h + "px";
+    el.style.transform = `translate(-50%, calc(-50% + ${cy_off}px))`;
   }
 
   function tick(ts) {
     if (!t0) t0 = ts;
     const t = Math.min(1, (ts - t0) / dur);
 
-    // Fire onReady callback so the Three.js mode transition starts under the overlay
-    if (t >= 0.15 && !readyCalled) {
+    // ── Trigger the Three.js mode transition early so it runs under the overlay ──
+    if (t >= 0.12 && !readyCalled) {
       readyCalled = true;
-      if (onReady) onReady();
+      try { if (onReady) onReady(); } catch (err) { console.error(err); }
     }
 
-    // Fade-in white, hold, then fade out
-    let alpha;
-    if (t < 0.92) {
-      alpha = lsPhase(t, 0, 0.18);
-    } else {
-      alpha = 1 - lsPhase(t, 0.92, 1.0);
-    }
-    loadingScreen.style.opacity = String(alpha);
+    // ── Opacity: fade white in [0→0.18], hold, fade out [0.90→1.0] ──
+    loadingScreen.style.opacity = String(
+      t < 0.90 ? ph(t, 0, 0.18) : 1 - ph(t, 0.90, 1.0)
+    );
 
-    if (t < 0.78) {
-      // Rise + staggered frame appearance
-      const yOff = vh * 0.55 * (1 - lsPhase(t, 0.20, 0.40));
+    // Group rises from below viewport [0.18→0.38]; holeCY tracks with it
+    const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.18, 0.38));
 
-      setFrame(FRAMES[0], FRAMES[0].iw * lsPhase(t, 0.20, 0.30), FRAMES[0].ih * lsPhase(t, 0.20, 0.30), yOff);
-      setFrame(FRAMES[1], FRAMES[1].iw * lsPhase(t, 0.40, 0.52), FRAMES[1].ih * lsPhase(t, 0.40, 0.52), yOff);
-      setFrame(FRAMES[2], FRAMES[2].iw * lsPhase(t, 0.54, 0.66), FRAMES[2].ih * lsPhase(t, 0.54, 0.66), yOff);
-      setFrame(FRAMES[3], FRAMES[3].iw * lsPhase(t, 0.68, 0.78), FRAMES[3].ih * lsPhase(t, 0.68, 0.78), yOff);
+    if (t < 0.68) {
+      // ── Phase 1 – rise from bottom + frames appear staggered ──────────────
+      // f1 (Musical) leads; each successive frame appears slightly after.
+      setF(lsF1, F1_W * ph(t, 0.18, 0.32), F1_H * ph(t, 0.18, 0.32), holeCY - vh/2);
+      setF(lsF2, F2_W * ph(t, 0.28, 0.44), F2_H * ph(t, 0.28, 0.44), holeCY - vh/2);
+      setF(lsF3, F3_W * ph(t, 0.38, 0.54), F3_H * ph(t, 0.38, 0.54), holeCY - vh/2);
+      lsSetHole(vw, vh, WIN_W * ph(t, 0.48, 0.62), WIN_H * ph(t, 0.48, 0.62), holeCY);
+
+    } else if (t < 0.80) {
+      // ── Phase 2 – all three image frames compress into the canvas window ──
+      const cp = ph(t, 0.68, 0.80);
+      setF(lsF1, F1_W + (WIN_W - F1_W) * cp, F1_H + (WIN_H - F1_H) * cp, 0);
+      setF(lsF2, F2_W + (WIN_W - F2_W) * cp, F2_H + (WIN_H - F2_H) * cp, 0);
+      setF(lsF3, F3_W + (WIN_W - F3_W) * cp, F3_H + (WIN_H - F3_H) * cp, 0);
+      lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
+
     } else {
-      // Expand all frames to fill the viewport; knockout wipes everything transparent
-      const ep = lsPhase(t, 0.80, 0.92);
-      FRAMES.forEach(f => {
-        f.el.style.width  = (f.iw + (vw - f.iw) * ep) + "px";
-        f.el.style.height = (f.ih + (vh - f.ih) * ep) + "px";
-        f.el.style.transform = "translate(-50%, -50%)";
-      });
+      // ── Phase 3 – canvas window expands to fill the screen ─────────────────
+      const ep = ph(t, 0.80, 0.90);
+      const hw = WIN_W + (vw - WIN_W) * ep;
+      const hh = WIN_H + (vh - WIN_H) * ep;
+      // Image frames stay compressed at WIN size; they vanish inside the growing hole
+      setF(lsF1, WIN_W, WIN_H, 0);
+      setF(lsF2, WIN_W, WIN_H, 0);
+      setF(lsF3, WIN_W, WIN_H, 0);
+      lsSetHole(vw, vh, hw, hh, vh / 2);
     }
 
     if (t < 1) {
       lsRaf = requestAnimationFrame(tick);
     } else {
       loadingScreen.style.opacity = "0";
-      loadingScreen.style.display = "none";
+      loadingScreen.style.clipPath = "";
+      loadingScreen.style.display  = "none";
+      loadingScreen.style.pointerEvents = "none";
       loadingScreen.setAttribute("aria-hidden", "true");
       lsActive = false;
     }

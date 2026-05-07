@@ -654,17 +654,18 @@ body:not(.mode-ifo) .ifo-prose {
 }
 
 /* ---------- Loading screen ---------- */
+/* The canvas-window hole is punched via clip-path (a nonzero-winding polygon
+   with an outer CW rectangle and an inner CCW rectangle). This avoids
+   mix-blend-mode compositing issues with hardware-accelerated WebGL canvases. */
 #loading-screen {
   position: fixed;
   inset: 0;
   z-index: 600;
   background: #ffffff;
-  isolation: isolate;
   pointer-events: none;
   opacity: 0;
   display: none;
-  will-change: opacity;
-  overflow: hidden;
+  will-change: opacity, clip-path;
 }
 
 .ls-frame {
@@ -676,20 +677,9 @@ body:not(.mode-ifo) .ifo-prose {
   height: 0;
   background-size: cover;
   background-position: center;
+  will-change: width, height, transform;
 }
 
-#ls-f1 { background-image: url('../Musical.png');   z-index: 1; }
-#ls-f2 { background-image: url('../Pictorial.png'); z-index: 2; }
-#ls-f3 { background-image: url('../Polymath.jpg');  z-index: 3; }
-
-#ls-knockout {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 0;
-  background: #000000;
-  mix-blend-mode: destination-out;
-  z-index: 4;
-}
+#ls-f1 { z-index: 1; background-image: url('../Musical.png');   }
+#ls-f2 { z-index: 2; background-image: url('../Pictorial.png'); }
+#ls-f3 { z-index: 3; background-image: url('../Polymath.jpg');  }

@@ -221,12 +221,13 @@
     </footer>
   </main>
 
-  <!-- Loading screen — nested image frames that expand to reveal the destination animation -->
+  <!-- Loading screen overlay — three nested image frames that compress into a canvas
+       window, then the window expands to reveal the destination animation. The canvas
+       shows through a clip-path polygon hole so WebGL content is always visible. -->
   <div id="loading-screen" aria-hidden="true">
     <div id="ls-f1" class="ls-frame"></div>
     <div id="ls-f2" class="ls-frame"></div>
     <div id="ls-f3" class="ls-frame"></div>
-    <div id="ls-knockout"></div>
   </div>
 
   <script type="importmap">
