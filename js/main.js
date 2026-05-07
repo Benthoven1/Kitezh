@@ -66,7 +66,7 @@ const navbar            = document.getElementById("navbar");
 const brandLink         = document.getElementById("brand-link");
 const body              = document.body;
 const expansionWrapper  = document.getElementById("expansion-wrapper");
-const missionOverlay    = document.getElementById("mission-overlay");
+const missionSection    = document.getElementById("mission-section");
 const missionChars      = Array.from(document.querySelectorAll(".mc"));
 
 window.scrollTo(0, 0);
@@ -393,7 +393,7 @@ function goTo3D() {
   state.expansionP2 = 0;
   state.missionFired = false;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-  missionOverlay.setAttribute("aria-hidden", "true");
+  missionSection.setAttribute("aria-hidden", "true");
 }
 
 brandLink.addEventListener("click", (e) => {
@@ -547,17 +547,25 @@ function animate() {
 
     const expF         = 1 + easeInOut(state.expansionP1) * 10;
     const expansionFade = 1 - easeInOut(state.expansionP1);
+    const isExpanding  = state.expansionP1 > 0;
 
     if (cofR !== undefined) {
-      // This ring becomes a CoF ring: flatten to XZ, scale toward cofR — never fades
+      // This ring becomes a CoF ring: flatten to XZ, scale toward cofR
       const flatT  = Math.max(eased, easedIFO);
       const scaleT = lerp(lerp(1, o.def.radius2D / o.def.radius, eased), cofR / o.def.radius, easedIFO);
       o.pivot.rotation.x = lerp(rx, Math.PI / 2, flatT);
       o.pivot.rotation.y = lerp(ry, 0, flatT);
       o.pivot.rotation.z = lerp(rz, 0, flatT);
       o.pivot.scale.setScalar(scaleT * expF);
-      o.ring.material.opacity     = expansionFade;
-      o.ring.material.transparent = true;
+      // Only enter transparent pass during expansion — avoids depth-order
+      // conflicts with the Circle of Fifths sprites in IFO mode.
+      if (isExpanding) {
+        o.ring.material.opacity     = expansionFade;
+        o.ring.material.transparent = true;
+      } else {
+        o.ring.material.opacity     = 1;
+        o.ring.material.transparent = false;
+      }
     } else {
       // Standard 3D↔2D transition + fade during IFO + scale-out during expansion
       o.pivot.rotation.x = lerp(rx, Math.PI / 2, eased);
@@ -565,19 +573,25 @@ function animate() {
       o.pivot.rotation.z = lerp(rz, 0, eased);
       const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
       const ex = lerp(1, o.def.ellipseX,                eased);
-      // All three axes scaled by expF so the ring expands radially in XZ
       o.pivot.scale.set(s * ex * expF, s * expF, s * expF);
       o.ring.material.opacity     = lerp(1, 0, easedIFO) * expansionFade;
       o.ring.material.transparent = true;
     }
 
-    // All orbiting planets fade out during IFO and/or expansion
+    // Orbiting planets fade during IFO and/or expansion
     if (o.def.id !== "ifo") {
       o.planet.material.opacity     = lerp(1, 0, easedIFO) * expansionFade;
       o.planet.material.transparent = true;
     } else if (!cofPlanetInScene) {
-      o.planet.material.opacity     = lerp(1, 0, easedIFO) * expansionFade;
-      o.planet.material.transparent = true;
+      // IFO planet: only go transparent during expansion to preserve opaque
+      // depth ordering with CoF sprites in 3D / IFO modes.
+      if (isExpanding) {
+        o.planet.material.opacity     = expansionFade;
+        o.planet.material.transparent = true;
+      } else {
+        o.planet.material.opacity     = 1;
+        o.planet.material.transparent = false;
+      }
     }
   });
 
@@ -719,29 +733,27 @@ function updateExpansionScroll() {
   state.expansionP1 = Math.min(1, rawP / 0.6);
   // Phase 2 (60–85 %): background goes dark, star-field appears, star drifts to corner
   state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.25));
-  // Phase 3 (83–100 %): mission text letters animate in
-  const p3 = Math.max(0, (rawP - 0.83) / 0.17);
 
-  // Keep body background in sync with the Three.js night-sky transition
   if (state.expansionP2 > 0) {
     body.classList.add("night-mode");
   } else {
     body.classList.remove("night-mode");
   }
+}
 
-  if (p3 > 0 && !state.missionFired) {
+// Mission text animates in via IntersectionObserver once the section
+// scrolls into view (naturally, after the expansion space ends).
+const missionObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting && !state.missionFired) {
     state.missionFired = true;
-    missionOverlay.setAttribute("aria-hidden", "false");
+    missionSection.setAttribute("aria-hidden", "false");
     missionChars.forEach((el, i) => {
       el.style.animationDelay = `${i * 0.033}s`;
       el.classList.add("mc-in");
     });
-  } else if (rawP < 0.82 && state.missionFired) {
-    state.missionFired = false;
-    missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-    missionOverlay.setAttribute("aria-hidden", "true");
   }
-}
+}, { threshold: 0.1 });
+missionObserver.observe(missionSection);
 
 window.addEventListener("scroll", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();

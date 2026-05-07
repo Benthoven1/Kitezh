@@ -196,6 +196,7 @@ body { transition: background-color 0.6s ease; }
 
 body.night-mode { background: #060412; }
 
+body.night-mode #mission-section,
 body.night-mode #letter-section {
   background: transparent;
   position: relative;
@@ -236,18 +237,19 @@ body.night-mode .footer-copy p {
   color: rgba(170, 160, 210, 0.45);
 }
 
-/* ---------- Mission text overlay ---------- */
-#mission-overlay {
-  position: absolute;
-  inset: 0;
+/* ---------- Mission text section (scrolls naturally after expansion space) ---------- */
+#mission-section {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+  text-align: center;
+  padding: clamp(80px, 12vh, 140px) clamp(20px, 4vw, 60px);
+  min-height: 50vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  padding: 0 clamp(20px, 4vw, 60px);
   pointer-events: none;
-  z-index: 2;
 }
 
 .mission-kicker {
