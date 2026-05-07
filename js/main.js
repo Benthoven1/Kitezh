@@ -77,10 +77,40 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(PAPER);
 
 const PAPER_COLOR       = new THREE.Color(PAPER);
-const NIGHT_COLOR       = new THREE.Color(0x060412);
 const PASTEL_STAR_COLOR = new THREE.Color(PASTEL_STAR);
 const WHITE_COLOR       = new THREE.Color(0xffffff);
 const BLACK_COLOR       = new THREE.Color(0x000000);
+
+// Night sky — gradient CanvasTexture; updated each frame during expansion
+const nightBgCvs       = document.createElement("canvas");
+nightBgCvs.width       = 2;
+nightBgCvs.height      = 512;
+const nightBgCtx       = nightBgCvs.getContext("2d");
+const nightBgTex       = new THREE.CanvasTexture(nightBgCvs);
+nightBgTex.flipY       = false; // canvas y=0 → screen top
+let lastBgT            = -1;
+
+function updateBackground(t) {
+  if (Math.abs(t - lastBgT) < 0.002) return;
+  lastBgT = t;
+  if (t <= 0) { scene.background = PAPER_COLOR; return; }
+  const mix = (a, b) => Math.round(a + (b - a) * t);
+  const g   = nightBgCtx.createLinearGradient(0, 0, 0, 512);
+  // Stops: [y_fraction, [r_night, g_night, b_night]]
+  for (const [pos, [rN, gN, bN]] of [
+    [0.00, [ 6,  2, 24]],  // top: deep indigo-purple
+    [0.22, [ 5,  3, 32]],  // upper: blue-violet
+    [0.45, [10,  6, 42]],  // mid: midnight blue
+    [0.68, [ 7,  4, 30]],  // lower: dark violet
+    [1.00, [12,  8, 48]],  // bottom: rich deep blue
+  ]) {
+    g.addColorStop(pos, `rgb(${mix(255,rN)},${mix(255,gN)},${mix(255,bN)})`);
+  }
+  nightBgCtx.fillStyle = g;
+  nightBgCtx.fillRect(0, 0, 2, 512);
+  nightBgTex.needsUpdate = true;
+  scene.background = nightBgTex;
+}
 
 // Star-field — scattered on the y≈0 plane, visible from the overhead 2D camera.
 // Uses a ShaderMaterial for per-star size variation, subtle colour tint, and twinkle.
@@ -484,8 +514,10 @@ function goTo3D() {
   starCenterTarget   = null;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
-  roseSectionEl.classList.remove("visible");
+  roseSectionEl.style.opacity    = "0";
   roseSectionEl.setAttribute("aria-hidden", "true");
+  lastBgT             = -1;
+  scene.background    = PAPER_COLOR;
   starTargetsComputed = false;
 }
 
@@ -808,8 +840,8 @@ function animate() {
   lerpVec(basePos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
 
-  // Expansion: background and star-field fade in from the very start of phase 1
-  scene.background.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p1e);
+  // Expansion: background gradient and star-field fade in from phase 1 start
+  updateBackground(p1e);
   skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
   skyStarMat.uniforms.uOpacity.value = p1e;
   skyStarMat.uniforms.uDriftP.value  = easeInOut(state.starDriftP);
@@ -842,31 +874,95 @@ function updateExpansionScroll() {
 }
 
 // ---------- Star drift toward rose flower centres ----------
+// Pixel-samples the rose image to find exact flower locations, then
+// back-projects them into Three.js world space so star targets align precisely.
 function computeStarTargets() {
   const img = document.getElementById("rose-bush-img");
-  if (!img) return;
+  if (!img || !img.complete || !img.naturalWidth) return;
+
+  // ── 1. Draw image at reduced scale ───────────────────────────────────────
+  const SW  = 180;
+  const SH  = Math.round(SW * img.naturalHeight / img.naturalWidth);
+  const oc  = document.createElement("canvas");
+  oc.width = SW; oc.height = SH;
+  const ctx = oc.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, SW, SH);
+  const { data } = ctx.getImageData(0, 0, SW, SH);
+
+  // ── 2. Rose-pixel heat map ────────────────────────────────────────────────
+  const heat = new Float32Array(SW * SH);
+  for (let y = 0; y < SH; y++) {
+    for (let x = 0; x < SW; x++) {
+      const i = (y * SW + x) * 4;
+      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+      if (a < 64) continue;
+      // Pink/red petals: r dominant, not grey/white
+      if (r > 110 && r > g + 28 && r > b - 10 && !(r > 220 && g > 190 && b > 190)) {
+        heat[y * SW + x] = (r - g) / 255;
+      }
+    }
+  }
+
+  // ── 3. Box-blur to merge petal pixels into blobs ─────────────────────────
+  const blurred = new Float32Array(SW * SH);
+  const R = 6;
+  for (let y = 0; y < SH; y++) {
+    for (let x = 0; x < SW; x++) {
+      let s = 0, c = 0;
+      for (let dy = -R; dy <= R; dy++) {
+        for (let dx = -R; dx <= R; dx++) {
+          const nx = x + dx, ny = y + dy;
+          if (nx >= 0 && nx < SW && ny >= 0 && ny < SH) { s += heat[ny * SW + nx]; c++; }
+        }
+      }
+      blurred[y * SW + x] = s / c;
+    }
+  }
+
+  // ── 4. Greedy local-max peak picking (one peak per flower) ───────────────
+  const N         = 20;
+  const suppR     = Math.max(9, Math.round(SW / 13));
+  const centers   = [];
+  const rem       = new Float32Array(blurred);
+
+  for (let k = 0; k < N; k++) {
+    let maxVal = 0, maxI = 0;
+    for (let i = 0; i < rem.length; i++) if (rem[i] > maxVal) { maxVal = rem[i]; maxI = i; }
+    if (maxVal < 0.003) break;
+    const cx = maxI % SW, cy = Math.floor(maxI / SW);
+    centers.push([cx / SW, cy / SH]);
+    for (let dy = -suppR; dy <= suppR; dy++)
+      for (let dx = -suppR; dx <= suppR; dx++) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx >= 0 && nx < SW && ny >= 0 && ny < SH) rem[ny * SW + nx] = 0;
+      }
+  }
+  // Fallback to hardcoded positions for any missing centres
+  while (centers.length < N) centers.push(FLOWER_IMG_POS[centers.length % FLOWER_IMG_POS.length]);
+
+  // ── 5. Back-project to Three.js world space via camera ray ───────────────
   const imgRect    = img.getBoundingClientRect();
   const canvasRect = canvas.getBoundingClientRect();
   const plane      = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   const tmpRay     = new THREE.Raycaster();
 
-  const worldFlowers = FLOWER_IMG_POS.map(([fx, fy]) => {
+  const worldFlowers = centers.map(([fx, fy]) => {
     const sx  = imgRect.left + fx * imgRect.width  - canvasRect.left;
     const sy  = imgRect.top  + fy * imgRect.height - canvasRect.top;
-    const ndc = new THREE.Vector2(
-      (sx / canvasRect.width)  * 2 - 1,
-      -(sy / canvasRect.height) * 2 + 1
+    tmpRay.setFromCamera(
+      new THREE.Vector2((sx / canvasRect.width) * 2 - 1, -(sy / canvasRect.height) * 2 + 1),
+      camera
     );
-    tmpRay.setFromCamera(ndc, camera);
     const pt = new THREE.Vector3();
     tmpRay.ray.intersectPlane(plane, pt);
-    return pt.lengthSq() > 0 ? pt : new THREE.Vector3(0, 0, 0);
+    return pt.lengthSq() > 0 ? pt : new THREE.Vector3();
   });
 
-  const N = worldFlowers.length;
+  // ── 6. Assign every star to a flower cluster ──────────────────────────────
+  const NF = worldFlowers.length;
   for (let i = 0; i < SKY_COUNT; i++) {
-    const fpt    = worldFlowers[i % N];
-    const spread = 0.35;
+    const fpt    = worldFlowers[i % NF];
+    const spread = 0.20;
     skyTargetArr[i * 3]     = fpt.x + (Math.random() - 0.5) * spread;
     skyTargetArr[i * 3 + 1] = fpt.y;
     skyTargetArr[i * 3 + 2] = fpt.z + (Math.random() - 0.5) * spread;
@@ -875,20 +971,37 @@ function computeStarTargets() {
   starTargetsComputed = true;
 }
 
-// Track scroll through the letter body to drive star drift.
-// Drift starts at 2/3 through the letter-body and is complete at the letter-close.
+// Bidirectional scroll driver: drift=0 when 2/3-mark of letter-body enters
+// viewport, drift=1 when letter-close centre reaches mid-viewport.
+// Rose opacity is derived directly so both directions are fully reversible.
 function updateLetterScroll() {
   if (!body.classList.contains("night-mode")) return;
-  const letterBody = document.querySelector(".letter-body");
-  if (!letterBody) return;
-  const rect = letterBody.getBoundingClientRect();
-  const vh   = window.innerHeight;
-  // 2/3 mark of letter-body in viewport-relative coords
-  const twoThirdsY = rect.top + rect.height * (2 / 3);
-  // Full drift when 2/3-mark reaches viewport top; starts when it's at viewport bottom
-  const raw = (vh - twoThirdsY) / vh;
-  state.starDriftP = Math.max(state.starDriftP, Math.max(0, Math.min(1, raw)));
+  const letterBody  = document.querySelector(".letter-body");
+  const letterClose = document.getElementById("letter-close");
+  if (!letterBody || !letterClose) return;
+
+  const bodyRect  = letterBody.getBoundingClientRect();
+  const closeRect = letterClose.getBoundingClientRect();
+  const vh        = window.innerHeight;
+
+  // startMark: viewport-y of the 2/3 point of the letter body
+  const startMark = bodyRect.top  + bodyRect.height * (2 / 3);
+  // endMark: viewport-y of the centre of letter-close footer
+  const endMark   = closeRect.top + closeRect.height * 0.5;
+
+  // docDist is constant regardless of scroll (relative distance in document)
+  const docDist    = endMark - startMark;
+  // scrolledPast: 0 when startMark == vh (drift trigger), grows as user scrolls down
+  const scrolledPast = vh - startMark;
+  const totalRange   = Math.max(1, vh * 0.5 + docDist);
+
+  state.starDriftP = Math.max(0, Math.min(1, scrolledPast / totalRange));
   if (state.starDriftP > 0 && !starTargetsComputed) computeStarTargets();
+
+  // Rose: fades in from driftP=0.45 to driftP=1 (fully opaque=0.82)
+  const roseAlpha = Math.max(0, (state.starDriftP - 0.45) / 0.55) * 0.82;
+  roseSectionEl.style.opacity = roseAlpha.toFixed(3);
+  if (roseAlpha > 0) roseSectionEl.setAttribute("aria-hidden", "false");
 }
 
 // Mission section: animate characters in when it first scrolls into view.
@@ -903,30 +1016,6 @@ const missionObserver = new IntersectionObserver((entries) => {
   }
 }, { threshold: 0.1 });
 missionObserver.observe(missionSection);
-
-// Rose overlay: fade in when letter-close scrolls into view, fade out at footer.
-const letterCloseEl = document.getElementById("letter-close");
-const roseObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting && body.classList.contains("night-mode")) {
-    roseSectionEl.classList.add("visible");
-    roseSectionEl.setAttribute("aria-hidden", "false");
-  }
-}, { threshold: 0.3 });
-if (letterCloseEl) roseObserver.observe(letterCloseEl);
-
-const footerEl = document.getElementById("site-footer");
-const roseFadeOutObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting) {
-    roseSectionEl.classList.remove("visible");
-  } else if (!entries[0].isIntersecting && body.classList.contains("night-mode")) {
-    // re-show if scrolling back up from footer into letter
-    const rect = letterCloseEl ? letterCloseEl.getBoundingClientRect() : null;
-    if (rect && rect.top < window.innerHeight && rect.bottom > 0) {
-      roseSectionEl.classList.add("visible");
-    }
-  }
-}, { threshold: 0.1 });
-if (footerEl) roseFadeOutObserver.observe(footerEl);
 
 window.addEventListener("scroll", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();

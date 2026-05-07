@@ -340,7 +340,7 @@ body.mode-2d .cosmos-hint,
 body.mode-ifo .cosmos-hint { opacity: 0; }
 
 
-/* ---------- Rose section — fixed viewport overlay; appears behind letter text ---------- */
+/* ---------- Rose section — fixed viewport overlay; opacity driven by JS ---------- */
 #rose-section {
   position: fixed;
   inset: 0;
@@ -349,12 +349,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 2.4s ease;
   pointer-events: none;
-}
-
-#rose-section.visible {
-  opacity: 0.72;
 }
 
 #rose-bush-img {
