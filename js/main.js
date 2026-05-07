@@ -580,16 +580,9 @@ function returnFromIFO() {
 document.querySelectorAll("[data-ifo-link]").forEach((el) => {
   el.addEventListener("click", (e) => {
     e.preventDefault();
-    if (state.mode === "ifo" || state.mode === "ifo-transitioning") return;
-    if (state.mode === "2d") {
-      // Need to return to 3D first then enter IFO — use longer duration to cover both transitions
-      showLoadingScreen(() => {
-        goTo3D();
-        setTimeout(() => goToIFO(), 1300);
-      }, 5000);
-    } else if (state.mode === "3d") {
-      showLoadingScreen(() => goToIFO());
-    }
+    if (state.mode === "ifo") return;
+    // Jump directly to IFO state — no animated 3D fly-in under the overlay
+    showLoadingScreen(() => jumpToIFO());
   });
 });
 
@@ -631,6 +624,38 @@ function goTo3D() {
   starTargetsComputed = false;
 }
 
+// Instantly snaps to full IFO state without playing the animated 3D→IFO
+// camera fly. Used when entering IFO via the navbar/footer (loading screen
+// covers the snap); the animated entry is reserved for the direct planet click.
+function jumpToIFO() {
+  state.t         = 1;
+  state.target    = 1;
+  state.ifoT      = 1;
+  state.ifoTarget = 1;
+  state.mode      = "ifo";
+
+  document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+  navbar.classList.add("visible");
+  navbar.setAttribute("aria-hidden", "false");
+  body.classList.remove("cosmos-only", "mode-2d", "expansion-active", "night-mode");
+  body.classList.add("mode-ifo");
+  ifoModeEl.setAttribute("aria-hidden", "false");
+  label.classList.remove("visible");
+  state.labelPlanet = null;
+  state.labelStar   = false;
+
+  state.expansionP1  = 0;
+  state.expansionP2  = 0;
+  state.missionFired = false;
+  state.starDriftP   = 0;
+  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
+  missionSection.setAttribute("aria-hidden", "true");
+  bgColor.copy(PAPER_COLOR);
+  starTargetsComputed = false;
+
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
 brandLink.addEventListener("click", (e) => {
   e.preventDefault();
   if (state.mode === "ifo" || state.mode === "ifo-transitioning") {
@@ -665,6 +690,24 @@ document.querySelectorAll(".nav-item.has-dropdown").forEach((item) => {
 
 document.addEventListener("click", () => {
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+});
+
+// Intercept nav links that leave index.html — play loading screen exit, then navigate.
+// Skips IFO links (handled above) and brand-link (handled above).
+document.addEventListener("click", (e) => {
+  const link = e.target.closest("a[href]");
+  if (!link) return;
+  if (link.hasAttribute("data-ifo-link") || link.id === "brand-link") return;
+  const href = link.getAttribute("href");
+  if (!href || /^(#|https?:|mailto:|tel:|javascript:)/.test(href)) return;
+  if (link.target === "_blank") return;
+  try { if (new URL(href, location.href).href === location.href) return; } catch (_) {}
+  e.preventDefault();
+  if (lsActive) return;
+  showLoadingScreen(() => {
+    sessionStorage.setItem("ls-entering", "1");
+    window.location.href = href;
+  });
 });
 
 function lerp(a, b, t) { return a + (b - a) * t; }
@@ -1123,11 +1166,68 @@ window.addEventListener("resize", () => {
 
 animate();
 
+// Entrance animation when arriving from a sub-page (sessionStorage flag set
+// by the exit animation in page-transition.js or by the sub-page link handler
+// above). Starts with the overlay at full opacity; the canvas hole + border
+// expand outward revealing the Three.js animation, then the overlay fades.
+if (sessionStorage.getItem("ls-entering")) {
+  sessionStorage.removeItem("ls-entering");
+  lsActive = true;
+  (function () {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const WIN_W = vw * 0.68, WIN_H = vh * 0.62;
+    const dur = 1400;
+
+    [lsF1, lsF2, lsF3].forEach((f) => {
+      f.style.width = WIN_W + "px"; f.style.height = WIN_H + "px";
+      f.style.transform = "translate(-50%, -50%)";
+    });
+    lsBorder.style.width  = (WIN_W + 6) + "px";
+    lsBorder.style.height = (WIN_H + 6) + "px";
+    lsBorder.style.transform = "translate(-50%, -50%)";
+    lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
+    loadingScreen.style.opacity       = "1";
+    loadingScreen.style.display       = "block";
+    loadingScreen.style.pointerEvents = "none";
+
+    function ec(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+    function ep2(t, a, b) { return ec(Math.max(0, Math.min(1, (t - a) / (b - a)))); }
+
+    let t0 = null;
+    function entranceTick(ts) {
+      if (!t0) t0 = ts;
+      const t = Math.min(1, (ts - t0) / dur);
+
+      loadingScreen.style.opacity = t < 0.72 ? "1" : String(1 - ep2(t, 0.72, 1.0));
+
+      const ep = ep2(t, 0, 0.72);
+      const hw = WIN_W + (vw - WIN_W) * ep;
+      const hh = WIN_H + (vh - WIN_H) * ep;
+      [lsF1, lsF2, lsF3].forEach((f) => { f.style.width = WIN_W + "px"; f.style.height = WIN_H + "px"; });
+      lsBorder.style.width  = (hw + 6) + "px";
+      lsBorder.style.height = (hh + 6) + "px";
+      lsSetHole(vw, vh, hw, hh, vh / 2);
+
+      if (t < 1) {
+        requestAnimationFrame(entranceTick);
+      } else {
+        loadingScreen.style.opacity       = "0";
+        loadingScreen.style.display       = "none";
+        loadingScreen.style.clipPath      = "";
+        loadingScreen.style.pointerEvents = "none";
+        lsActive = false;
+      }
+    }
+    requestAnimationFrame(entranceTick);
+  }());
+}
+
 // If the page was reached via an IFO deep-link (e.g. from a sub-page navbar
-// or footer), strip the hash and immediately enter IFO mode.
+// or footer), strip the hash and snap directly to IFO state. The entrance
+// animation above (if playing) will reveal the already-set IFO canvas.
 if (window.location.hash === '#ifo') {
   history.replaceState(null, '', window.location.pathname);
-  goToIFO();
+  jumpToIFO();
 }
 
 // When the page is restored from the browser back-forward cache the WebGL
