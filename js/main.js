@@ -410,6 +410,7 @@ const loadingScreen = document.getElementById("loading-screen");
 const lsF1 = document.getElementById("ls-f1");
 const lsF2 = document.getElementById("ls-f2");
 const lsF3 = document.getElementById("ls-f3");
+const lsBorder = document.getElementById("ls-border");
 let lsRaf    = null;
 let lsActive = false;
 
@@ -431,20 +432,20 @@ function lsSetHole(vw, vh, hW, hH, hCY) {
 function showLoadingScreen(onReady, duration) {
   if (lsActive) return;
   lsActive = true;
-  const dur = duration || 2400;
+  const dur = duration || 4000;
   if (lsRaf) { cancelAnimationFrame(lsRaf); lsRaf = null; }
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
-  // Thin concentric borders: each gap is 2 vw and 1.5 vh per side.
-  // Canvas window (the live-canvas hole) is the innermost rectangle.
-  const WIN_W = vw * 0.68, WIN_H = vh * 0.62;   // canvas hole
-  const F3_W  = vw * 0.72, F3_H  = vh * 0.65;   // Polymath  (+2vw/+1.5vh each side)
+  // Thin concentric borders: each gap is 2 vw / 1.5 vh per side.
+  // WIN is the live-canvas hole (innermost); F1 is the outermost image frame.
+  const WIN_W = vw * 0.68, WIN_H = vh * 0.62;   // canvas hole / final rectangle
+  const F3_W  = vw * 0.72, F3_H  = vh * 0.65;   // Polymath
   const F2_W  = vw * 0.76, F2_H  = vh * 0.68;   // Pictorial
-  const F1_W  = vw * 0.80, F1_H  = vh * 0.71;   // Musical
+  const F1_W  = vw * 0.80, F1_H  = vh * 0.71;   // Musical (outermost)
 
-  [lsF1, lsF2, lsF3].forEach(f => {
+  [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
     f.style.transform = "translate(-50%, -50%)";
   });
@@ -456,13 +457,21 @@ function showLoadingScreen(onReady, duration) {
 
   let readyCalled = false, t0 = null;
 
-  function e(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2; }
+  // Cubic ease-in-out — smoother than quadratic
+  function e(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
   function ph(t, a, b) { return e(Math.max(0, Math.min(1, (t - a) / (b - a)))); }
 
   function setF(el, w, h, cy_off) {
     el.style.width     = w + "px";
     el.style.height    = h + "px";
     el.style.transform = `translate(-50%, calc(-50% + ${cy_off}px))`;
+  }
+
+  // Border ring: 3 px wider on each side than the hole so it sits around the edge
+  function setBorder(w, h, cy_off = 0) {
+    lsBorder.style.width  = (w + 6) + "px";
+    lsBorder.style.height = (h + 6) + "px";
+    lsBorder.style.transform = `translate(-50%, calc(-50% + ${cy_off}px))`;
   }
 
   function lsCleanup() {
@@ -479,44 +488,51 @@ function showLoadingScreen(onReady, duration) {
       if (!t0) t0 = ts;
       const t = Math.min(1, (ts - t0) / dur);
 
-      // ── Trigger the Three.js mode transition early so it runs under the overlay ──
-      if (t >= 0.12 && !readyCalled) {
+      // Trigger the Three.js mode transition early so it runs under the overlay
+      if (t >= 0.10 && !readyCalled) {
         readyCalled = true;
         try { if (onReady) onReady(); } catch (err) { console.error(err); }
       }
 
-      // ── Opacity: fade white in [0→0.18], hold, fade out [0.90→1.0] ──
+      // Fade in [0→0.10], hold, fade out [0.92→1.0]
       loadingScreen.style.opacity = String(
-        t < 0.90 ? ph(t, 0, 0.18) : 1 - ph(t, 0.90, 1.0)
+        t < 0.92 ? ph(t, 0, 0.10) : 1 - ph(t, 0.92, 1.0)
       );
 
-      // Group rises from below viewport [0.18→0.38]; holeCY tracks with it
-      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.18, 0.38));
+      // Group rises from below viewport [0.10→0.30]; holeCY tracks with it
+      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.10, 0.30));
+      const cy_off = holeCY - vh / 2;
 
-      if (t < 0.68) {
-        // ── Phase 1 – rise from bottom + frames appear staggered ──────────────
-        setF(lsF1, F1_W * ph(t, 0.18, 0.32), F1_H * ph(t, 0.18, 0.32), holeCY - vh/2);
-        setF(lsF2, F2_W * ph(t, 0.28, 0.44), F2_H * ph(t, 0.28, 0.44), holeCY - vh/2);
-        setF(lsF3, F3_W * ph(t, 0.38, 0.54), F3_H * ph(t, 0.38, 0.54), holeCY - vh/2);
-        lsSetHole(vw, vh, WIN_W * ph(t, 0.48, 0.62), WIN_H * ph(t, 0.48, 0.62), holeCY);
+      if (t < 0.62) {
+        // ── Phase 1 – staggered frame appearance; canvas hole + border grow in ──
+        // F1 leads and finishes at t=0.30; subsequent frames stagger behind it.
+        setF(lsF1, F1_W * ph(t, 0.10, 0.30), F1_H * ph(t, 0.10, 0.30), cy_off);
+        setF(lsF2, F2_W * ph(t, 0.20, 0.42), F2_H * ph(t, 0.20, 0.42), cy_off);
+        setF(lsF3, F3_W * ph(t, 0.30, 0.52), F3_H * ph(t, 0.30, 0.52), cy_off);
+        const winP = ph(t, 0.42, 0.62);
+        const winW = WIN_W * winP, winH = WIN_H * winP;
+        lsSetHole(vw, vh, winW, winH, holeCY);
+        setBorder(winW, winH, cy_off);
 
       } else if (t < 0.80) {
-        // ── Phase 2 – all three image frames compress into the canvas window ──
-        const cp = ph(t, 0.68, 0.80);
+        // ── Phase 2 – image frames shrink to match the final rectangle ──────────
+        const cp = ph(t, 0.62, 0.80);
         setF(lsF1, F1_W + (WIN_W - F1_W) * cp, F1_H + (WIN_H - F1_H) * cp, 0);
         setF(lsF2, F2_W + (WIN_W - F2_W) * cp, F2_H + (WIN_H - F2_H) * cp, 0);
         setF(lsF3, F3_W + (WIN_W - F3_W) * cp, F3_H + (WIN_H - F3_H) * cp, 0);
         lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
+        setBorder(WIN_W, WIN_H);
 
       } else {
-        // ── Phase 3 – canvas window expands to fill the screen ─────────────────
-        const ep = ph(t, 0.80, 0.90);
+        // ── Phase 3 – border + hole expand outward, leaving the page ────────────
+        const ep = ph(t, 0.80, 0.92);
         const hw = WIN_W + (vw - WIN_W) * ep;
         const hh = WIN_H + (vh - WIN_H) * ep;
         setF(lsF1, WIN_W, WIN_H, 0);
         setF(lsF2, WIN_W, WIN_H, 0);
         setF(lsF3, WIN_W, WIN_H, 0);
         lsSetHole(vw, vh, hw, hh, vh / 2);
+        setBorder(hw, hh);
       }
 
       if (t < 1) {
@@ -570,7 +586,7 @@ document.querySelectorAll("[data-ifo-link]").forEach((el) => {
       showLoadingScreen(() => {
         goTo3D();
         setTimeout(() => goToIFO(), 1300);
-      }, 3000);
+      }, 5000);
     } else if (state.mode === "3d") {
       showLoadingScreen(() => goToIFO());
     }
