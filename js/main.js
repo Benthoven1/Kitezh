@@ -165,62 +165,7 @@ const skyStarMat = new THREE.ShaderMaterial({
 const skyStars = new THREE.Points(skyStarGeo, skyStarMat);
 
 // ── Sky group — everything in here rotates together as the user scrolls ───────
-const skyGroup = new THREE.Group();
-skyGroup.add(skyStars);
-scene.add(skyGroup);
-
-// ── Constellation definitions (XZ world positions, top-down view) ─────────────
-// Four constellations placed in different angular sectors; each fades in
-// sequentially as skyRotP advances, giving the feel of scanning across the sky.
-const CONST_DEFS = [
-  {   // "Lyra" — small compact parallelogram, NE quadrant
-    revealAt: 0.08,
-    stars: [ [1.5, 5.8], [0.5, 6.6], [-0.4, 6.2], [-0.3, 5.2], [0.8, 4.8] ],
-    lines: [ [0,1],[1,2],[2,3],[3,4],[4,0],[1,3] ],
-  },
-  {   // "Orion" — hunter silhouette (shoulders, belt, feet), NW quadrant
-    revealAt: 0.30,
-    stars: [ [-5.5,2.8],[-4.5,3.4], [-5.2,1.9],[-5.0,1.9],[-4.7,1.9], [-5.8,0.7],[-4.3,0.5] ],
-    lines: [ [0,1],[0,2],[1,3],[2,3],[3,4],[2,5],[4,6] ],
-  },
-  {   // "Ursa Major" — Big Dipper bowl + handle, SW quadrant
-    revealAt: 0.58,
-    stars: [ [-3.8,-5.0],[-2.8,-5.3],[-2.0,-4.8],[-2.4,-4.0], [-1.2,-3.6],[0.2,-3.1],[1.5,-2.7] ],
-    lines: [ [0,1],[1,2],[2,3],[3,0],[2,4],[4,5],[5,6] ],
-  },
-  {   // "Cassiopeia" — W zigzag, SE quadrant
-    revealAt: 0.80,
-    stars: [ [4.2,-3.8],[5.0,-2.8],[5.8,-3.5],[6.6,-2.5],[7.4,-3.2] ],
-    lines: [ [0,1],[1,2],[2,3],[3,4] ],
-  },
-];
-
-// Build Three.js geometry for each constellation
-const constellations = CONST_DEFS.map(def => {
-  // Highlight stars — slightly larger, crisp white points
-  const starPos = new Float32Array(def.stars.length * 3);
-  def.stars.forEach(([x, z], i) => { starPos[i*3]=x; starPos[i*3+1]=0.1; starPos[i*3+2]=z; });
-  const starGeo = new THREE.BufferGeometry();
-  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.25, transparent: true, opacity: 0, depthTest: false, depthWrite: false, sizeAttenuation: true });
-  const starPts = new THREE.Points(starGeo, starMat);
-  skyGroup.add(starPts);
-
-  // Connecting lines — faint silver
-  const linePos = new Float32Array(def.lines.length * 2 * 3);
-  def.lines.forEach(([a, b], i) => {
-    const [ax, az] = def.stars[a], [bx, bz] = def.stars[b];
-    linePos[i*6]=ax; linePos[i*6+1]=0.1; linePos[i*6+2]=az;
-    linePos[i*6+3]=bx; linePos[i*6+4]=0.1; linePos[i*6+5]=bz;
-  });
-  const lineGeo = new THREE.BufferGeometry();
-  lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
-  const lineMat = new THREE.LineBasicMaterial({ color: 0xd0c8c0, transparent: true, opacity: 0, depthTest: false, depthWrite: false });
-  const lineSegs = new THREE.LineSegments(lineGeo, lineMat);
-  skyGroup.add(lineSegs);
-
-  return { starMat, lineMat, revealAt: def.revealAt };
-});
+scene.add(skyStars);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -402,7 +347,7 @@ const state = {
   expansionP1: 0,
   expansionP2: 0,
   missionFired: false,
-  skyRotP: 0,
+  lsRevealP: 1,
 };
 
 let lastW = 0, lastH = 0;
@@ -501,6 +446,10 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   const EF3_W  = F3_W  * EFF, EF3_H  = F3_H  * EFF;
   const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
   const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
+  // Planet hole: small window framing only the central Mulvium star
+  const PLANET_HOLE = Math.min(vw, vh) * 0.30;
+
+  state.lsRevealP = 0;
 
   [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
@@ -536,6 +485,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   }
 
   function lsCleanup() {
+    state.lsRevealP = 1;
     [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
       f.style.width = "0"; f.style.height = "0";
       f.style.transform = "translate(-50%, -50%)";
@@ -580,30 +530,32 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.30, 0.40)})`;
 
       if (t < 0.62) {
-        // ── Phase 1 – all four rectangles pop in at full size, staggered by 0.10 ──
+        // ── Phase 1 – rectangles 1-3 pop in with photos; planet hole pops in small ──
         if (t >= 0.10) setF(lsF1, EF1_W, EF1_H, cy_off);
         if (t >= 0.20) setF(lsF2, EF2_W, EF2_H, cy_off);
         if (t >= 0.30) setF(lsF3, EF3_W, EF3_H, cy_off);
         if (t >= 0.40) {
-          lsSetHole(vw, vh, EWIN_W, EWIN_H, holeCY);
-          setBorder(EWIN_W, EWIN_H, cy_off);
+          lsSetHole(vw, vh, PLANET_HOLE, PLANET_HOLE, holeCY);
+          setBorder(PLANET_HOLE, PLANET_HOLE, cy_off);
         } else {
           loadingScreen.style.clipPath = "";
           lsBorder.style.width = "0"; lsBorder.style.height = "0";
         }
 
       } else if (t < 0.76) {
-        // ── Phase 2 – image frames converge to the EFF-scaled rectangle ──────────
+        // ── Phase 2 – frames converge; planet hole grows from small to EWIN ────────
         const cp = ph(t, 0.62, 0.76);
         setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
         setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
         setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
-        lsSetHole(vw, vh, EWIN_W, EWIN_H, vh / 2);
-        setBorder(EWIN_W, EWIN_H);
+        const holeW = PLANET_HOLE + (EWIN_W - PLANET_HOLE) * cp;
+        const holeH = PLANET_HOLE + (EWIN_H - PLANET_HOLE) * cp;
+        lsSetHole(vw, vh, holeW, holeH, vh / 2);
+        setBorder(holeW, holeH);
 
       } else {
-        // ── Phase 3 – subtle expansion → beat → hole fills viewport ─────────────
-        // t 0.76→0.82: frames expand from EFF size to full WIN size
+        // ── Phase 3 – expansion → beat → hole fills viewport; rings rearrange ─────
+        // t 0.76→0.82: frames and hole expand from EFF/EWIN size to full WIN size
         const expand = ph(t, 0.76, 0.82);
         const curW = EWIN_W + (WIN_W - EWIN_W) * expand;
         const curH = EWIN_H + (WIN_H - EWIN_H) * expand;
@@ -611,8 +563,9 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setF(lsF2, curW, curH, 0);
         setF(lsF3, curW, curH, 0);
         // t 0.82→0.88: beat — everything holds still at WIN size
-        // t 0.88→1.0: hole + border expand to fill viewport
+        // t 0.88→1.0: hole + border expand to fill viewport; orbits rearrange
         const ep = ph(t, 0.88, 1.0);
+        state.lsRevealP = ep;
         const hw = curW + (vw - curW) * ep;
         const hh = curH + (vh - curH) * ep;
         lsSetHole(vw, vh, hw, hh, vh / 2);
@@ -700,11 +653,10 @@ function goTo3D() {
   state.expansionP1 = 0;
   state.expansionP2 = 0;
   state.missionFired = false;
-  state.skyRotP      = 0;
+  state.lsRevealP    = 1;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   bgColor.copy(PAPER_COLOR);
-  skyGroup.rotation.y = 0;
 }
 
 // Instantly snaps to full IFO state without playing the animated 3D→IFO
@@ -730,11 +682,10 @@ function jumpToIFO() {
   state.expansionP1  = 0;
   state.expansionP2  = 0;
   state.missionFired = false;
-  state.skyRotP      = 0;
+  state.lsRevealP    = 1;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   bgColor.copy(PAPER_COLOR);
-  skyGroup.rotation.y = 0;
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
@@ -771,11 +722,10 @@ function snapTo3D() {
   state.expansionP1  = 0;
   state.expansionP2  = 0;
   state.missionFired = false;
-  state.skyRotP      = 0;
+  state.lsRevealP    = 1;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   bgColor.copy(PAPER_COLOR);
-  skyGroup.rotation.y = 0;
 }
 
 // Fade the current page content out to white, then start the loading animation.
@@ -996,6 +946,8 @@ function animate() {
   });
 
   // 3D↔2D tilt/scale transition; IFO+Castles rings transform into CoF rings
+  // revealMul scales all orbits from 0→1 as the loading screen hole blows out.
+  const revealMul = easeInOut(state.lsRevealP);
   orbits.forEach((o) => {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
     const cofR = COF_RING_TARGETS[o.def.id];
@@ -1011,7 +963,7 @@ function animate() {
       o.pivot.rotation.x = lerp(rx, Math.PI / 2, flatT);
       o.pivot.rotation.y = lerp(ry, 0, flatT);
       o.pivot.rotation.z = lerp(rz, 0, flatT);
-      o.pivot.scale.setScalar(scaleT * expF);
+      o.pivot.scale.setScalar(scaleT * expF * revealMul);
       // Only enter transparent pass during expansion — avoids depth-order
       // conflicts with the Circle of Fifths sprites in IFO mode.
       if (isExpanding) {
@@ -1028,7 +980,7 @@ function animate() {
       o.pivot.rotation.z = lerp(rz, 0, eased);
       const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
       const ex = lerp(1, o.def.ellipseX,                eased);
-      o.pivot.scale.set(s * ex * expF, s * expF, s * expF);
+      o.pivot.scale.set(s * ex * expF * revealMul, s * expF * revealMul, s * expF * revealMul);
       o.ring.material.opacity     = lerp(1, 0, easedIFO) * expansionFade;
       o.ring.material.transparent = true;
     }
@@ -1163,14 +1115,6 @@ function animate() {
   skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
   skyStarMat.uniforms.uOpacity.value = p1e;
 
-  // Sky rotation and constellation reveal driven by scroll progress
-  skyGroup.rotation.y = state.skyRotP * Math.PI * 0.6;  // max ~108° rotation
-  constellations.forEach(con => {
-    const alpha = easeInOut(Math.max(0, Math.min(1, (state.skyRotP - con.revealAt) / 0.12)));
-    con.starMat.opacity = alpha * 0.9;
-    con.lineMat.opacity = alpha * 0.28;
-  });
-
   updateHover();
   trackLabel();
   resize();
@@ -1198,28 +1142,6 @@ function updateExpansionScroll() {
   }
 }
 
-// Bidirectional scroll driver: skyRotP=0 when 2/3-mark of letter-body enters
-// viewport, skyRotP=1 when letter-close centre reaches mid-viewport.
-// Both sky rotation and constellation opacity are derived directly so scroll
-// is fully reversible in both directions.
-function updateSkyRotation() {
-  if (!body.classList.contains("night-mode")) return;
-  const letterBody  = document.querySelector(".letter-body");
-  const letterClose = document.getElementById("letter-close");
-  if (!letterBody || !letterClose) return;
-
-  const bodyRect  = letterBody.getBoundingClientRect();
-  const closeRect = letterClose.getBoundingClientRect();
-  const vh        = window.innerHeight;
-
-  const startMark    = bodyRect.top  + bodyRect.height * (2 / 3);
-  const endMark      = closeRect.top + closeRect.height * 0.5;
-  const docDist      = endMark - startMark;
-  const scrolledPast = vh - startMark;
-  const totalRange   = Math.max(1, vh * 0.5 + docDist);
-
-  state.skyRotP = Math.max(0, Math.min(1, scrolledPast / totalRange));
-}
 
 // Mission section: animate characters in when it first scrolls into view.
 const missionObserver = new IntersectionObserver((entries) => {
@@ -1236,12 +1158,10 @@ missionObserver.observe(missionSection);
 
 window.addEventListener("scroll", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
-  if (body.classList.contains("night-mode")) updateSkyRotation();
 }, { passive: true });
 
 window.addEventListener("resize", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
-  if (body.classList.contains("night-mode")) updateSkyRotation();
 });
 
 animate();
