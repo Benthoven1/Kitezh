@@ -524,18 +524,17 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.10, 0.30));
       const cy_off = holeCY - vh / 2;
 
-      // Image inner divs: overflow by 20 % at phase 1, shrink to exact fit by phase 2 end
-      const imgScale = 1.2 - 0.2 * ph(t, 0.62, 0.80);
+      // Image inner divs: 1.2x → 1.1x as rects are created, then 1.1x → 1.0x as frames converge
+      const imgScale = 1.2 - 0.1 * ph(t, 0.10, 0.30) - 0.1 * ph(t, 0.62, 0.80);
       lsF1img.style.transform = `scale(${imgScale})`;
       lsF2img.style.transform = `scale(${imgScale})`;
       lsF3img.style.transform = `scale(${imgScale})`;
 
       if (t < 0.62) {
-        // ── Phase 1 – staggered frame appearance; canvas hole + border grow in ──
-        // All sizes scaled by EFF (92 %) so the animation sits slightly small
-        setF(lsF1, EF1_W * ph(t, 0.10, 0.30), EF1_H * ph(t, 0.10, 0.30), cy_off);
-        setF(lsF2, EF2_W * ph(t, 0.20, 0.42), EF2_H * ph(t, 0.20, 0.42), cy_off);
-        setF(lsF3, EF3_W * ph(t, 0.30, 0.52), EF3_H * ph(t, 0.30, 0.52), cy_off);
+        // ── Phase 1 – frames pop in at full size (staggered); hole + border grow in ──
+        if (t >= 0.10) setF(lsF1, EF1_W, EF1_H, cy_off);
+        if (t >= 0.20) setF(lsF2, EF2_W, EF2_H, cy_off);
+        if (t >= 0.30) setF(lsF3, EF3_W, EF3_H, cy_off);
         const winP = ph(t, 0.42, 0.62);
         const winW = EWIN_W * winP, winH = EWIN_H * winP;
         lsSetHole(vw, vh, winW, winH, holeCY);
