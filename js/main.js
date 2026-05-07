@@ -526,9 +526,10 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
       // Each image zooms independently from its own pop-in time toward 1.0x —
       // staggered start + staggered end gives a cascading sense of depth.
-      lsF1img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.10, 0.70)})`;
-      lsF2img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.20, 0.76)})`;
-      lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.30, 0.82)})`;
+      // All images settle to 1.0x exactly when the last rectangle pops in (t=0.40)
+      lsF1img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.10, 0.40)})`;
+      lsF2img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.20, 0.40)})`;
+      lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.30, 0.40)})`;
 
       if (t < 0.62) {
         // ── Phase 1 – all four rectangles pop in at full size, staggered by 0.10 ──
@@ -543,9 +544,9 @@ function showLoadingScreen(onReady, duration, startOpaque) {
           lsBorder.style.width = "0"; lsBorder.style.height = "0";
         }
 
-      } else if (t < 0.80) {
-        // ── Phase 2 – image frames shrink to match the EFF-scaled rectangle ─────
-        const cp = ph(t, 0.62, 0.80);
+      } else if (t < 0.76) {
+        // ── Phase 2 – image frames converge to the EFF-scaled rectangle ──────────
+        const cp = ph(t, 0.62, 0.76);
         setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
         setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
         setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
@@ -553,16 +554,17 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setBorder(EWIN_W, EWIN_H);
 
       } else {
-        // ── Phase 3 – subtle expansion (92 %→100 %) then hole fills viewport ────
-        // t 0.80→0.85: all frames expand from EFF size to full WIN size
-        const expand = ph(t, 0.80, 0.85);
+        // ── Phase 3 – subtle expansion → beat → hole fills viewport ─────────────
+        // t 0.76→0.82: frames expand from EFF size to full WIN size
+        const expand = ph(t, 0.76, 0.82);
         const curW = EWIN_W + (WIN_W - EWIN_W) * expand;
         const curH = EWIN_H + (WIN_H - EWIN_H) * expand;
         setF(lsF1, curW, curH, 0);
         setF(lsF2, curW, curH, 0);
         setF(lsF3, curW, curH, 0);
-        // t 0.85→1.0: hole + border expand to fill viewport (curW=WIN_W by then)
-        const ep = ph(t, 0.85, 1.0);
+        // t 0.82→0.88: beat — everything holds still at WIN size
+        // t 0.88→1.0: hole + border expand to fill viewport
+        const ep = ph(t, 0.88, 1.0);
         const hw = curW + (vw - curW) * ep;
         const hh = curH + (vh - curH) * ep;
         lsSetHole(vw, vh, hw, hh, vh / 2);
@@ -930,62 +932,26 @@ function trackLabel() {
   }
 }
 
-// ── Shooting-star system ─────────────────────────────────────────────────────
-// Subtle arc trails that sweep along the rose's ring radii, making the petal
-// structure feel alive. Only visible once the star constellation has drifted
-// into the rose shape (starDriftP > 0).
-const SS_RADII = [0.13, 0.27, 0.42, 0.56, 0.70, 0.83, 0.96].map(f => f * 7.4);
-const SS_COUNT = 6;   // max simultaneous trails
-const SS_PTS   = 22;  // points per trail line-strip
-const SS_ARC   = 0.28; // arc length (radians) of the trail behind the head
+// ── Continuous rose-curve tracer ─────────────────────────────────────────────
+// One shooting-star that traces r = R * cos(2.5φ), a 5-petal rhodonea that
+// echoes the inner constellation layers. φ advances continuously; the fading
+// tail reveals the petal arcs one at a time, completing the full rose over ~10 s.
+const SS_PTS = 60;    // line-strip resolution
+const SS_ARC = 1.5;   // radians of trail behind the head (~0.7 petals visible)
+const SS_SPD = 1.2;   // radians / second
 
-const shooters = [];
-let ssNextSpawn = 0;
-
-for (let _i = 0; _i < SS_COUNT; _i++) {
-  const _pos = new Float32Array(SS_PTS * 3);
-  const _col = new Float32Array(SS_PTS * 3);
-  const _geo = new THREE.BufferGeometry();
-  _geo.setAttribute('position', new THREE.BufferAttribute(_pos, 3).setUsage(THREE.DynamicDrawUsage));
-  _geo.setAttribute('color',    new THREE.BufferAttribute(_col, 3).setUsage(THREE.DynamicDrawUsage));
-  const _mat  = new THREE.LineBasicMaterial({
-    vertexColors: true, transparent: true, opacity: 0,
-    depthTest: true, depthWrite: false,
-  });
-  const _line = new THREE.Line(_geo, _mat);
-  scene.add(_line);
-  shooters.push({ line: _line, geo: _geo, pos: _pos, col: _col,
-                  active: false, t: 0, dur: 1, angle: 0, speed: 0, r: 0 });
-}
-
-function ssSpawn(s) {
-  s.r     = SS_RADII[Math.floor(Math.random() * SS_RADII.length)];
-  s.angle = Math.random() * Math.PI * 2;
-  s.speed = (Math.random() > 0.5 ? 1 : -1) * (0.5 + Math.random() * 1.1);
-  s.dur   = 0.8 + Math.random() * 1.0;
-  s.t     = 0;
-  s.active = true;
-}
-
-function ssTick(s, dt, masterAlpha) {
-  s.t     = Math.min(1, s.t + dt / s.dur);
-  s.angle += s.speed * dt;
-  // Bell fade: quick in (first 20 %), slow out (remaining 80 %)
-  const env = s.t < 0.2 ? s.t / 0.2 : 1 - (s.t - 0.2) / 0.8;
-  s.line.material.opacity = Math.max(0, env * masterAlpha * 0.52);
-  for (let i = 0; i < SS_PTS; i++) {
-    const frac  = i / (SS_PTS - 1);                               // 0=tail 1=head
-    const theta = s.angle - s.speed * SS_ARC * (1 - frac);
-    const b     = frac * frac;                                     // quad falloff
-    s.pos[i*3]   = Math.cos(theta) * s.r;
-    s.pos[i*3+1] = 0.05;
-    s.pos[i*3+2] = Math.sin(theta) * s.r;
-    s.col[i*3]   = b * 0.96;  s.col[i*3+1] = b * 0.93;  s.col[i*3+2] = b;
-  }
-  s.geo.attributes.position.needsUpdate = true;
-  s.geo.attributes.color.needsUpdate    = true;
-  if (s.t >= 1) s.active = false;
-}
+const ssPos = new Float32Array(SS_PTS * 3);
+const ssCol = new Float32Array(SS_PTS * 3);
+const ssGeo = new THREE.BufferGeometry();
+ssGeo.setAttribute('position', new THREE.BufferAttribute(ssPos, 3).setUsage(THREE.DynamicDrawUsage));
+ssGeo.setAttribute('color',    new THREE.BufferAttribute(ssCol, 3).setUsage(THREE.DynamicDrawUsage));
+const ssMat   = new THREE.LineBasicMaterial({
+  vertexColors: true, transparent: true, opacity: 0,
+  depthTest: true, depthWrite: false,
+});
+const ssTrail = new THREE.Line(ssGeo, ssMat);
+scene.add(ssTrail);
+let ssPhi = 0;
 
 // ---------- Animation loop ----------
 function animate() {
@@ -1171,18 +1137,25 @@ function animate() {
   skyStarMat.uniforms.uOpacity.value = p1e;
   skyStarMat.uniforms.uDriftP.value  = easeInOut(state.starDriftP);
 
-  // Shooting stars: active once rose constellation is visible
+  // Rose-curve tracer: single shooting-star traces the rhodonea continuously
   if (state.starDriftP > 0.05) {
     const ssAlpha = easeInOut(Math.max(0, (state.starDriftP - 0.05) / 0.95));
-    const ssNow   = performance.now() * 0.001;
-    if (ssNow > ssNextSpawn) {
-      const free = shooters.find(s => !s.active);
-      if (free) ssSpawn(free);
-      ssNextSpawn = ssNow + 0.4 + Math.random() * 1.2;
+    ssPhi += SS_SPD * dt;
+    for (let i = 0; i < SS_PTS; i++) {
+      const frac = i / (SS_PTS - 1);                     // 0 = tail, 1 = head
+      const φ    = ssPhi - SS_ARC * (1 - frac);
+      const r    = 7.4 * 0.93 * Math.cos(2.5 * φ);      // rhodonea r = R·cos(2.5φ)
+      const b    = frac * frac;                           // quadratic falloff tail→head
+      ssPos[i*3]   = Math.cos(φ) * r;
+      ssPos[i*3+1] = 0.05;
+      ssPos[i*3+2] = Math.sin(φ) * r;
+      ssCol[i*3]   = b * 0.96;  ssCol[i*3+1] = b * 0.93;  ssCol[i*3+2] = b;
     }
-    shooters.forEach(s => { if (s.active) ssTick(s, dt, ssAlpha); });
+    ssGeo.attributes.position.needsUpdate = true;
+    ssGeo.attributes.color.needsUpdate    = true;
+    ssMat.opacity = ssAlpha * 0.48;
   } else {
-    shooters.forEach(s => { s.active = false; s.line.material.opacity = 0; });
+    ssMat.opacity = 0;
   }
 
   updateHover();
