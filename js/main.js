@@ -707,6 +707,41 @@ brandLink.addEventListener("click", (e) => {
   showLoadingScreen(() => snapTo3D());
 });
 
+// Fade to white before navigating to any sub-page from index.html.
+// Uses the existing #loading-screen overlay so the WebGL canvas is covered
+// cleanly (avoids GPU-compositing issues with body opacity on canvas elements).
+function coverAndNavigate(href) {
+  if (lsActive) { window.location.href = href; return; }
+  loadingScreen.style.clipPath = "";
+  loadingScreen.style.opacity = "0";
+  loadingScreen.style.display = "block";
+  loadingScreen.style.pointerEvents = "all";
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      loadingScreen.style.transition = "opacity 0.35s ease";
+      loadingScreen.style.opacity = "1";
+      setTimeout(function () {
+        loadingScreen.style.transition = "";
+        window.location.href = href;
+      }, 350);
+    });
+  });
+}
+
+document.addEventListener("click", (ev) => {
+  const link = ev.target.closest("a[href]");
+  if (!link || link.target === "_blank") return;
+  const href = link.getAttribute("href");
+  if (!href) return;
+  try {
+    const url = new URL(href, location.href);
+    if (url.origin !== location.origin) return;       // external
+    if (url.pathname === location.pathname) return;   // same page (IFO, brand handled elsewhere)
+    ev.preventDefault();
+    coverAndNavigate(href);
+  } catch (e) {}
+});
+
 document.querySelectorAll(".nav-item.has-dropdown").forEach((item) => {
   const trigger = item.querySelector(".nav-trigger");
   let leaveTimer = null;
