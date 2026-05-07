@@ -60,17 +60,41 @@ const ORBITS = [
   },
 ];
 
-const canvas   = document.getElementById("cosmos");
-const label    = document.getElementById("planet-label");
-const navbar   = document.getElementById("navbar");
-const brandLink = document.getElementById("brand-link");
-const body     = document.body;
+const canvas            = document.getElementById("cosmos");
+const label             = document.getElementById("planet-label");
+const navbar            = document.getElementById("navbar");
+const brandLink         = document.getElementById("brand-link");
+const body              = document.body;
+const expansionWrapper  = document.getElementById("expansion-wrapper");
+const missionOverlay    = document.getElementById("mission-overlay");
+const missionChars      = Array.from(document.querySelectorAll(".mc"));
 
 window.scrollTo(0, 0);
 body.classList.add("cosmos-only");
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(PAPER);
+
+const PAPER_COLOR = new THREE.Color(PAPER);
+const NIGHT_COLOR = new THREE.Color(0x060412);
+
+// Star-field particles — fade in during the night-sky phase
+const SKY_COUNT  = 1600;
+const skyPosArr  = new Float32Array(SKY_COUNT * 3);
+for (let i = 0; i < SKY_COUNT; i++) {
+  const θ = Math.random() * Math.PI * 2;
+  const r = 25 + Math.random() * 175;
+  skyPosArr[i * 3]     = Math.cos(θ) * r;
+  skyPosArr[i * 3 + 1] = Math.random() * 60;
+  skyPosArr[i * 3 + 2] = Math.sin(θ) * r;
+}
+const skyStarGeo = new THREE.BufferGeometry();
+skyStarGeo.setAttribute("position", new THREE.BufferAttribute(skyPosArr, 3));
+const skyStarMat = new THREE.PointsMaterial({
+  color: 0xffffff, size: 0.22, transparent: true, opacity: 0, sizeAttenuation: true,
+});
+const skyStars = new THREE.Points(skyStarGeo, skyStarMat);
+scene.add(skyStars);
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -246,6 +270,9 @@ const state = {
   labelPlanet: null,
   labelStar: false,
   clock: new THREE.Clock(),
+  expansionP1: 0,
+  expansionP2: 0,
+  missionFired: false,
 };
 
 let lastW = 0, lastH = 0;
@@ -360,8 +387,13 @@ function goTo3D() {
   state.target = 0;
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   body.classList.add("cosmos-only");
-  body.classList.remove("mode-2d");
+  body.classList.remove("mode-2d", "expansion-active");
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+  state.expansionP1 = 0;
+  state.expansionP2 = 0;
+  state.missionFired = false;
+  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
+  missionOverlay.setAttribute("aria-hidden", "true");
 }
 
 brandLink.addEventListener("click", (e) => {
@@ -513,6 +545,8 @@ function animate() {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
     const cofR = COF_RING_TARGETS[o.def.id];
 
+    const expF = 1 + easeInOut(state.expansionP1) * 10;
+
     if (cofR !== undefined) {
       // This ring becomes a CoF ring: flatten to XZ, scale toward cofR — never fades
       const flatT  = Math.max(eased, easedIFO);
@@ -520,7 +554,7 @@ function animate() {
       o.pivot.rotation.x = lerp(rx, Math.PI / 2, flatT);
       o.pivot.rotation.y = lerp(ry, 0, flatT);
       o.pivot.rotation.z = lerp(rz, 0, flatT);
-      o.pivot.scale.setScalar(scaleT);
+      o.pivot.scale.setScalar(scaleT * expF);
     } else {
       // Standard 3D↔2D transition + fade during IFO
       o.pivot.rotation.x = lerp(rx, Math.PI / 2, eased);
@@ -528,7 +562,7 @@ function animate() {
       o.pivot.rotation.z = lerp(rz, 0, eased);
       const s  = lerp(1, o.def.radius2D / o.def.radius, eased);
       const ex = lerp(1, o.def.ellipseX,                eased);
-      o.pivot.scale.set(s * ex, s, s);
+      o.pivot.scale.set(s * ex * expF, s, s * expF);
       o.ring.material.opacity     = lerp(1, 0, easedIFO);
       o.ring.material.transparent = true;
     }
@@ -562,10 +596,21 @@ function animate() {
     cofPlanetInScene = false;
   }
 
-  // Star pulse + hover bump
+  // Star pulse + hover bump + expansion growth (slower than rings, 2.5× max)
   const pulse      = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
-  const starTarget = state.hoverStar && state.mode === "3d" ? 1.1 : pulse;
+  const starExpand = 1 + easeInOut(state.expansionP1) * 1.5;
+  const starTarget = (state.hoverStar && state.mode === "3d" ? 1.1 : pulse) * starExpand;
   star.scale.lerp(tmpVec.set(starTarget, starTarget, starTarget), 1 - Math.pow(0.0005, dt));
+
+  // Phase 2: slide the star to the bottom-right corner of the overhead view
+  if (state.expansionP2 > 0) {
+    const camH  = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 24;
+    const camW  = camH * camera.aspect;
+    const p2e   = easeInOut(state.expansionP2);
+    star.position.set(camW * 0.72 * p2e, 0, camH * 0.68 * p2e);
+  } else {
+    star.position.set(0, 0, 0);
+  }
 
   orbits.forEach((o) => {
     const target = state.hoverPlanet === o && state.mode === "3d" ? 1.18 : 1;
@@ -579,7 +624,9 @@ function animate() {
     if ((dir === 1 && state.t >= 1) || (dir === -1 && state.t <= 0)) {
       state.t    = state.target;
       state.mode = state.target === 1 ? "2d" : "3d";
-      if (state.mode === "3d") {
+      if (state.mode === "2d") {
+        body.classList.add("expansion-active");
+      } else {
         navbar.classList.remove("visible");
         navbar.setAttribute("aria-hidden", "true");
       }
@@ -636,6 +683,16 @@ function animate() {
   lerpVec(basePos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
 
+  // Expansion: background colour + star-field opacity
+  if (state.expansionP2 > 0) {
+    const p2e = easeInOut(state.expansionP2);
+    scene.background.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p2e);
+    skyStarMat.opacity = p2e;
+  } else {
+    scene.background.copy(PAPER_COLOR);
+    skyStarMat.opacity = 0;
+  }
+
   updateHover();
   trackLabel();
   resize();
@@ -643,6 +700,42 @@ function animate() {
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
+
+// ---------- Expansion scroll sequence ----------
+function updateExpansionScroll() {
+  if (!body.classList.contains("expansion-active")) return;
+  const totalScroll = expansionWrapper.offsetHeight - window.innerHeight;
+  if (totalScroll <= 0) return;
+  const rawP = Math.max(0, Math.min(1, window.scrollY / totalScroll));
+
+  // Phase 1 (0–60 %): rings + planets fly outward, star grows slowly
+  state.expansionP1 = Math.min(1, rawP / 0.6);
+  // Phase 2 (60–85 %): background goes dark, star-field appears, star drifts to corner
+  state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.25));
+  // Phase 3 (83–100 %): mission text letters animate in
+  const p3 = Math.max(0, (rawP - 0.83) / 0.17);
+
+  if (p3 > 0 && !state.missionFired) {
+    state.missionFired = true;
+    missionOverlay.setAttribute("aria-hidden", "false");
+    missionChars.forEach((el, i) => {
+      el.style.animationDelay = `${i * 0.033}s`;
+      el.classList.add("mc-in");
+    });
+  } else if (rawP < 0.82 && state.missionFired) {
+    state.missionFired = false;
+    missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
+    missionOverlay.setAttribute("aria-hidden", "true");
+  }
+}
+
+window.addEventListener("scroll", () => {
+  if (body.classList.contains("expansion-active")) updateExpansionScroll();
+}, { passive: true });
+
+window.addEventListener("resize", () => {
+  if (body.classList.contains("expansion-active")) updateExpansionScroll();
+});
 
 animate();
 
