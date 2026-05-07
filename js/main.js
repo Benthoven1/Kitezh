@@ -712,6 +712,7 @@ brandLink.addEventListener("click", (e) => {
 // cleanly (avoids GPU-compositing issues with body opacity on canvas elements).
 function coverAndNavigate(href) {
   if (lsActive) { window.location.href = href; return; }
+  [lsF1, lsF2, lsF3, lsBorder].forEach(f => { f.style.width = "0"; f.style.height = "0"; });
   loadingScreen.style.clipPath = "";
   loadingScreen.style.opacity = "0";
   loadingScreen.style.display = "block";
