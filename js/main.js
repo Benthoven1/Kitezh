@@ -448,6 +448,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
     f.style.transform = "translate(-50%, -50%)";
+    f.style.visibility = ""; // restore from CSS (visible) — clear any cover-nav hide
   });
   loadingScreen.style.clipPath  = "";
   loadingScreen.style.opacity   = startOpaque ? "1" : "0";
@@ -477,6 +478,11 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   }
 
   function lsCleanup() {
+    [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
+      f.style.width = "0"; f.style.height = "0";
+      f.style.transform = "translate(-50%, -50%)";
+      f.style.visibility = "hidden";
+    });
     loadingScreen.style.opacity    = "0";
     loadingScreen.style.clipPath   = "";
     loadingScreen.style.display    = "none";
@@ -712,6 +718,13 @@ brandLink.addEventListener("click", (e) => {
 // cleanly (avoids GPU-compositing issues with body opacity on canvas elements).
 function coverAndNavigate(href) {
   if (lsActive) { window.location.href = href; return; }
+  // visibility:hidden suppresses rendering entirely — prevents image frames
+  // from showing at residual sizes AND prevents #ls-border's CSS border from
+  // collapsing to a visible 6 px square when width/height are zeroed.
+  [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
+    f.style.width = "0"; f.style.height = "0"; f.style.visibility = "hidden";
+  });
+  loadingScreen.style.transition = ""; // clear any leftover transition
   loadingScreen.style.clipPath = "";
   loadingScreen.style.opacity = "0";
   loadingScreen.style.display = "block";
