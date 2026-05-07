@@ -200,7 +200,7 @@ body.night-mode #mission-section,
 body.night-mode #letter-section {
   background: transparent;
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 body.night-mode .letter-to,
@@ -221,7 +221,7 @@ body.night-mode #site-footer {
   background: transparent;
   border-top-color: rgba(220, 212, 245, 0.12);
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 body.night-mode .footer-wordmark {
@@ -339,25 +339,6 @@ body.mode-ifo.ifo-transitioning .planet-label {
 body.mode-2d .cosmos-hint,
 body.mode-ifo .cosmos-hint { opacity: 0; }
 
-
-/* ---------- Rose section — fixed viewport overlay; opacity driven by JS ---------- */
-#rose-section {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-}
-
-#rose-bush-img {
-  width: 100%;
-  max-width: min(960px, 92vw);
-  height: auto;
-  display: block;
-}
 
 /* ---------- Letter Section ---------- */
 #letter-section {

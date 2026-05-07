@@ -68,49 +68,19 @@ const body              = document.body;
 const expansionWrapper  = document.getElementById("expansion-wrapper");
 const missionSection    = document.getElementById("mission-section");
 const missionChars      = Array.from(missionSection.querySelectorAll(".mc"));
-const roseSectionEl     = document.getElementById("rose-section");
-
 window.scrollTo(0, 0);
 body.classList.add("cosmos-only");
 
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(PAPER);
 
 const PAPER_COLOR       = new THREE.Color(PAPER);
 const PASTEL_STAR_COLOR = new THREE.Color(PASTEL_STAR);
 const WHITE_COLOR       = new THREE.Color(0xffffff);
 const BLACK_COLOR       = new THREE.Color(0x000000);
+const NIGHT_COLOR       = new THREE.Color(0x060412);
 
-// Night sky — gradient CanvasTexture; updated each frame during expansion
-const nightBgCvs       = document.createElement("canvas");
-nightBgCvs.width       = 2;
-nightBgCvs.height      = 512;
-const nightBgCtx       = nightBgCvs.getContext("2d");
-const nightBgTex       = new THREE.CanvasTexture(nightBgCvs);
-nightBgTex.flipY       = false; // canvas y=0 → screen top
-let lastBgT            = -1;
-
-function updateBackground(t) {
-  if (Math.abs(t - lastBgT) < 0.002) return;
-  lastBgT = t;
-  if (t <= 0) { scene.background = PAPER_COLOR; return; }
-  const mix = (a, b) => Math.round(a + (b - a) * t);
-  const g   = nightBgCtx.createLinearGradient(0, 0, 0, 512);
-  // Stops: [y_fraction, [r_night, g_night, b_night]]
-  for (const [pos, [rN, gN, bN]] of [
-    [0.00, [ 6,  2, 24]],  // top: deep indigo-purple
-    [0.22, [ 5,  3, 32]],  // upper: blue-violet
-    [0.45, [10,  6, 42]],  // mid: midnight blue
-    [0.68, [ 7,  4, 30]],  // lower: dark violet
-    [1.00, [12,  8, 48]],  // bottom: rich deep blue
-  ]) {
-    g.addColorStop(pos, `rgb(${mix(255,rN)},${mix(255,gN)},${mix(255,bN)})`);
-  }
-  nightBgCtx.fillStyle = g;
-  nightBgCtx.fillRect(0, 0, 2, 512);
-  nightBgTex.needsUpdate = true;
-  scene.background = nightBgTex;
-}
+const bgColor    = new THREE.Color(PAPER);
+scene.background = bgColor;
 
 // Star-field — scattered on the y≈0 plane, visible from the overhead 2D camera.
 // Uses a ShaderMaterial for per-star size variation, subtle colour tint, and twinkle.
@@ -199,16 +169,7 @@ const skyStarMat = new THREE.ShaderMaterial({
 const skyStars = new THREE.Points(skyStarGeo, skyStarMat);
 scene.add(skyStars);
 
-// Approximate flower-centre positions as [x_frac, y_frac] of the rose-bush image
-const FLOWER_IMG_POS = [
-  [0.06,0.54],[0.13,0.42],[0.19,0.53],[0.26,0.40],
-  [0.31,0.50],[0.38,0.35],[0.42,0.44],[0.48,0.30],
-  [0.51,0.43],[0.55,0.36],[0.59,0.47],[0.63,0.33],
-  [0.67,0.44],[0.70,0.27],[0.73,0.39],[0.77,0.50],
-  [0.82,0.39],[0.86,0.48],[0.90,0.42],[0.94,0.53],
-];
 let starTargetsComputed = false;
-let starCenterTarget   = null;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -511,13 +472,9 @@ function goTo3D() {
   state.expansionP2 = 0;
   state.missionFired = false;
   state.starDriftP   = 0;
-  starCenterTarget   = null;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
-  roseSectionEl.style.opacity    = "0";
-  roseSectionEl.setAttribute("aria-hidden", "true");
-  lastBgT             = -1;
-  scene.background    = PAPER_COLOR;
+  bgColor.copy(PAPER_COLOR);
   starTargetsComputed = false;
 }
 
@@ -749,19 +706,8 @@ function animate() {
   const starTarget = (state.hoverStar && state.mode === "3d" ? 1.1 : pulse) * starShrink;
   star.scale.lerp(tmpVec.set(starTarget, starTarget, starTarget), 1 - Math.pow(0.0005, dt));
 
-  // Once star is fully tiny and drift has started, scatter it toward a flower
-  if (p1e > 0.88 && state.starDriftP > 0 && starTargetsComputed) {
-    if (!starCenterTarget) {
-      const fi = Math.floor(Math.random() * FLOWER_IMG_POS.length);
-      starCenterTarget = new THREE.Vector3(
-        skyTargetArr[fi * 3], skyTargetArr[fi * 3 + 1], skyTargetArr[fi * 3 + 2]
-      );
-    }
-    const driftT = easeInOut(Math.max(0, (state.starDriftP - 0.1) / 0.9));
-    star.position.lerpVectors(new THREE.Vector3(0, 0, 0), starCenterTarget, driftT);
-  } else {
-    star.position.set(0, 0, 0);
-  }
+  // Center star stays at rose origin (0,0,0) — it becomes the heart of the rose
+  star.position.set(0, 0, 0);
 
   // Color + emissive: pastel cream → pure white with radiant glow
   star.material.color.copy(PASTEL_STAR_COLOR).lerp(WHITE_COLOR, p1e);
@@ -840,8 +786,8 @@ function animate() {
   lerpVec(basePos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
 
-  // Expansion: background gradient and star-field fade in from phase 1 start
-  updateBackground(p1e);
+  // Expansion: background fades from paper to #060412; star-field fades in
+  bgColor.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p1e);
   skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
   skyStarMat.uniforms.uOpacity.value = p1e;
   skyStarMat.uniforms.uDriftP.value  = easeInOut(state.starDriftP);
@@ -873,100 +819,59 @@ function updateExpansionScroll() {
   }
 }
 
-// ---------- Star drift toward rose flower centres ----------
-// Pixel-samples the rose image to find exact flower locations, then
-// back-projects them into Three.js world space so star targets align precisely.
-function computeStarTargets() {
-  const img = document.getElementById("rose-bush-img");
-  if (!img || !img.complete || !img.naturalWidth) return;
+// ---------- Star drift toward a single mathematical rose shape ----------
+// Generates target positions on a 5-petal rhodonea curve (r = R|cos(2.5θ)|^α)
+// in world space. 60% outline, 30% fill, 10% centre cluster.
+function computeRoseTargets() {
+  const R_WORLD = 7.0;  // rose radius in world units (~9.2 visible)
+  const K       = 2.5;  // 5-petal rhodonea
+  const ALPHA   = 0.55; // petal roundness
 
-  // ── 1. Draw image at reduced scale ───────────────────────────────────────
-  const SW  = 180;
-  const SH  = Math.round(SW * img.naturalHeight / img.naturalWidth);
-  const oc  = document.createElement("canvas");
-  oc.width = SW; oc.height = SH;
-  const ctx = oc.getContext("2d", { willReadFrequently: true });
-  ctx.drawImage(img, 0, 0, SW, SH);
-  const { data } = ctx.getImageData(0, 0, SW, SH);
+  const outlineCount = Math.round(SKY_COUNT * 0.60);
+  const fillCount    = Math.round(SKY_COUNT * 0.30);
+  const centerCount  = SKY_COUNT - outlineCount - fillCount;
 
-  // ── 2. Rose-pixel heat map ────────────────────────────────────────────────
-  const heat = new Float32Array(SW * SH);
-  for (let y = 0; y < SH; y++) {
-    for (let x = 0; x < SW; x++) {
-      const i = (y * SW + x) * 4;
-      const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
-      if (a < 64) continue;
-      // Pink/red petals: r dominant, not grey/white
-      if (r > 110 && r > g + 28 && r > b - 10 && !(r > 220 && g > 190 && b > 190)) {
-        heat[y * SW + x] = (r - g) / 255;
-      }
-    }
+  let idx = 0;
+
+  // Outline: stars trace the rose curve with tight perpendicular scatter
+  for (let i = 0; i < outlineCount; ) {
+    const theta  = Math.random() * Math.PI * 2;
+    const r      = R_WORLD * Math.pow(Math.abs(Math.cos(K * theta)), ALPHA);
+    if (r < R_WORLD * 0.30) continue; // skip cusp zone; centre cluster covers that
+    const radial  = (Math.random() - 0.5) * 0.22;
+    const tangent = (Math.random() - 0.5) * 0.32;
+    const tx = -Math.sin(theta), tz = Math.cos(theta);
+    skyTargetArr[idx * 3]     = (r + radial) * Math.cos(theta) + tangent * tx;
+    skyTargetArr[idx * 3 + 1] = 0;
+    skyTargetArr[idx * 3 + 2] = (r + radial) * Math.sin(theta) + tangent * tz;
+    idx++;
+    i++;
   }
 
-  // ── 3. Box-blur to merge petal pixels into blobs ─────────────────────────
-  const blurred = new Float32Array(SW * SH);
-  const R = 6;
-  for (let y = 0; y < SH; y++) {
-    for (let x = 0; x < SW; x++) {
-      let s = 0, c = 0;
-      for (let dy = -R; dy <= R; dy++) {
-        for (let dx = -R; dx <= R; dx++) {
-          const nx = x + dx, ny = y + dy;
-          if (nx >= 0 && nx < SW && ny >= 0 && ny < SH) { s += heat[ny * SW + nx]; c++; }
-        }
-      }
-      blurred[y * SW + x] = s / c;
-    }
+  // Fill: rejection-sample inside the rose petals
+  for (let i = 0; i < fillCount; ) {
+    const x     = (Math.random() * 2 - 1) * R_WORLD;
+    const z     = (Math.random() * 2 - 1) * R_WORLD;
+    const theta = Math.atan2(z, x);
+    const rMax  = R_WORLD * Math.pow(Math.abs(Math.cos(K * theta)), ALPHA);
+    if (Math.sqrt(x * x + z * z) > rMax) continue;
+    skyTargetArr[idx * 3]     = x;
+    skyTargetArr[idx * 3 + 1] = 0;
+    skyTargetArr[idx * 3 + 2] = z;
+    idx++;
+    i++;
   }
 
-  // ── 4. Greedy local-max peak picking (one peak per flower) ───────────────
-  const N         = 20;
-  const suppR     = Math.max(9, Math.round(SW / 13));
-  const centers   = [];
-  const rem       = new Float32Array(blurred);
-
-  for (let k = 0; k < N; k++) {
-    let maxVal = 0, maxI = 0;
-    for (let i = 0; i < rem.length; i++) if (rem[i] > maxVal) { maxVal = rem[i]; maxI = i; }
-    if (maxVal < 0.003) break;
-    const cx = maxI % SW, cy = Math.floor(maxI / SW);
-    centers.push([cx / SW, cy / SH]);
-    for (let dy = -suppR; dy <= suppR; dy++)
-      for (let dx = -suppR; dx <= suppR; dx++) {
-        const nx = cx + dx, ny = cy + dy;
-        if (nx >= 0 && nx < SW && ny >= 0 && ny < SH) rem[ny * SW + nx] = 0;
-      }
+  // Centre cluster: dense glow at the rose heart (world origin)
+  for (let i = 0; i < centerCount; i++) {
+    const angle  = Math.random() * Math.PI * 2;
+    const radius = Math.pow(Math.random(), 0.5) * 1.0;
+    skyTargetArr[idx * 3]     = Math.cos(angle) * radius;
+    skyTargetArr[idx * 3 + 1] = 0;
+    skyTargetArr[idx * 3 + 2] = Math.sin(angle) * radius;
+    idx++;
   }
-  // Fallback to hardcoded positions for any missing centres
-  while (centers.length < N) centers.push(FLOWER_IMG_POS[centers.length % FLOWER_IMG_POS.length]);
 
-  // ── 5. Back-project to Three.js world space via camera ray ───────────────
-  const imgRect    = img.getBoundingClientRect();
-  const canvasRect = canvas.getBoundingClientRect();
-  const plane      = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  const tmpRay     = new THREE.Raycaster();
-
-  const worldFlowers = centers.map(([fx, fy]) => {
-    const sx  = imgRect.left + fx * imgRect.width  - canvasRect.left;
-    const sy  = imgRect.top  + fy * imgRect.height - canvasRect.top;
-    tmpRay.setFromCamera(
-      new THREE.Vector2((sx / canvasRect.width) * 2 - 1, -(sy / canvasRect.height) * 2 + 1),
-      camera
-    );
-    const pt = new THREE.Vector3();
-    tmpRay.ray.intersectPlane(plane, pt);
-    return pt.lengthSq() > 0 ? pt : new THREE.Vector3();
-  });
-
-  // ── 6. Assign every star to a flower cluster ──────────────────────────────
-  const NF = worldFlowers.length;
-  for (let i = 0; i < SKY_COUNT; i++) {
-    const fpt    = worldFlowers[i % NF];
-    const spread = 0.20;
-    skyTargetArr[i * 3]     = fpt.x + (Math.random() - 0.5) * spread;
-    skyTargetArr[i * 3 + 1] = fpt.y;
-    skyTargetArr[i * 3 + 2] = fpt.z + (Math.random() - 0.5) * spread;
-  }
   skyTargetBuf.needsUpdate = true;
   starTargetsComputed = true;
 }
@@ -996,12 +901,7 @@ function updateLetterScroll() {
   const totalRange   = Math.max(1, vh * 0.5 + docDist);
 
   state.starDriftP = Math.max(0, Math.min(1, scrolledPast / totalRange));
-  if (state.starDriftP > 0 && !starTargetsComputed) computeStarTargets();
-
-  // Rose: fades in from driftP=0.45 to driftP=1 (fully opaque=0.82)
-  const roseAlpha = Math.max(0, (state.starDriftP - 0.45) / 0.55) * 0.82;
-  roseSectionEl.style.opacity = roseAlpha.toFixed(3);
-  if (roseAlpha > 0) roseSectionEl.setAttribute("aria-hidden", "false");
+  if (state.starDriftP > 0 && !starTargetsComputed) computeRoseTargets();
 }
 
 // Mission section: animate characters in when it first scrolls into view.
