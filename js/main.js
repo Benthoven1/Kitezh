@@ -398,35 +398,56 @@ canvas.addEventListener("click", () => {
   }
 });
 
-const ifoModeEl = document.getElementById("ifo-mode");
+const ifoModeEl    = document.getElementById("ifo-mode");
+const modeCurtain  = document.getElementById("mode-curtain");
+let   curtainTimer = null;
+
+// Brief dark flash that hides the single-frame geometry jump when switching modes.
+// onCover() is called at peak opacity (after fade-in); the curtain then fades out.
+function flashCurtain(onCover) {
+  clearTimeout(curtainTimer);
+  modeCurtain.style.transition = "opacity 0.18s ease-in";
+  modeCurtain.style.opacity    = "1";
+  modeCurtain.style.pointerEvents = "all";
+  curtainTimer = setTimeout(() => {
+    if (onCover) onCover();
+    modeCurtain.style.transition = "opacity 0.42s ease-out";
+    modeCurtain.style.opacity    = "0";
+    setTimeout(() => { modeCurtain.style.pointerEvents = "none"; }, 440);
+  }, 200);
+}
 
 function goToIFO() {
   if (state.mode !== "3d") return;
-  label.classList.remove("visible");
-  state.labelPlanet = null;
-  state.labelStar = false;
-  document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
-  navbar.classList.add("visible");
-  navbar.setAttribute("aria-hidden", "false");
-  body.classList.remove("cosmos-only");
-  body.classList.add("mode-ifo");
-  ifoModeEl.setAttribute("aria-hidden", "false");
-  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-  state.ifoTarget = 1;
-  state.mode = "ifo-transitioning";
+  flashCurtain(() => {
+    label.classList.remove("visible");
+    state.labelPlanet = null;
+    state.labelStar = false;
+    document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+    navbar.classList.add("visible");
+    navbar.setAttribute("aria-hidden", "false");
+    body.classList.remove("cosmos-only");
+    body.classList.add("mode-ifo");
+    ifoModeEl.setAttribute("aria-hidden", "false");
+    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+    state.ifoTarget = 1;
+    state.mode = "ifo-transitioning";
+  });
 }
 
 function returnFromIFO() {
   if (state.mode !== "ifo" && state.mode !== "ifo-transitioning") return;
-  state.ifoTarget = 0;
-  state.mode = "ifo-transitioning";
-  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-  body.classList.add("cosmos-only");
-  // Defer the display:none / reflow work to the next frame so the scroll and
-  // cosmos-only paint settle first — prevents the main-thread stall on Safari.
-  requestAnimationFrame(() => {
-    body.classList.remove("mode-ifo");
-    ifoModeEl.setAttribute("aria-hidden", "true");
+  flashCurtain(() => {
+    state.ifoTarget = 0;
+    state.mode = "ifo-transitioning";
+    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+    body.classList.add("cosmos-only");
+    // Defer the display:none / reflow work to the next frame so the scroll and
+    // cosmos-only paint settle first — prevents the main-thread stall on Safari.
+    requestAnimationFrame(() => {
+      body.classList.remove("mode-ifo");
+      ifoModeEl.setAttribute("aria-hidden", "true");
+    });
   });
 }
 
@@ -465,20 +486,23 @@ function goTo2D() {
 
 function goTo3D() {
   if (state.mode !== "2d") return;
-  state.mode = "transitioning";
-  state.target = 0;
+  // Scroll before curtain so the position is correct once it reveals 3D view.
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-  body.classList.add("cosmos-only");
-  body.classList.remove("mode-2d", "expansion-active", "night-mode");
-  document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
-  state.expansionP1 = 0;
-  state.expansionP2 = 0;
-  state.missionFired = false;
-  state.starDriftP   = 0;
-  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-  missionSection.setAttribute("aria-hidden", "true");
-  bgColor.copy(PAPER_COLOR);
-  starTargetsComputed = false;
+  flashCurtain(() => {
+    state.mode = "transitioning";
+    state.target = 0;
+    body.classList.add("cosmos-only");
+    body.classList.remove("mode-2d", "expansion-active", "night-mode");
+    document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+    state.expansionP1 = 0;
+    state.expansionP2 = 0;
+    state.missionFired = false;
+    state.starDriftP   = 0;
+    missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
+    missionSection.setAttribute("aria-hidden", "true");
+    bgColor.copy(PAPER_COLOR);
+    starTargetsComputed = false;
+  });
 }
 
 brandLink.addEventListener("click", (e) => {
@@ -823,65 +847,87 @@ function updateExpansionScroll() {
 }
 
 // ---------- Star drift toward a rose-flower shape ----------
-// Matches the real rose-flower.jpg viewed from above: roughly circular silhouette
-// with gentle petal ruffles on the edge, golden-angle phyllotaxis spiral fill
-// (the natural packing pattern of real rose petals), and a tight dense centre.
+// Matches rose-flower.jpg viewed from above: seven concentric petal layers with
+// Fibonacci petal counts (5→5→8→8→13→13→8), offsets chosen so a 5-armed spiral
+// advances ~35° per layer — matching the visible spiral structure of a real rose.
+// Spiral connector stars and a tight dense centre complete the shape.
 function computeRoseTargets() {
-  const R_WORLD = 7.2;  // overall rose radius in world units
+  const R_WORLD = 7.4;
 
-  const outlineCount = Math.round(SKY_COUNT * 0.28);
-  const spiralCount  = Math.round(SKY_COUNT * 0.50);
-  const centerCount  = Math.round(SKY_COUNT * 0.12);
-  const fillCount    = SKY_COUNT - outlineCount - spiralCount - centerCount;
+  // Each layer: radius fraction, petal count, angular offset computed so the
+  // spiral arm at arm-angle advances by 35° between each successive layer.
+  //   offset = target_advance_deg × (π/180) MOD (2π / n)
+  const LAYERS = [
+    { rFrac: 0.13, n:  5, offset: 0.000 },  // inner eye — 0°
+    { rFrac: 0.27, n:  5, offset: 0.611 },  // 35° mod 72° = 35°
+    { rFrac: 0.42, n:  8, offset: 0.436 },  // 70° mod 45° = 25°
+    { rFrac: 0.56, n:  8, offset: 0.262 },  // 105° mod 45° = 15°
+    { rFrac: 0.70, n: 13, offset: 0.027 },  // 140° mod 27.7° ≈ 1.5°
+    { rFrac: 0.83, n: 13, offset: 0.154 },  // 175° mod 27.7° ≈ 8.8°
+    { rFrac: 0.96, n:  8, offset: 0.524 },  // 210° mod 45° = 30°
+  ];
+
+  // Star budget: 80% across petal layers (weighted by layer index for outer depth),
+  // 8% along spiral arm connectors, rest = dense centre.
+  const layerTotal  = Math.round(SKY_COUNT * 0.80);
+  const weights     = LAYERS.map((_, i) => i + 2);                     // 2..8
+  const weightSum   = weights.reduce((a, b) => a + b, 0);              // 35
+  const layerCounts = weights.map(w => Math.round((w / weightSum) * layerTotal));
 
   let idx = 0;
 
-  // Outer ruffled perimeter — circular with ~5 gentle petal bumps matching the real rose edge
-  for (let i = 0; i < outlineCount; i++) {
-    const theta  = Math.random() * Math.PI * 2;
-    const ruffle = 1 + 0.10 * Math.cos(5 * theta) + 0.04 * Math.cos(10 * theta + 0.5);
-    const r      = R_WORLD * ruffle + (Math.random() - 0.5) * 0.50;
-    skyTargetArr[idx * 3]     = r * Math.cos(theta);
+  LAYERS.forEach((layer, li) => {
+    const r_base     = R_WORLD * layer.rFrac;
+    const petalAngle = (2 * Math.PI) / layer.n;
+    const perPetal   = Math.max(1, Math.round(layerCounts[li] / layer.n));
+    // Petal size: radial spread smaller than ring gap (keeps layers distinct),
+    // tangential spread fills most of the petal arc (rounded blob look).
+    const radialSize  = R_WORLD * 0.040 + r_base * 0.028;
+    const tangentSize = r_base * Math.sin(petalAngle * 0.40);
+
+    for (let p = 0; p < layer.n && idx < SKY_COUNT; p++) {
+      const petalCenter = p * petalAngle + layer.offset;
+      const rx =  Math.cos(petalCenter);   // radial unit vector
+      const rz =  Math.sin(petalCenter);
+      const tx = -Math.sin(petalCenter);   // tangential unit vector
+      const tz =  Math.cos(petalCenter);
+
+      for (let s = 0; s < perPetal && idx < SKY_COUNT; s++) {
+        // Uniform-disk sample for a rounded petal shape (dense centre, thin edges)
+        let u, v;
+        do { u = (Math.random() - 0.5) * 2; v = (Math.random() - 0.5) * 2; }
+        while (u * u + v * v > 1);
+
+        skyTargetArr[idx * 3]     = (r_base + u * radialSize) * rx + v * tangentSize * tx;
+        skyTargetArr[idx * 3 + 1] = 0;
+        skyTargetArr[idx * 3 + 2] = (r_base + u * radialSize) * rz + v * tangentSize * tz;
+        idx++;
+      }
+    }
+  });
+
+  // 5 Archimedean spiral arms (one per primary petal), each sweeping 210° from
+  // centre to edge — makes the inter-petal spiral structure visually explicit.
+  const spiralStars = Math.round(SKY_COUNT * 0.08);
+  for (let i = 0; i < spiralStars && idx < SKY_COUNT; i++) {
+    const arm   = Math.floor(Math.random() * 5);
+    const t     = Math.sqrt(Math.random());           // weight toward outer radius
+    const r     = R_WORLD * 0.94 * t;
+    const theta = arm * (2 * Math.PI / 5) + t * (210 * Math.PI / 180);
+    skyTargetArr[idx * 3]     = r * Math.cos(theta) + (Math.random() - 0.5) * 0.20;
     skyTargetArr[idx * 3 + 1] = 0;
-    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta);
+    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta) + (Math.random() - 0.5) * 0.20;
     idx++;
   }
 
-  // Phyllotaxis (golden-angle) spiral — replicates the natural spiral petal arrangement
-  // visible in the rose photo; produces the characteristic sunflower-like packing.
-  const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ≈ 137.5°
-  for (let i = 0; i < spiralCount; i++) {
-    const t     = (i + 1) / spiralCount;
-    const theta = i * goldenAngle;
-    const r     = R_WORLD * 0.92 * Math.sqrt(t) + (Math.random() - 0.5) * 0.28;
-    skyTargetArr[idx * 3]     = r * Math.cos(theta);
-    skyTargetArr[idx * 3 + 1] = 0;
-    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta);
-    idx++;
-  }
-
-  // Dense centre cluster — the tight spiral heart of the rose
-  for (let i = 0; i < centerCount; i++) {
+  // Dense centre — tight spiral eye of the rose
+  while (idx < SKY_COUNT) {
     const angle  = Math.random() * Math.PI * 2;
-    const radius = Math.pow(Math.random(), 0.35) * R_WORLD * 0.20;
+    const radius = Math.pow(Math.random(), 0.35) * R_WORLD * 0.10;
     skyTargetArr[idx * 3]     = Math.cos(angle) * radius;
     skyTargetArr[idx * 3 + 1] = 0;
     skyTargetArr[idx * 3 + 2] = Math.sin(angle) * radius;
     idx++;
-  }
-
-  // Interior fill — uniform random within the circular rose boundary
-  let filled = 0;
-  while (filled < fillCount) {
-    const x = (Math.random() * 2 - 1) * R_WORLD;
-    const z = (Math.random() * 2 - 1) * R_WORLD;
-    if (x * x + z * z <= R_WORLD * R_WORLD) {
-      skyTargetArr[idx * 3]     = x;
-      skyTargetArr[idx * 3 + 1] = 0;
-      skyTargetArr[idx * 3 + 2] = z;
-      idx++;
-      filled++;
-    }
   }
 
   skyTargetBuf.needsUpdate = true;

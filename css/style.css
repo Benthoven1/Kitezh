@@ -184,11 +184,10 @@ body.expansion-active #canvas-wrap {
   pointer-events: none;
 }
 
-/* 480 vh keeps the same effective scroll distance (480 − 100 = 380 vh)
-   as the previous sticky approach because the fixed canvas no longer
-   contributes height to the wrapper. */
+/* 300 vh scroll range lets the expansion animation play fully while bringing
+   the mission section into view much sooner after the night sky completes. */
 body.expansion-active #expansion-space {
-  height: 480vh;
+  height: 300vh;
 }
 
 /* ---------- Night-mode (phase 2 of expansion) ---------- */
@@ -654,4 +653,17 @@ body:not(.mode-ifo) .ifo-prose {
 /* ---- Responsive ---- */
 @media (max-width: 720px) {
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
+}
+
+/* ---------- Mode-transition curtain ---------- */
+/* Full-screen dark overlay that briefly covers animation state jumps when
+   switching between 3D, 2D, and IFO modes. */
+#mode-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #06050f;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity;
 }
