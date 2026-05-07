@@ -459,7 +459,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
     f.style.transform = "translate(-50%, -50%)";
     f.style.visibility = ""; // restore from CSS (visible) — clear any cover-nav hide
   });
-  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.8)"; });
+  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.2)"; });
   loadingScreen.style.clipPath  = "";
   loadingScreen.style.opacity   = startOpaque ? "1" : "0";
   loadingScreen.style.display   = "block";
@@ -526,9 +526,9 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
       // Each image zooms independently from its own pop-in time toward 1.0x —
       // staggered start + staggered end gives a cascading sense of depth.
-      lsF1img.style.transform = `scale(${1.8 - 0.8 * ph(t, 0.10, 0.70)})`;
-      lsF2img.style.transform = `scale(${1.8 - 0.8 * ph(t, 0.20, 0.76)})`;
-      lsF3img.style.transform = `scale(${1.8 - 0.8 * ph(t, 0.30, 0.82)})`;
+      lsF1img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.10, 0.70)})`;
+      lsF2img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.20, 0.76)})`;
+      lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.30, 0.82)})`;
 
       if (t < 0.62) {
         // ── Phase 1 – all four rectangles pop in at full size, staggered by 0.10 ──
