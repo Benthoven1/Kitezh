@@ -439,10 +439,10 @@ function showLoadingScreen(onReady, duration) {
 
   // Thin concentric borders: each gap is 2 vw and 1.5 vh per side.
   // Canvas window (the live-canvas hole) is the innermost rectangle.
-  const WIN_W = vw * 0.40, WIN_H = vh * 0.26;   // canvas hole
-  const F3_W  = vw * 0.44, F3_H  = vh * 0.29;   // Polymath  (+2vw/+1.5vh each side)
-  const F2_W  = vw * 0.48, F2_H  = vh * 0.32;   // Pictorial
-  const F1_W  = vw * 0.52, F1_H  = vh * 0.35;   // Musical
+  const WIN_W = vw * 0.68, WIN_H = vh * 0.62;   // canvas hole
+  const F3_W  = vw * 0.72, F3_H  = vh * 0.65;   // Polymath  (+2vw/+1.5vh each side)
+  const F2_W  = vw * 0.76, F2_H  = vh * 0.68;   // Pictorial
+  const F1_W  = vw * 0.80, F1_H  = vh * 0.71;   // Musical
 
   [lsF1, lsF2, lsF3].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
