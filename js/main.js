@@ -98,11 +98,11 @@ for (let i = 0; i < SKY_COUNT; i++) {
   skyPosArr[i * 3 + 1] = Math.random() * 2;
   skyPosArr[i * 3 + 2] = (Math.random() - 0.5) * 240;
 
-  // 70% small (1–2 px), 25% medium (2–3 px), 5% bright (3–4 px)
+  // 55% small (1.5–2.5 px), 35% medium (2.5–4 px), 10% bright (4–5.5 px)
   const sr = Math.random();
-  skySizeArr[i] = sr < 0.70 ? 1.0 + Math.random()
-               : sr < 0.95 ? 2.0 + Math.random() * 0.8
-               :              3.0 + Math.random() * 0.8;
+  skySizeArr[i] = sr < 0.55 ? 1.5 + Math.random()
+               : sr < 0.90 ? 2.5 + Math.random() * 1.5
+               :              4.0 + Math.random() * 1.5;
 
   skyTwinkleArr[i] = Math.random() * Math.PI * 2;
 
@@ -178,6 +178,7 @@ const FLOWER_IMG_POS = [
   [0.82,0.39],[0.86,0.48],[0.90,0.42],[0.94,0.53],
 ];
 let starTargetsComputed = false;
+let starCenterTarget   = null;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -480,6 +481,7 @@ function goTo3D() {
   state.expansionP2 = 0;
   state.missionFired = false;
   state.starDriftP   = 0;
+  starCenterTarget   = null;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   roseSectionEl.classList.remove("visible");
@@ -709,12 +711,25 @@ function animate() {
     cofPlanetInScene = false;
   }
 
-  // Star: shrinks as expansion progresses, stays centered, transitions to radiant white
+  // Star: shrinks as expansion progresses, then drifts to a flower centre once tiny
   const pulse      = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
   const starShrink = lerp(1, 0.04, p1e);
   const starTarget = (state.hoverStar && state.mode === "3d" ? 1.1 : pulse) * starShrink;
   star.scale.lerp(tmpVec.set(starTarget, starTarget, starTarget), 1 - Math.pow(0.0005, dt));
-  star.position.set(0, 0, 0);
+
+  // Once star is fully tiny and drift has started, scatter it toward a flower
+  if (p1e > 0.88 && state.starDriftP > 0 && starTargetsComputed) {
+    if (!starCenterTarget) {
+      const fi = Math.floor(Math.random() * FLOWER_IMG_POS.length);
+      starCenterTarget = new THREE.Vector3(
+        skyTargetArr[fi * 3], skyTargetArr[fi * 3 + 1], skyTargetArr[fi * 3 + 2]
+      );
+    }
+    const driftT = easeInOut(Math.max(0, (state.starDriftP - 0.1) / 0.9));
+    star.position.lerpVectors(new THREE.Vector3(0, 0, 0), starCenterTarget, driftT);
+  } else {
+    star.position.set(0, 0, 0);
+  }
 
   // Color + emissive: pastel cream → pure white with radiant glow
   star.material.color.copy(PASTEL_STAR_COLOR).lerp(WHITE_COLOR, p1e);
@@ -860,14 +875,20 @@ function computeStarTargets() {
   starTargetsComputed = true;
 }
 
-function updateRoseScroll() {
-  if (!body.classList.contains("expansion-active")) return;
-  const rect = roseSectionEl.getBoundingClientRect();
+// Track scroll through the letter body to drive star drift.
+// Drift starts at 2/3 through the letter-body and is complete at the letter-close.
+function updateLetterScroll() {
+  if (!body.classList.contains("night-mode")) return;
+  const letterBody = document.querySelector(".letter-body");
+  if (!letterBody) return;
+  const rect = letterBody.getBoundingClientRect();
   const vh   = window.innerHeight;
-  // 0 when rose bottom edge enters viewport; 1 when rose centre is at viewport centre
-  const raw  = 1 - (rect.top - vh * 0.35) / (vh * 0.85);
-  state.starDriftP = Math.max(0, Math.min(1, raw));
-  if (state.starDriftP > 0.25 && !starTargetsComputed) computeStarTargets();
+  // 2/3 mark of letter-body in viewport-relative coords
+  const twoThirdsY = rect.top + rect.height * (2 / 3);
+  // Full drift when 2/3-mark reaches viewport top; starts when it's at viewport bottom
+  const raw = (vh - twoThirdsY) / vh;
+  state.starDriftP = Math.max(state.starDriftP, Math.max(0, Math.min(1, raw)));
+  if (state.starDriftP > 0 && !starTargetsComputed) computeStarTargets();
 }
 
 // Mission section: animate characters in when it first scrolls into view.
@@ -883,27 +904,38 @@ const missionObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 missionObserver.observe(missionSection);
 
-// Rose section: fade in and show it when it enters the viewport.
+// Rose overlay: fade in when letter-close scrolls into view, fade out at footer.
+const letterCloseEl = document.getElementById("letter-close");
 const roseObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting) {
+  if (entries[0].isIntersecting && body.classList.contains("night-mode")) {
     roseSectionEl.classList.add("visible");
     roseSectionEl.setAttribute("aria-hidden", "false");
   }
-}, { threshold: 0.05 });
-roseObserver.observe(roseSectionEl);
+}, { threshold: 0.3 });
+if (letterCloseEl) roseObserver.observe(letterCloseEl);
+
+const footerEl = document.getElementById("site-footer");
+const roseFadeOutObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting) {
+    roseSectionEl.classList.remove("visible");
+  } else if (!entries[0].isIntersecting && body.classList.contains("night-mode")) {
+    // re-show if scrolling back up from footer into letter
+    const rect = letterCloseEl ? letterCloseEl.getBoundingClientRect() : null;
+    if (rect && rect.top < window.innerHeight && rect.bottom > 0) {
+      roseSectionEl.classList.add("visible");
+    }
+  }
+}, { threshold: 0.1 });
+if (footerEl) roseFadeOutObserver.observe(footerEl);
 
 window.addEventListener("scroll", () => {
-  if (body.classList.contains("expansion-active")) {
-    updateExpansionScroll();
-    updateRoseScroll();
-  }
+  if (body.classList.contains("expansion-active")) updateExpansionScroll();
+  if (body.classList.contains("night-mode")) updateLetterScroll();
 }, { passive: true });
 
 window.addEventListener("resize", () => {
-  if (body.classList.contains("expansion-active")) {
-    updateExpansionScroll();
-    updateRoseScroll();
-  }
+  if (body.classList.contains("expansion-active")) updateExpansionScroll();
+  if (body.classList.contains("night-mode")) updateLetterScroll();
 });
 
 animate();

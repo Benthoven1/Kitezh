@@ -200,7 +200,7 @@ body.night-mode #mission-section,
 body.night-mode #letter-section {
   background: transparent;
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 body.night-mode .letter-to,
@@ -221,7 +221,7 @@ body.night-mode #site-footer {
   background: transparent;
   border-top-color: rgba(220, 212, 245, 0.12);
   position: relative;
-  z-index: 1;
+  z-index: 2;
 }
 
 body.night-mode .footer-wordmark {
@@ -340,22 +340,21 @@ body.mode-2d .cosmos-hint,
 body.mode-ifo .cosmos-hint { opacity: 0; }
 
 
-/* ---------- Rose section — stars drift into flower centers ---------- */
+/* ---------- Rose section — fixed viewport overlay; appears behind letter text ---------- */
 #rose-section {
-  position: relative;
+  position: fixed;
+  inset: 0;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px clamp(16px, 5vw, 60px) 40px;
   opacity: 0;
-  transition: opacity 1.8s ease;
+  transition: opacity 2.4s ease;
   pointer-events: none;
-  background: transparent;
 }
 
 #rose-section.visible {
-  opacity: 1;
+  opacity: 0.72;
 }
 
 #rose-bush-img {
@@ -363,12 +362,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   max-width: min(960px, 92vw);
   height: auto;
   display: block;
-}
-
-body.night-mode #rose-section {
-  background: transparent;
-  position: relative;
-  z-index: 1;
 }
 
 /* ---------- Letter Section ---------- */
