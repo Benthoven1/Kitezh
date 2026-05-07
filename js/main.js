@@ -504,11 +504,14 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       }
 
       // Fade in [0→0.10] for in-page transitions; already opaque for cross-page.
-      // Hold at 1, then fade out [0.92→1.0].
+      // Phase 3 fades out [0.80→1.0] while the hole stays at WIN size, so the
+      // white matting visibly dissolves and the canvas is revealed by opacity
+      // rather than by an expanding clip-path (which would reach full-viewport
+      // transparency before the opacity ramp could be seen at all).
       loadingScreen.style.opacity = String(
-        t < 0.92
+        t < 0.80
           ? (startOpaque ? 1 : ph(t, 0, 0.10))
-          : 1 - ph(t, 0.92, 1.0)
+          : 1 - ph(t, 0.80, 1.0)
       );
 
       // Group rises from below viewport [0.10→0.30]; holeCY tracks with it
@@ -517,7 +520,6 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
       if (t < 0.62) {
         // ── Phase 1 – staggered frame appearance; canvas hole + border grow in ──
-        // F1 leads and finishes at t=0.30; subsequent frames stagger behind it.
         setF(lsF1, F1_W * ph(t, 0.10, 0.30), F1_H * ph(t, 0.10, 0.30), cy_off);
         setF(lsF2, F2_W * ph(t, 0.20, 0.42), F2_H * ph(t, 0.20, 0.42), cy_off);
         setF(lsF3, F3_W * ph(t, 0.30, 0.52), F3_H * ph(t, 0.30, 0.52), cy_off);
@@ -536,15 +538,15 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setBorder(WIN_W, WIN_H);
 
       } else {
-        // ── Phase 3 – border + hole expand outward, leaving the page ────────────
-        const ep = ph(t, 0.80, 0.92);
-        const hw = WIN_W + (vw - WIN_W) * ep;
-        const hh = WIN_H + (vh - WIN_H) * ep;
+        // ── Phase 3 – fade out; hole stays at WIN size ───────────────────────────
+        // Opacity is handled above (1→0 over 0.80→1.0).  Hold the hole and
+        // frames steady so the canvas is visible through the centre while the
+        // white matting dissolves around it.
         setF(lsF1, WIN_W, WIN_H, 0);
         setF(lsF2, WIN_W, WIN_H, 0);
         setF(lsF3, WIN_W, WIN_H, 0);
-        lsSetHole(vw, vh, hw, hh, vh / 2);
-        setBorder(hw, hh);
+        lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
+        setBorder(WIN_W, WIN_H);
       }
 
       if (t < 1) {
