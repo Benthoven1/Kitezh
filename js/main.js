@@ -429,7 +429,7 @@ function lsSetHole(vw, vh, hW, hH, hCY) {
     `${x1}px ${y1}px,${x1}px ${y2}px,${x2}px ${y2}px,${x2}px ${y1}px,${x1}px ${y1}px)`;
 }
 
-function showLoadingScreen(onReady, duration) {
+function showLoadingScreen(onReady, duration, startOpaque) {
   if (lsActive) return;
   lsActive = true;
   const dur = duration || 4000;
@@ -450,10 +450,12 @@ function showLoadingScreen(onReady, duration) {
     f.style.transform = "translate(-50%, -50%)";
   });
   loadingScreen.style.clipPath  = "";
-  loadingScreen.style.opacity   = "0";
+  loadingScreen.style.opacity   = startOpaque ? "1" : "0";
   loadingScreen.style.display   = "block";
   loadingScreen.style.pointerEvents = "all";
   loadingScreen.setAttribute("aria-hidden", "false");
+  // Remove the pre-paint cover class now that JS has taken ownership
+  document.documentElement.classList.remove("ls-instant-cover");
 
   let readyCalled = false, t0 = null;
 
@@ -488,15 +490,19 @@ function showLoadingScreen(onReady, duration) {
       if (!t0) t0 = ts;
       const t = Math.min(1, (ts - t0) / dur);
 
-      // Trigger the Three.js mode transition early so it runs under the overlay
-      if (t >= 0.10 && !readyCalled) {
+      // Fire mode transition: immediately when overlay is already opaque (cross-page
+      // entrance), otherwise wait until overlay has faded in (t ≥ 0.10).
+      if (!readyCalled && (startOpaque || t >= 0.10)) {
         readyCalled = true;
         try { if (onReady) onReady(); } catch (err) { console.error(err); }
       }
 
-      // Fade in [0→0.10], hold, fade out [0.92→1.0]
+      // Fade in [0→0.10] for in-page transitions; already opaque for cross-page.
+      // Hold at 1, then fade out [0.92→1.0].
       loadingScreen.style.opacity = String(
-        t < 0.92 ? ph(t, 0, 0.10) : 1 - ph(t, 0.92, 1.0)
+        t < 0.92
+          ? (startOpaque ? 1 : ph(t, 0, 0.10))
+          : 1 - ph(t, 0.92, 1.0)
       );
 
       // Group rises from below viewport [0.10→0.30]; holeCY tracks with it
@@ -1197,7 +1203,7 @@ animate();
 
   if (_entering) {
     sessionStorage.removeItem("ls-entering");
-    showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, 2800);
+    showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, 2800, true);
   } else if (_ifoHash) {
     // Direct URL access with #ifo — no loading screen, just snap state
     jumpToIFO();
