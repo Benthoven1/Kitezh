@@ -221,8 +221,13 @@
     </footer>
   </main>
 
-  <!-- Curtain overlay — briefly fades in/out to cover animation state jumps -->
-  <div id="mode-curtain" aria-hidden="true"></div>
+  <!-- Loading screen — nested image frames that expand to reveal the destination animation -->
+  <div id="loading-screen" aria-hidden="true">
+    <div id="ls-f1" class="ls-frame"></div>
+    <div id="ls-f2" class="ls-frame"></div>
+    <div id="ls-f3" class="ls-frame"></div>
+    <div id="ls-knockout"></div>
+  </div>
 
   <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.161.0/build/three.module.js" } }

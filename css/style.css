@@ -184,10 +184,8 @@ body.expansion-active #canvas-wrap {
   pointer-events: none;
 }
 
-/* 300 vh scroll range lets the expansion animation play fully while bringing
-   the mission section into view much sooner after the night sky completes. */
 body.expansion-active #expansion-space {
-  height: 300vh;
+  height: 80vh;
 }
 
 /* ---------- Night-mode (phase 2 of expansion) ---------- */
@@ -242,8 +240,8 @@ body.night-mode .footer-copy p {
   z-index: 1;
   background: transparent;
   text-align: center;
-  padding: clamp(80px, 12vh, 140px) clamp(20px, 4vw, 60px);
-  min-height: 50vh;
+  padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 60px) clamp(40px, 6vh, 80px);
+  min-height: 20vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -655,15 +653,43 @@ body:not(.mode-ifo) .ifo-prose {
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
 }
 
-/* ---------- Mode-transition curtain ---------- */
-/* Full-screen dark overlay that briefly covers animation state jumps when
-   switching between 3D, 2D, and IFO modes. */
-#mode-curtain {
+/* ---------- Loading screen ---------- */
+#loading-screen {
   position: fixed;
   inset: 0;
-  z-index: 200;
-  background: #06050f;
-  opacity: 0;
+  z-index: 600;
+  background: #ffffff;
+  isolation: isolate;
   pointer-events: none;
+  opacity: 0;
+  display: none;
   will-change: opacity;
+  overflow: hidden;
+}
+
+.ls-frame {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+#ls-f1 { background-image: url('../Musical.png');   z-index: 1; }
+#ls-f2 { background-image: url('../Pictorial.png'); z-index: 2; }
+#ls-f3 { background-image: url('../Polymath.jpg');  z-index: 3; }
+
+#ls-knockout {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  background: #000000;
+  mix-blend-mode: destination-out;
+  z-index: 4;
 }
