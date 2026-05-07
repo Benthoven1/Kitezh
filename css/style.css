@@ -185,7 +185,7 @@ body.expansion-active #canvas-wrap {
 }
 
 body.expansion-active #expansion-space {
-  height: 80vh;
+  height: 200vh;
 }
 
 /* ---------- Night-mode (phase 2 of expansion) ---------- */
