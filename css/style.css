@@ -682,16 +682,28 @@ html.ls-instant-cover #loading-screen {
   transform: translate(-50%, -50%);
   width: 0;
   height: 0;
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
   will-change: width, height, transform;
 }
 
-#ls-f1 { z-index: 1; background-image: url('../Musical.png');   }
-#ls-f2 { z-index: 2; background-image: url('../Pictorial.png'); }
-#ls-f3 { z-index: 3; background-image: url('../Polymath.jpg');  }
+.ls-img {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transform-origin: center;
+  will-change: transform;
+}
+
+#ls-f1 { z-index: 1; }
+#ls-f2 { z-index: 2; }
+#ls-f3 { z-index: 3; }
+#ls-f1 .ls-img { background-image: url('../Musical.png');   }
+#ls-f2 .ls-img { background-image: url('../Pictorial.png'); }
+#ls-f3 .ls-img { background-image: url('../Polymath.jpg');  }
 #ls-border {
   z-index: 4;
+  overflow: visible;
   background: transparent;
   border: 3px solid rgba(27, 22, 19, 0.45);
 }
