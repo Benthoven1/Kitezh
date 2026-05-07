@@ -86,7 +86,7 @@ scene.background = bgColor;
 // Uses a ShaderMaterial for per-star size variation, subtle colour tint, and twinkle.
 // Original positions are also the geometry's "position" attribute so Three.js frustum
 // culling still works; aTargetPos holds flower-centre targets filled later.
-const SKY_COUNT     = 1600;
+const SKY_COUNT     = 4500;
 const skyPosArr     = new Float32Array(SKY_COUNT * 3);
 const skySizeArr    = new Float32Array(SKY_COUNT);
 const skyTwinkleArr = new Float32Array(SKY_COUNT);
@@ -101,11 +101,11 @@ for (let i = 0; i < SKY_COUNT; i++) {
   skyPosArr[i * 3 + 1] = Math.random() * 2;
   skyPosArr[i * 3 + 2] = (Math.random() - 0.5) * spread * 2;
 
-  // 55% small (1.5–2.5 px), 35% medium (2.5–4 px), 10% bright (4–5.5 px)
+  // 50% small (1.0–2.0 px), 35% medium (2.0–3.5 px), 15% bright (3.5–6 px)
   const sr = Math.random();
-  skySizeArr[i] = sr < 0.55 ? 1.5 + Math.random()
-               : sr < 0.90 ? 2.5 + Math.random() * 1.5
-               :              4.0 + Math.random() * 1.5;
+  skySizeArr[i] = sr < 0.50 ? 1.0 + Math.random()
+               : sr < 0.85 ? 2.0 + Math.random() * 1.5
+               :              3.5 + Math.random() * 2.5;
 
   skyTwinkleArr[i] = Math.random() * Math.PI * 2;
 
@@ -398,56 +398,133 @@ canvas.addEventListener("click", () => {
   }
 });
 
-const ifoModeEl    = document.getElementById("ifo-mode");
-const modeCurtain  = document.getElementById("mode-curtain");
-let   curtainTimer = null;
+const ifoModeEl = document.getElementById("ifo-mode");
 
-// Brief dark flash that hides the single-frame geometry jump when switching modes.
-// onCover() is called at peak opacity (after fade-in); the curtain then fades out.
-function flashCurtain(onCover) {
-  clearTimeout(curtainTimer);
-  modeCurtain.style.transition = "opacity 0.18s ease-in";
-  modeCurtain.style.opacity    = "1";
-  modeCurtain.style.pointerEvents = "all";
-  curtainTimer = setTimeout(() => {
-    if (onCover) onCover();
-    modeCurtain.style.transition = "opacity 0.42s ease-out";
-    modeCurtain.style.opacity    = "0";
-    setTimeout(() => { modeCurtain.style.pointerEvents = "none"; }, 440);
-  }, 200);
+// ── Loading screen ────────────────────────────────────────────────────────────
+// Plays a nested-rectangle reveal sequence when navigating via top/footer nav.
+// Four concentric frames animate up from the bottom: Musical → Pictorial →
+// Polymath (images from the repo) → transparent knockout that shows the live
+// Three.js canvas. The knockout expands to fill the viewport, seamlessly
+// becoming the destination animation before the overlay fades away.
+const loadingScreen = document.getElementById("loading-screen");
+const lsF1 = document.getElementById("ls-f1");
+const lsF2 = document.getElementById("ls-f2");
+const lsF3 = document.getElementById("ls-f3");
+const lsKO = document.getElementById("ls-knockout");
+let lsRaf    = null;
+let lsActive = false;
+
+function showLoadingScreen(onReady, duration) {
+  if (lsActive) return;
+  lsActive = true;
+  const dur = duration || 2200;
+  if (lsRaf) { cancelAnimationFrame(lsRaf); lsRaf = null; }
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const FRAMES = [
+    { el: lsF1, iw: vw * 0.56, ih: vh * 0.38 },
+    { el: lsF2, iw: vw * 0.40, ih: vh * 0.27 },
+    { el: lsF3, iw: vw * 0.26, ih: vh * 0.18 },
+    { el: lsKO, iw: vw * 0.14, ih: vh * 0.10 },
+  ];
+
+  FRAMES.forEach(f => {
+    f.el.style.width  = "0";
+    f.el.style.height = "0";
+    f.el.style.transform = "translate(-50%, -50%)";
+  });
+  loadingScreen.style.opacity = "0";
+  loadingScreen.style.display = "block";
+  loadingScreen.setAttribute("aria-hidden", "false");
+
+  let readyCalled = false;
+  let t0 = null;
+
+  function lsEase(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2; }
+  function lsPhase(t, a, b) { return lsEase(Math.max(0, Math.min(1, (t - a) / (b - a)))); }
+
+  function setFrame(f, w, h, yOff) {
+    f.el.style.width  = w + "px";
+    f.el.style.height = h + "px";
+    f.el.style.transform = `translate(-50%, calc(-50% + ${yOff}px))`;
+  }
+
+  function tick(ts) {
+    if (!t0) t0 = ts;
+    const t = Math.min(1, (ts - t0) / dur);
+
+    // Fire onReady callback so the Three.js mode transition starts under the overlay
+    if (t >= 0.15 && !readyCalled) {
+      readyCalled = true;
+      if (onReady) onReady();
+    }
+
+    // Fade-in white, hold, then fade out
+    let alpha;
+    if (t < 0.92) {
+      alpha = lsPhase(t, 0, 0.18);
+    } else {
+      alpha = 1 - lsPhase(t, 0.92, 1.0);
+    }
+    loadingScreen.style.opacity = String(alpha);
+
+    if (t < 0.78) {
+      // Rise + staggered frame appearance
+      const yOff = vh * 0.55 * (1 - lsPhase(t, 0.20, 0.40));
+
+      setFrame(FRAMES[0], FRAMES[0].iw * lsPhase(t, 0.20, 0.30), FRAMES[0].ih * lsPhase(t, 0.20, 0.30), yOff);
+      setFrame(FRAMES[1], FRAMES[1].iw * lsPhase(t, 0.40, 0.52), FRAMES[1].ih * lsPhase(t, 0.40, 0.52), yOff);
+      setFrame(FRAMES[2], FRAMES[2].iw * lsPhase(t, 0.54, 0.66), FRAMES[2].ih * lsPhase(t, 0.54, 0.66), yOff);
+      setFrame(FRAMES[3], FRAMES[3].iw * lsPhase(t, 0.68, 0.78), FRAMES[3].ih * lsPhase(t, 0.68, 0.78), yOff);
+    } else {
+      // Expand all frames to fill the viewport; knockout wipes everything transparent
+      const ep = lsPhase(t, 0.80, 0.92);
+      FRAMES.forEach(f => {
+        f.el.style.width  = (f.iw + (vw - f.iw) * ep) + "px";
+        f.el.style.height = (f.ih + (vh - f.ih) * ep) + "px";
+        f.el.style.transform = "translate(-50%, -50%)";
+      });
+    }
+
+    if (t < 1) {
+      lsRaf = requestAnimationFrame(tick);
+    } else {
+      loadingScreen.style.opacity = "0";
+      loadingScreen.style.display = "none";
+      loadingScreen.setAttribute("aria-hidden", "true");
+      lsActive = false;
+    }
+  }
+
+  lsRaf = requestAnimationFrame(tick);
 }
 
 function goToIFO() {
   if (state.mode !== "3d") return;
-  flashCurtain(() => {
-    label.classList.remove("visible");
-    state.labelPlanet = null;
-    state.labelStar = false;
-    document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
-    navbar.classList.add("visible");
-    navbar.setAttribute("aria-hidden", "false");
-    body.classList.remove("cosmos-only");
-    body.classList.add("mode-ifo");
-    ifoModeEl.setAttribute("aria-hidden", "false");
-    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-    state.ifoTarget = 1;
-    state.mode = "ifo-transitioning";
-  });
+  label.classList.remove("visible");
+  state.labelPlanet = null;
+  state.labelStar = false;
+  document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+  navbar.classList.add("visible");
+  navbar.setAttribute("aria-hidden", "false");
+  body.classList.remove("cosmos-only");
+  body.classList.add("mode-ifo");
+  ifoModeEl.setAttribute("aria-hidden", "false");
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  state.ifoTarget = 1;
+  state.mode = "ifo-transitioning";
 }
 
 function returnFromIFO() {
   if (state.mode !== "ifo" && state.mode !== "ifo-transitioning") return;
-  flashCurtain(() => {
-    state.ifoTarget = 0;
-    state.mode = "ifo-transitioning";
-    window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-    body.classList.add("cosmos-only");
-    // Defer the display:none / reflow work to the next frame so the scroll and
-    // cosmos-only paint settle first — prevents the main-thread stall on Safari.
-    requestAnimationFrame(() => {
-      body.classList.remove("mode-ifo");
-      ifoModeEl.setAttribute("aria-hidden", "true");
-    });
+  state.ifoTarget = 0;
+  state.mode = "ifo-transitioning";
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  body.classList.add("cosmos-only");
+  requestAnimationFrame(() => {
+    body.classList.remove("mode-ifo");
+    ifoModeEl.setAttribute("aria-hidden", "true");
   });
 }
 
@@ -456,10 +533,13 @@ document.querySelectorAll("[data-ifo-link]").forEach((el) => {
     e.preventDefault();
     if (state.mode === "ifo" || state.mode === "ifo-transitioning") return;
     if (state.mode === "2d") {
-      goTo3D();
-      setTimeout(() => goToIFO(), 1400);
+      // Need to return to 3D first then enter IFO — use longer duration to cover both transitions
+      showLoadingScreen(() => {
+        goTo3D();
+        setTimeout(() => goToIFO(), 1300);
+      }, 3000);
     } else if (state.mode === "3d") {
-      goToIFO();
+      showLoadingScreen(() => goToIFO());
     }
   });
 });
@@ -486,29 +566,29 @@ function goTo2D() {
 
 function goTo3D() {
   if (state.mode !== "2d") return;
-  // Scroll before curtain so the position is correct once it reveals 3D view.
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
-  flashCurtain(() => {
-    state.mode = "transitioning";
-    state.target = 0;
-    body.classList.add("cosmos-only");
-    body.classList.remove("mode-2d", "expansion-active", "night-mode");
-    document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
-    state.expansionP1 = 0;
-    state.expansionP2 = 0;
-    state.missionFired = false;
-    state.starDriftP   = 0;
-    missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-    missionSection.setAttribute("aria-hidden", "true");
-    bgColor.copy(PAPER_COLOR);
-    starTargetsComputed = false;
-  });
+  state.mode = "transitioning";
+  state.target = 0;
+  body.classList.add("cosmos-only");
+  body.classList.remove("mode-2d", "expansion-active", "night-mode");
+  document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+  state.expansionP1 = 0;
+  state.expansionP2 = 0;
+  state.missionFired = false;
+  state.starDriftP   = 0;
+  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
+  missionSection.setAttribute("aria-hidden", "true");
+  bgColor.copy(PAPER_COLOR);
+  starTargetsComputed = false;
 }
 
 brandLink.addEventListener("click", (e) => {
   e.preventDefault();
-  if (state.mode === "ifo" || state.mode === "ifo-transitioning") returnFromIFO();
-  else goTo3D();
+  if (state.mode === "ifo" || state.mode === "ifo-transitioning") {
+    showLoadingScreen(() => returnFromIFO());
+  } else if (state.mode === "2d") {
+    showLoadingScreen(() => goTo3D());
+  }
 });
 
 document.querySelectorAll(".nav-item.has-dropdown").forEach((item) => {
@@ -851,86 +931,93 @@ function updateExpansionScroll() {
 // Fibonacci petal counts (5→5→8→8→13→13→8), offsets chosen so a 5-armed spiral
 // advances ~35° per layer — matching the visible spiral structure of a real rose.
 // Spiral connector stars and a tight dense centre complete the shape.
+// Each layer receives a slight y-lift proportional to its radius so the petals
+// open in 3D like a real bloom viewed from a low angle, adding clear visual depth.
 function computeRoseTargets() {
   const R_WORLD = 7.4;
 
-  // Each layer: radius fraction, petal count, angular offset computed so the
-  // spiral arm at arm-angle advances by 35° between each successive layer.
-  //   offset = target_advance_deg × (π/180) MOD (2π / n)
+  // rFrac, petal count, angular offset, y-lift fraction (outer layers rise more),
+  // star-size scale (inner=tiny, outer=large, gives distance cue).
   const LAYERS = [
-    { rFrac: 0.13, n:  5, offset: 0.000 },  // inner eye — 0°
-    { rFrac: 0.27, n:  5, offset: 0.611 },  // 35° mod 72° = 35°
-    { rFrac: 0.42, n:  8, offset: 0.436 },  // 70° mod 45° = 25°
-    { rFrac: 0.56, n:  8, offset: 0.262 },  // 105° mod 45° = 15°
-    { rFrac: 0.70, n: 13, offset: 0.027 },  // 140° mod 27.7° ≈ 1.5°
-    { rFrac: 0.83, n: 13, offset: 0.154 },  // 175° mod 27.7° ≈ 8.8°
-    { rFrac: 0.96, n:  8, offset: 0.524 },  // 210° mod 45° = 30°
+    { rFrac: 0.13, n:  5, offset: 0.000, yLift: 0.00, sizeMul: 0.55 },  // inner eye
+    { rFrac: 0.27, n:  5, offset: 0.611, yLift: 0.06, sizeMul: 0.70 },
+    { rFrac: 0.42, n:  8, offset: 0.436, yLift: 0.12, sizeMul: 0.85 },
+    { rFrac: 0.56, n:  8, offset: 0.262, yLift: 0.20, sizeMul: 1.00 },
+    { rFrac: 0.70, n: 13, offset: 0.027, yLift: 0.28, sizeMul: 1.20 },
+    { rFrac: 0.83, n: 13, offset: 0.154, yLift: 0.36, sizeMul: 1.40 },
+    { rFrac: 0.96, n:  8, offset: 0.524, yLift: 0.44, sizeMul: 1.60 },  // outermost petals
   ];
 
-  // Star budget: 80% across petal layers (weighted by layer index for outer depth),
-  // 8% along spiral arm connectors, rest = dense centre.
-  const layerTotal  = Math.round(SKY_COUNT * 0.80);
-  const weights     = LAYERS.map((_, i) => i + 2);                     // 2..8
-  const weightSum   = weights.reduce((a, b) => a + b, 0);              // 35
+  // Star budget: 82% across petal layers (outer layers get disproportionately more
+  // to make rings visually dense), 8% spiral connectors, rest = dense centre.
+  const layerTotal  = Math.round(SKY_COUNT * 0.82);
+  const weights     = LAYERS.map((_, i) => i + 3);         // 3..9
+  const weightSum   = weights.reduce((a, b) => a + b, 0);  // 42
   const layerCounts = weights.map(w => Math.round((w / weightSum) * layerTotal));
 
   let idx = 0;
 
   LAYERS.forEach((layer, li) => {
-    const r_base     = R_WORLD * layer.rFrac;
-    const petalAngle = (2 * Math.PI) / layer.n;
-    const perPetal   = Math.max(1, Math.round(layerCounts[li] / layer.n));
-    // Petal size: radial spread smaller than ring gap (keeps layers distinct),
-    // tangential spread fills most of the petal arc (rounded blob look).
-    const radialSize  = R_WORLD * 0.040 + r_base * 0.028;
-    const tangentSize = r_base * Math.sin(petalAngle * 0.40);
+    const r_base      = R_WORLD * layer.rFrac;
+    const petalAngle  = (2 * Math.PI) / layer.n;
+    const perPetal    = Math.max(1, Math.round(layerCounts[li] / layer.n));
+    // Tight radial spread keeps layers sharply separated; tangential spread fills the arc.
+    const radialSize  = R_WORLD * 0.028 + r_base * 0.018;
+    const tangentSize = r_base * Math.sin(petalAngle * 0.44);
+    // y-range for this layer: petals open upward with increasing radius
+    const yRange = R_WORLD * layer.yLift * 0.30;
 
     for (let p = 0; p < layer.n && idx < SKY_COUNT; p++) {
       const petalCenter = p * petalAngle + layer.offset;
-      const rx =  Math.cos(petalCenter);   // radial unit vector
+      const rx =  Math.cos(petalCenter);
       const rz =  Math.sin(petalCenter);
-      const tx = -Math.sin(petalCenter);   // tangential unit vector
+      const tx = -Math.sin(petalCenter);
       const tz =  Math.cos(petalCenter);
 
       for (let s = 0; s < perPetal && idx < SKY_COUNT; s++) {
-        // Uniform-disk sample for a rounded petal shape (dense centre, thin edges)
         let u, v;
         do { u = (Math.random() - 0.5) * 2; v = (Math.random() - 0.5) * 2; }
         while (u * u + v * v > 1);
 
         skyTargetArr[idx * 3]     = (r_base + u * radialSize) * rx + v * tangentSize * tx;
-        skyTargetArr[idx * 3 + 1] = 0;
+        skyTargetArr[idx * 3 + 1] = yRange * (0.5 + 0.5 * Math.random());
         skyTargetArr[idx * 3 + 2] = (r_base + u * radialSize) * rz + v * tangentSize * tz;
+
+        // Layer-specific star size: inner = tiny/dim, outer = large/bright
+        skySizeArr[idx] = (0.6 + Math.random() * 1.0) * layer.sizeMul;
         idx++;
       }
     }
   });
 
-  // 5 Archimedean spiral arms (one per primary petal), each sweeping 210° from
-  // centre to edge — makes the inter-petal spiral structure visually explicit.
+  // 5 Archimedean spiral arms sweeping 210° from centre to edge
   const spiralStars = Math.round(SKY_COUNT * 0.08);
   for (let i = 0; i < spiralStars && idx < SKY_COUNT; i++) {
     const arm   = Math.floor(Math.random() * 5);
-    const t     = Math.sqrt(Math.random());           // weight toward outer radius
+    const t     = Math.sqrt(Math.random());
     const r     = R_WORLD * 0.94 * t;
     const theta = arm * (2 * Math.PI / 5) + t * (210 * Math.PI / 180);
-    skyTargetArr[idx * 3]     = r * Math.cos(theta) + (Math.random() - 0.5) * 0.20;
-    skyTargetArr[idx * 3 + 1] = 0;
-    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta) + (Math.random() - 0.5) * 0.20;
+    const yFrac = (r / R_WORLD) * 0.25;
+    skyTargetArr[idx * 3]     = r * Math.cos(theta) + (Math.random() - 0.5) * 0.15;
+    skyTargetArr[idx * 3 + 1] = yFrac * Math.random();
+    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta) + (Math.random() - 0.5) * 0.15;
+    skySizeArr[idx] = 0.7 + Math.random() * 0.8;
     idx++;
   }
 
-  // Dense centre — tight spiral eye of the rose
+  // Dense centre — tight spiral eye of the rose, nearly flat
   while (idx < SKY_COUNT) {
     const angle  = Math.random() * Math.PI * 2;
     const radius = Math.pow(Math.random(), 0.35) * R_WORLD * 0.10;
     skyTargetArr[idx * 3]     = Math.cos(angle) * radius;
-    skyTargetArr[idx * 3 + 1] = 0;
+    skyTargetArr[idx * 3 + 1] = Math.random() * 0.08;
     skyTargetArr[idx * 3 + 2] = Math.sin(angle) * radius;
+    skySizeArr[idx] = 0.5 + Math.random() * 0.6;
     idx++;
   }
 
   skyTargetBuf.needsUpdate = true;
+  skyStarGeo.attributes.aSize.needsUpdate = true;
   starTargetsComputed = true;
 }
 
