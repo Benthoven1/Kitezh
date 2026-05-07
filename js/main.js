@@ -504,14 +504,9 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       }
 
       // Fade in [0→0.10] for in-page transitions; already opaque for cross-page.
-      // Phase 3 fades out [0.80→1.0] while the hole stays at WIN size, so the
-      // white matting visibly dissolves and the canvas is revealed by opacity
-      // rather than by an expanding clip-path (which would reach full-viewport
-      // transparency before the opacity ramp could be seen at all).
+      // Hold at 1 through phases 1-3, then let lsCleanup snap to 0.
       loadingScreen.style.opacity = String(
-        t < 0.80
-          ? (startOpaque ? 1 : ph(t, 0, 0.10))
-          : 1 - ph(t, 0.80, 1.0)
+        startOpaque ? 1 : ph(t, 0, 0.10)
       );
 
       // Group rises from below viewport [0.10→0.30]; holeCY tracks with it
@@ -538,15 +533,15 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setBorder(WIN_W, WIN_H);
 
       } else {
-        // ── Phase 3 – fade out; hole stays at WIN size ───────────────────────────
-        // Opacity is handled above (1→0 over 0.80→1.0).  Hold the hole and
-        // frames steady so the canvas is visible through the centre while the
-        // white matting dissolves around it.
+        // ── Phase 3 – border + hole expand outward, leaving the page ────────────
+        const ep = ph(t, 0.80, 1.0);
+        const hw = WIN_W + (vw - WIN_W) * ep;
+        const hh = WIN_H + (vh - WIN_H) * ep;
         setF(lsF1, WIN_W, WIN_H, 0);
         setF(lsF2, WIN_W, WIN_H, 0);
         setF(lsF3, WIN_W, WIN_H, 0);
-        lsSetHole(vw, vh, WIN_W, WIN_H, vh / 2);
-        setBorder(WIN_W, WIN_H);
+        lsSetHole(vw, vh, hw, hh, vh / 2);
+        setBorder(hw, hh);
       }
 
       if (t < 1) {
@@ -708,14 +703,10 @@ function snapTo3D() {
   starTargetsComputed = false;
 }
 
-// Cover the page with the loading screen in a single paint, then hand off
-// to showLoadingScreen with startOpaque=true.
-//
-// A gradual fade-in (even 80 ms) exposes the underlying page elements —
-// the IFO article, navbar, and any container with a white/paper background
-// all become visible white boxes around text against the partially opaque
-// overlay.  Snapping to opacity:1 in one rAF (~16 ms) is imperceptible and
-// eliminates all bleed-through entirely.
+// Fade the current page content out to white, then start the loading animation.
+// This is the "fade-out before the loading screen" — the overlay fades IN
+// (covering the page) which from the viewer's perspective is a fade-out of
+// whatever was visible (IFO prose, 3D cosmos, etc.).
 function fadeInLoadingScreen(onReady) {
   if (lsActive) return;
   lsActive = true;
@@ -724,16 +715,20 @@ function fadeInLoadingScreen(onReady) {
   });
   loadingScreen.style.clipPath      = "";
   loadingScreen.style.transition    = "";
-  loadingScreen.style.opacity       = "1";   // snap — no ramp
+  loadingScreen.style.opacity       = "0";
   loadingScreen.style.display       = "block";
   loadingScreen.style.pointerEvents = "all";
   loadingScreen.setAttribute("aria-hidden", "false");
-  // One rAF so the browser commits the opaque white frame before we start
-  // the animation (prevents the first animation tick from running on the
-  // same frame as the display change).
   requestAnimationFrame(() => {
-    lsActive = false;
-    showLoadingScreen(onReady, 4000, true);
+    requestAnimationFrame(() => {
+      loadingScreen.style.transition = "opacity 0.25s ease";
+      loadingScreen.style.opacity    = "1";
+      setTimeout(() => {
+        loadingScreen.style.transition = "";
+        lsActive = false;
+        showLoadingScreen(onReady, 4000, true);
+      }, 250);
+    });
   });
 }
 
