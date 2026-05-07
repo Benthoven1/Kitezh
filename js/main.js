@@ -1028,11 +1028,11 @@ function animate() {
   // Center star stays at rose origin (0,0,0) — it becomes the heart of the rose
   star.position.set(0, 0, 0);
 
-  // Color + emissive: pastel cream → pure white with radiant glow
+  // Color: pastel cream → plain white; keep emissive very faint so it blends with the field
   star.material.color.copy(PASTEL_STAR_COLOR).lerp(WHITE_COLOR, p1e);
   star.material.emissive.copy(BLACK_COLOR).lerp(WHITE_COLOR, p1e);
-  star.material.emissiveIntensity = p1e * 2;
-  star.material.roughness = lerp(0.38, 0, p1e);
+  star.material.emissiveIntensity = p1e * 0.2;
+  star.material.roughness = lerp(0.38, 0.2, p1e);
 
   orbits.forEach((o) => {
     const target = state.hoverPlanet === o && state.mode === "3d" ? 1.18 : 1;
@@ -1138,93 +1138,41 @@ function updateExpansionScroll() {
   }
 }
 
-// ---------- Star drift toward a rose-flower shape ----------
-// Matches rose-flower.jpg viewed from above: seven concentric petal layers with
-// Fibonacci petal counts (5→5→8→8→13→13→8), offsets chosen so a 5-armed spiral
-// advances ~35° per layer — matching the visible spiral structure of a real rose.
-// Spiral connector stars and a tight dense centre complete the shape.
-// Each layer receives a slight y-lift proportional to its radius so the petals
-// open in 3D like a real bloom viewed from a low angle, adding clear visual depth.
+// ---------- Star drift toward a continuous ring figure ----------
+// Stars form a clean glowing ring (like a ring nebula) with a soft inner core.
+// 72 % of stars are evenly distributed in angle around a circle of radius R_RING
+// with a Gaussian radial spread — producing a solid, unbroken luminous band.
+// The remaining 28 % fill a soft disc at the centre.
 function computeRoseTargets() {
-  const R_WORLD = 7.4;
+  const R_WORLD  = 7.4;
+  const R_RING   = R_WORLD * 0.62;  // ring radius
+  const R_SIG    = R_WORLD * 0.055; // radial σ — tighter = crisper ring edge
 
-  // rFrac, petal count, angular offset, y-lift fraction (outer layers rise more),
-  // star-size scale (inner=tiny, outer=large, gives distance cue).
-  const LAYERS = [
-    { rFrac: 0.13, n:  5, offset: 0.000, yLift: 0.00, sizeMul: 0.55 },  // inner eye
-    { rFrac: 0.27, n:  5, offset: 0.611, yLift: 0.06, sizeMul: 0.70 },
-    { rFrac: 0.42, n:  8, offset: 0.436, yLift: 0.12, sizeMul: 0.85 },
-    { rFrac: 0.56, n:  8, offset: 0.262, yLift: 0.20, sizeMul: 1.00 },
-    { rFrac: 0.70, n: 13, offset: 0.027, yLift: 0.28, sizeMul: 1.20 },
-    { rFrac: 0.83, n: 13, offset: 0.154, yLift: 0.36, sizeMul: 1.40 },
-    { rFrac: 0.96, n:  8, offset: 0.524, yLift: 0.44, sizeMul: 1.60 },  // outermost petals
-  ];
-
-  // Star budget: 82% across petal layers (outer layers get disproportionately more
-  // to make rings visually dense), 8% spiral connectors, rest = dense centre.
-  const layerTotal  = Math.round(SKY_COUNT * 0.82);
-  const weights     = LAYERS.map((_, i) => i + 3);         // 3..9
-  const weightSum   = weights.reduce((a, b) => a + b, 0);  // 42
-  const layerCounts = weights.map(w => Math.round((w / weightSum) * layerTotal));
-
+  const ringCount = Math.round(SKY_COUNT * 0.72);
   let idx = 0;
 
-  LAYERS.forEach((layer, li) => {
-    const r_base      = R_WORLD * layer.rFrac;
-    const petalAngle  = (2 * Math.PI) / layer.n;
-    const perPetal    = Math.max(1, Math.round(layerCounts[li] / layer.n));
-    // Tight radial spread keeps layers sharply separated; tangential spread fills the arc.
-    const radialSize  = R_WORLD * 0.028 + r_base * 0.018;
-    const tangentSize = r_base * Math.sin(petalAngle * 0.44);
-    // y-range for this layer: petals open upward with increasing radius
-    const yRange = R_WORLD * layer.yLift * 0.30;
-
-    for (let p = 0; p < layer.n && idx < SKY_COUNT; p++) {
-      const petalCenter = p * petalAngle + layer.offset;
-      const rx =  Math.cos(petalCenter);
-      const rz =  Math.sin(petalCenter);
-      const tx = -Math.sin(petalCenter);
-      const tz =  Math.cos(petalCenter);
-
-      for (let s = 0; s < perPetal && idx < SKY_COUNT; s++) {
-        let u, v;
-        do { u = (Math.random() - 0.5) * 2; v = (Math.random() - 0.5) * 2; }
-        while (u * u + v * v > 1);
-
-        skyTargetArr[idx * 3]     = (r_base + u * radialSize) * rx + v * tangentSize * tx;
-        skyTargetArr[idx * 3 + 1] = yRange * (0.5 + 0.5 * Math.random());
-        skyTargetArr[idx * 3 + 2] = (r_base + u * radialSize) * rz + v * tangentSize * tz;
-
-        // Layer-specific star size: inner = tiny/dim, outer = large/bright
-        skySizeArr[idx] = (0.6 + Math.random() * 1.0) * layer.sizeMul;
-        idx++;
-      }
-    }
-  });
-
-  // 5 Archimedean spiral arms sweeping 210° from centre to edge
-  const spiralStars = Math.round(SKY_COUNT * 0.08);
-  for (let i = 0; i < spiralStars && idx < SKY_COUNT; i++) {
-    const arm   = Math.floor(Math.random() * 5);
-    const t     = Math.sqrt(Math.random());
-    const r     = R_WORLD * 0.94 * t;
-    const theta = arm * (2 * Math.PI / 5) + t * (210 * Math.PI / 180);
-    const yFrac = (r / R_WORLD) * 0.25;
-    skyTargetArr[idx * 3]     = r * Math.cos(theta) + (Math.random() - 0.5) * 0.15;
-    skyTargetArr[idx * 3 + 1] = yFrac * Math.random();
-    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta) + (Math.random() - 0.5) * 0.15;
-    skySizeArr[idx] = 0.7 + Math.random() * 0.8;
+  for (let i = 0; i < ringCount; i++) {
+    // Equidistant base angle + small jitter keeps the ring visually continuous
+    const theta = (i / ringCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.20;
+    // Gaussian radial offset via Box-Muller
+    const u1 = Math.max(Math.random(), 1e-9);
+    const g  = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * Math.random());
+    const r  = Math.max(0.4, R_RING + g * R_SIG);
+    skyTargetArr[idx * 3]     = Math.cos(theta) * r;
+    skyTargetArr[idx * 3 + 1] = (Math.random() - 0.5) * 0.24;
+    skyTargetArr[idx * 3 + 2] = Math.sin(theta) * r;
+    skySizeArr[idx] = 0.8 + Math.random() * 1.3;
     idx++;
   }
 
-  // Dense centre — tight spiral eye of the rose, nearly flat
+  // Soft inner glow: power-law distribution concentrates stars toward the centre
   while (idx < SKY_COUNT) {
     const angle  = Math.random() * Math.PI * 2;
-    const radius = Math.pow(Math.random(), 0.35) * R_WORLD * 0.10;
+    const radius = Math.pow(Math.random(), 0.5) * R_WORLD * 0.36;
     skyTargetArr[idx * 3]     = Math.cos(angle) * radius;
-    skyTargetArr[idx * 3 + 1] = Math.random() * 0.08;
+    skyTargetArr[idx * 3 + 1] = (Math.random() - 0.5) * 0.14;
     skyTargetArr[idx * 3 + 2] = Math.sin(angle) * radius;
-    skySizeArr[idx] = 0.5 + Math.random() * 0.6;
+    skySizeArr[idx] = 0.5 + Math.random() * 0.9;
     idx++;
   }
 
