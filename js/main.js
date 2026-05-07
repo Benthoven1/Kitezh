@@ -513,47 +513,50 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       const t = Math.min(1, (ts - t0) / dur);
 
       // Fire mode transition: immediately when overlay is already opaque (cross-page
-      // entrance), otherwise wait until overlay has faded in (t ≥ 0.10).
-      if (!readyCalled && (startOpaque || t >= 0.10)) {
+      // entrance), otherwise wait until overlay has faded in (t ≥ 0.08).
+      if (!readyCalled && (startOpaque || t >= 0.08)) {
         readyCalled = true;
         try { if (onReady) onReady(); } catch (err) { console.error(err); }
       }
 
-      // Fade in [0→0.10] for in-page transitions; already opaque for cross-page.
-      // Hold at 1 through phases 1-3, then let lsCleanup snap to 0.
-      loadingScreen.style.opacity = String(
-        startOpaque ? 1 : ph(t, 0, 0.10)
-      );
+      // Fade in [0→0.08]; already opaque for cross-page. Hold at 1 until lsCleanup.
+      loadingScreen.style.opacity = String(startOpaque ? 1 : ph(t, 0, 0.08));
 
-      // Group rises from below viewport [0.10→0.30]; holeCY tracks with it
-      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.10, 0.30));
+      // Rings collapse from 7× oversized to 1× independently of rectangle phases.
+      // Start advancing once the overlay is fully opaque so there's no visible jump.
+      if (startOpaque || t >= 0.08) {
+        state.lsRevealP = ph(t, 0.10, 1.0);
+      }
+
+      // Group rises from below viewport [0.08→0.28]; holeCY tracks with it.
+      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.08, 0.28));
       const cy_off = holeCY - vh / 2;
 
-      // Each image zooms independently from its own pop-in time toward 1.0x —
-      // staggered start + staggered end gives a cascading sense of depth.
-      // All images settle to 1.0x exactly when the last rectangle pops in (t=0.40)
-      lsF1img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.10, 0.40)})`;
-      lsF2img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.20, 0.40)})`;
-      lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.30, 0.40)})`;
+      // Each image zooms in from its pop-in time, settling to 1.0× by t=0.38.
+      lsF1img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.10, 0.38)})`;
+      lsF2img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.18, 0.38)})`;
+      lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.26, 0.38)})`;
 
-      if (t < 0.62) {
-        // ── Phase 1 – all four rectangles pop in staggered; canvas hole last ────────
-        if (t >= 0.10) setF(lsF1, EF1_W, EF1_H, cy_off);
-        if (t >= 0.20) setF(lsF2, EF2_W, EF2_H, cy_off);
-        if (t >= 0.30) setF(lsF3, EF3_W, EF3_H, cy_off);
-        if (t >= 0.40) {
-          // Snap rings to oversized now that overlay is opaque and hole appears
-          state.lsRevealP = 0;
-          lsSetHole(vw, vh, EWIN_W, EWIN_H, holeCY);
-          setBorder(EWIN_W, EWIN_H, cy_off);
+      if (t < 0.58) {
+        // ── Phase 1 – rectangles bloom in smoothly, staggered; canvas hole last ─────
+        const f1p = ph(t, 0.10, 0.17);
+        const f2p = ph(t, 0.18, 0.25);
+        const f3p = ph(t, 0.26, 0.33);
+        if (t >= 0.10) setF(lsF1, EF1_W * f1p, EF1_H * f1p, cy_off);
+        if (t >= 0.18) setF(lsF2, EF2_W * f2p, EF2_H * f2p, cy_off);
+        if (t >= 0.26) setF(lsF3, EF3_W * f3p, EF3_H * f3p, cy_off);
+        if (t >= 0.34) {
+          const hf = ph(t, 0.34, 0.42);
+          lsSetHole(vw, vh, EWIN_W * hf, EWIN_H * hf, holeCY);
+          setBorder(EWIN_W * hf, EWIN_H * hf, cy_off);
         } else {
           loadingScreen.style.clipPath = "";
           lsBorder.style.width = "0"; lsBorder.style.height = "0";
         }
 
-      } else if (t < 0.76) {
+      } else if (t < 0.74) {
         // ── Phase 2 – image frames converge to the canvas hole; hole stays fixed ────
-        const cp = ph(t, 0.62, 0.76);
+        const cp = ph(t, 0.58, 0.74);
         setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
         setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
         setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
@@ -561,18 +564,15 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setBorder(EWIN_W, EWIN_H);
 
       } else {
-        // ── Phase 3 – expansion → beat → hole fills viewport; rings rearrange ─────
-        // t 0.76→0.82: frames and hole expand from EFF/EWIN size to full WIN size
-        const expand = ph(t, 0.76, 0.82);
+        // ── Phase 3 – expansion (0.74→0.85) → beat (0.85→0.90) → blowout (0.90→1.0)
+        const expand = ph(t, 0.74, 0.85);
         const curW = EWIN_W + (WIN_W - EWIN_W) * expand;
         const curH = EWIN_H + (WIN_H - EWIN_H) * expand;
         setF(lsF1, curW, curH, 0);
         setF(lsF2, curW, curH, 0);
         setF(lsF3, curW, curH, 0);
-        // t 0.82→0.88: beat — everything holds still at WIN size
-        // t 0.88→1.0: hole + border expand to fill viewport; orbits rearrange
-        const ep = ph(t, 0.88, 1.0);
-        state.lsRevealP = ep;
+        // blowout: hole + border expand to fill viewport (ring collapse handled above)
+        const ep = ph(t, 0.90, 1.0);
         const hw = curW + (vw - curW) * ep;
         const hh = curH + (vh - curH) * ep;
         lsSetHole(vw, vh, hw, hh, vh / 2);
@@ -762,7 +762,7 @@ function fadeInLoadingScreen(onReady) {
       setTimeout(() => {
         loadingScreen.style.transition = "";
         lsActive = false;
-        showLoadingScreen(onReady, 4000, true);
+        showLoadingScreen(onReady, 5000, true);
       }, 250);
     });
   });
@@ -957,8 +957,7 @@ function animate() {
   });
 
   // 3D↔2D tilt/scale transition; IFO+Castles rings transform into CoF rings
-  // revealMul: rings start oversized (2.5×) and collapse to 1× as the hole blows out.
-  const revealMul = lerp(2.5, 1.0, easeInOut(state.lsRevealP));
+  const revealMul = lerp(7.0, 1.0, easeInOut(state.lsRevealP));
   orbits.forEach((o) => {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
     const cofR = COF_RING_TARGETS[o.def.id];
@@ -1189,7 +1188,7 @@ animate();
 
   if (_entering) {
     sessionStorage.removeItem("ls-entering");
-    showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, 4000, true);
+    showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, 5000, true);
   } else if (_ifoHash) {
     // Direct URL access with #ifo — no loading screen, just snap state
     jumpToIFO();
