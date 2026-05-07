@@ -139,7 +139,7 @@ ORBITS.forEach((def) => {
   orbits.push({ def, pivot, rotator, ring, planet, angle: def.phase });
 });
 
-// ── Circle of Fifths ──────────────────────────────────────────────────────────
+// ── Circle of Fifths ──────────────────────────────────────────────────────────────────────────────
 // Keys in circle-of-fifths order; alt = enharmonic equivalent where commonly used
 const COF_KEY_PAIRS = [
   { key: "C",   alt: null  },
@@ -601,7 +601,7 @@ function animate() {
     }
   }
 
-  // ── Circle of Fifths animation ───────────────────────────────────────────
+  // ── Circle of Fifths animation ─────────────────────────────────────────────────────────────────────────────
   if (easedIFO > 0.001) {
     cofAngle += dt * 0.18;
 
@@ -671,18 +671,21 @@ document.addEventListener('visibilitychange', () => {
   const wordEl    = document.getElementById('patronage-word');
   if (!section || !container || !wordEl) return;
 
-  const bgs = Array.from(section.querySelectorAll('.patronage-bg'));
+  const bgs     = Array.from(section.querySelectorAll('.patronage-bg'));
+  const overlay = document.getElementById('patronage-overlay');
+  const dots    = Array.from(section.querySelectorAll('.patronage-dot'));
 
   // Sequence: blank → six disciplines → Arts (dissolve)
+  // Colors drawn from AestheticInspoforKitezh2 Paradam palette
   const STAGES = [
-    { word: '',              font: 'blank',         bg: null            },
-    { word: 'Musical',       font: 'musical',       bg: 'musical'       },
-    { word: 'Literary',      font: 'literary',      bg: 'literary'      },
-    { word: 'Architectural', font: 'architectural', bg: 'architectural' },
-    { word: 'Pictorial',     font: 'pictorial',     bg: 'pictorial'     },
-    { word: 'Sculptural',    font: 'sculptural',    bg: 'sculptural'    },
-    { word: 'Polymath',      font: 'polymath',      bg: 'polymath'      },
-    { word: 'Arts',          font: 'arts',          bg: null, dissolve: true },
+    { word: '',              font: 'blank',         bg: null,            color: ''        },
+    { word: 'Musical',       font: 'musical',       bg: 'musical',       color: '#fca6b4' },
+    { word: 'Literary',      font: 'literary',      bg: 'literary',      color: '#e4d957' },
+    { word: 'Architectural', font: 'architectural', bg: 'architectural', color: '#8b9ec9' },
+    { word: 'Pictorial',     font: 'pictorial',     bg: 'pictorial',     color: '#b494d9' },
+    { word: 'Sculptural',    font: 'sculptural',    bg: 'sculptural',    color: '#ffac75' },
+    { word: 'Polymath',      font: 'polymath',      bg: 'polymath',      color: '#75bca0' },
+    { word: 'Arts',          font: 'arts',          bg: null,            color: '',        dissolve: true },
   ];
 
   let currentIdx = -1;
@@ -691,13 +694,34 @@ document.addEventListener('visibilitychange', () => {
     if (idx === currentIdx) return;
     currentIdx = idx;
     const stage = STAGES[idx];
-    wordEl.textContent = stage.word;
-    wordEl.dataset.font = stage.font;
+
+    // Word entrance — force reflow to restart animation
+    if (stage.word) {
+      wordEl.classList.remove('word-entering');
+      void wordEl.offsetWidth;
+      wordEl.textContent = stage.word;
+      wordEl.dataset.font = stage.font;
+      wordEl.classList.add('word-entering');
+    } else {
+      wordEl.classList.remove('word-entering');
+      wordEl.textContent = stage.word;
+      wordEl.dataset.font = stage.font;
+    }
+
+    // Discipline color overlay (Paradam palette via soft-light blend)
+    if (overlay) overlay.style.backgroundColor = stage.color || '';
+
+    // Background images
     bgs.forEach((el) => {
       el.classList.toggle('active', stage.bg !== null && el.dataset.bg === stage.bg);
     });
     container.classList.toggle('has-bg', stage.bg !== null);
     container.classList.toggle('dissolve', !!stage.dissolve);
+
+    // Stage pip dots — stages 1–6 map to dot indices 0–5
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === idx - 1 && stage.bg !== null);
+    });
   }
 
   function update() {
@@ -705,6 +729,11 @@ document.addEventListener('visibilitychange', () => {
     const scrollRange = section.offsetHeight - window.innerHeight;
     if (scrollRange <= 0) { apply(0); return; }
     const progress = Math.max(0, Math.min(1, -rect.top / scrollRange));
+
+    // Parallax drift — backgrounds slowly translate as you scroll through
+    const parallaxY = (progress - 0.5) * -22;
+    container.style.setProperty('--bg-parallax', parallaxY.toFixed(1) + 'px');
+
     // Snap to discrete stages — each occupies an equal slice of scroll.
     const idx = Math.min(STAGES.length - 1, Math.floor(progress * STAGES.length));
     apply(idx);
