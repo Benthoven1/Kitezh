@@ -683,3 +683,8 @@ body:not(.mode-ifo) .ifo-prose {
 #ls-f1 { z-index: 1; background-image: url('../Musical.png');   }
 #ls-f2 { z-index: 2; background-image: url('../Pictorial.png'); }
 #ls-f3 { z-index: 3; background-image: url('../Polymath.jpg');  }
+#ls-border {
+  z-index: 4;
+  background: transparent;
+  border: 3px solid rgba(27, 22, 19, 0.45);
+}
