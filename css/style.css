@@ -237,22 +237,6 @@ body.night-mode .footer-copy p {
   color: rgba(170, 160, 210, 0.45);
 }
 
-/* ---------- Mission overlay (cinematic, inside fixed canvas) ---------- */
-#mission-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 2;
-  opacity: 0;
-  transition: opacity 0.8s ease;
-}
-
-#mission-overlay.visible { opacity: 1; }
-
 /* ---------- Mission text section (scrolls naturally after expansion space) ---------- */
 #mission-section {
   position: relative;
@@ -355,6 +339,37 @@ body.mode-ifo.ifo-transitioning .planet-label {
 body.mode-2d .cosmos-hint,
 body.mode-ifo .cosmos-hint { opacity: 0; }
 
+
+/* ---------- Rose section — stars drift into flower centers ---------- */
+#rose-section {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px clamp(16px, 5vw, 60px) 40px;
+  opacity: 0;
+  transition: opacity 1.8s ease;
+  pointer-events: none;
+  background: transparent;
+}
+
+#rose-section.visible {
+  opacity: 1;
+}
+
+#rose-bush-img {
+  width: 100%;
+  max-width: min(960px, 92vw);
+  height: auto;
+  display: block;
+}
+
+body.night-mode #rose-section {
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
 
 /* ---------- Letter Section ---------- */
 #letter-section {
