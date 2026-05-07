@@ -94,9 +94,12 @@ const skyColorArr   = new Float32Array(SKY_COUNT * 3);
 const skyTargetArr  = new Float32Array(SKY_COUNT * 3);
 
 for (let i = 0; i < SKY_COUNT; i++) {
-  skyPosArr[i * 3]     = (Math.random() - 0.5) * 240;
+  // 60% in visible area (±16), 25% near-outer (±45), 15% far scattered (±110)
+  const sr0 = Math.random();
+  const spread = sr0 < 0.60 ? 16 : (sr0 < 0.85 ? 45 : 110);
+  skyPosArr[i * 3]     = (Math.random() - 0.5) * spread * 2;
   skyPosArr[i * 3 + 1] = Math.random() * 2;
-  skyPosArr[i * 3 + 2] = (Math.random() - 0.5) * 240;
+  skyPosArr[i * 3 + 2] = (Math.random() - 0.5) * spread * 2;
 
   // 55% small (1.5–2.5 px), 35% medium (2.5–4 px), 10% bright (4–5.5 px)
   const sr = Math.random();
@@ -819,57 +822,66 @@ function updateExpansionScroll() {
   }
 }
 
-// ---------- Star drift toward a single mathematical rose shape ----------
-// Generates target positions on a 5-petal rhodonea curve (r = R|cos(2.5θ)|^α)
-// in world space. 60% outline, 30% fill, 10% centre cluster.
+// ---------- Star drift toward a rose-flower shape ----------
+// Matches the real rose-flower.jpg viewed from above: roughly circular silhouette
+// with gentle petal ruffles on the edge, golden-angle phyllotaxis spiral fill
+// (the natural packing pattern of real rose petals), and a tight dense centre.
 function computeRoseTargets() {
-  const R_WORLD = 7.0;  // rose radius in world units (~9.2 visible)
-  const K       = 2.5;  // 5-petal rhodonea
-  const ALPHA   = 0.55; // petal roundness
+  const R_WORLD = 7.2;  // overall rose radius in world units
 
-  const outlineCount = Math.round(SKY_COUNT * 0.60);
-  const fillCount    = Math.round(SKY_COUNT * 0.30);
-  const centerCount  = SKY_COUNT - outlineCount - fillCount;
+  const outlineCount = Math.round(SKY_COUNT * 0.28);
+  const spiralCount  = Math.round(SKY_COUNT * 0.50);
+  const centerCount  = Math.round(SKY_COUNT * 0.12);
+  const fillCount    = SKY_COUNT - outlineCount - spiralCount - centerCount;
 
   let idx = 0;
 
-  // Outline: stars trace the rose curve with tight perpendicular scatter
-  for (let i = 0; i < outlineCount; ) {
+  // Outer ruffled perimeter — circular with ~5 gentle petal bumps matching the real rose edge
+  for (let i = 0; i < outlineCount; i++) {
     const theta  = Math.random() * Math.PI * 2;
-    const r      = R_WORLD * Math.pow(Math.abs(Math.cos(K * theta)), ALPHA);
-    if (r < R_WORLD * 0.30) continue; // skip cusp zone; centre cluster covers that
-    const radial  = (Math.random() - 0.5) * 0.22;
-    const tangent = (Math.random() - 0.5) * 0.32;
-    const tx = -Math.sin(theta), tz = Math.cos(theta);
-    skyTargetArr[idx * 3]     = (r + radial) * Math.cos(theta) + tangent * tx;
+    const ruffle = 1 + 0.10 * Math.cos(5 * theta) + 0.04 * Math.cos(10 * theta + 0.5);
+    const r      = R_WORLD * ruffle + (Math.random() - 0.5) * 0.50;
+    skyTargetArr[idx * 3]     = r * Math.cos(theta);
     skyTargetArr[idx * 3 + 1] = 0;
-    skyTargetArr[idx * 3 + 2] = (r + radial) * Math.sin(theta) + tangent * tz;
+    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta);
     idx++;
-    i++;
   }
 
-  // Fill: rejection-sample inside the rose petals
-  for (let i = 0; i < fillCount; ) {
-    const x     = (Math.random() * 2 - 1) * R_WORLD;
-    const z     = (Math.random() * 2 - 1) * R_WORLD;
-    const theta = Math.atan2(z, x);
-    const rMax  = R_WORLD * Math.pow(Math.abs(Math.cos(K * theta)), ALPHA);
-    if (Math.sqrt(x * x + z * z) > rMax) continue;
-    skyTargetArr[idx * 3]     = x;
+  // Phyllotaxis (golden-angle) spiral — replicates the natural spiral petal arrangement
+  // visible in the rose photo; produces the characteristic sunflower-like packing.
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5)); // ≈ 137.5°
+  for (let i = 0; i < spiralCount; i++) {
+    const t     = (i + 1) / spiralCount;
+    const theta = i * goldenAngle;
+    const r     = R_WORLD * 0.92 * Math.sqrt(t) + (Math.random() - 0.5) * 0.28;
+    skyTargetArr[idx * 3]     = r * Math.cos(theta);
     skyTargetArr[idx * 3 + 1] = 0;
-    skyTargetArr[idx * 3 + 2] = z;
+    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta);
     idx++;
-    i++;
   }
 
-  // Centre cluster: dense glow at the rose heart (world origin)
+  // Dense centre cluster — the tight spiral heart of the rose
   for (let i = 0; i < centerCount; i++) {
     const angle  = Math.random() * Math.PI * 2;
-    const radius = Math.pow(Math.random(), 0.5) * 1.0;
+    const radius = Math.pow(Math.random(), 0.35) * R_WORLD * 0.20;
     skyTargetArr[idx * 3]     = Math.cos(angle) * radius;
     skyTargetArr[idx * 3 + 1] = 0;
     skyTargetArr[idx * 3 + 2] = Math.sin(angle) * radius;
     idx++;
+  }
+
+  // Interior fill — uniform random within the circular rose boundary
+  let filled = 0;
+  while (filled < fillCount) {
+    const x = (Math.random() * 2 - 1) * R_WORLD;
+    const z = (Math.random() * 2 - 1) * R_WORLD;
+    if (x * x + z * z <= R_WORLD * R_WORLD) {
+      skyTargetArr[idx * 3]     = x;
+      skyTargetArr[idx * 3 + 1] = 0;
+      skyTargetArr[idx * 3 + 2] = z;
+      idx++;
+      filled++;
+    }
   }
 
   skyTargetBuf.needsUpdate = true;
