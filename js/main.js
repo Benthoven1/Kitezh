@@ -457,10 +457,6 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   const EF3_W  = F3_W  * EFF, EF3_H  = F3_H  * EFF;
   const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
   const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
-  // Planet hole: small window framing only the central Mulvium star
-  const PLANET_HOLE = Math.min(vw, vh) * 0.30;
-
-  state.lsRevealP = 0;
 
   [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
@@ -541,28 +537,28 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.30, 0.40)})`;
 
       if (t < 0.62) {
-        // ── Phase 1 – rectangles 1-3 pop in with photos; planet hole pops in small ──
+        // ── Phase 1 – all four rectangles pop in staggered; canvas hole last ────────
         if (t >= 0.10) setF(lsF1, EF1_W, EF1_H, cy_off);
         if (t >= 0.20) setF(lsF2, EF2_W, EF2_H, cy_off);
         if (t >= 0.30) setF(lsF3, EF3_W, EF3_H, cy_off);
         if (t >= 0.40) {
-          lsSetHole(vw, vh, PLANET_HOLE, PLANET_HOLE, holeCY);
-          setBorder(PLANET_HOLE, PLANET_HOLE, cy_off);
+          // Snap rings to oversized now that overlay is opaque and hole appears
+          state.lsRevealP = 0;
+          lsSetHole(vw, vh, EWIN_W, EWIN_H, holeCY);
+          setBorder(EWIN_W, EWIN_H, cy_off);
         } else {
           loadingScreen.style.clipPath = "";
           lsBorder.style.width = "0"; lsBorder.style.height = "0";
         }
 
       } else if (t < 0.76) {
-        // ── Phase 2 – frames converge; planet hole grows from small to EWIN ────────
+        // ── Phase 2 – image frames converge to the canvas hole; hole stays fixed ────
         const cp = ph(t, 0.62, 0.76);
         setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
         setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
         setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
-        const holeW = PLANET_HOLE + (EWIN_W - PLANET_HOLE) * cp;
-        const holeH = PLANET_HOLE + (EWIN_H - PLANET_HOLE) * cp;
-        lsSetHole(vw, vh, holeW, holeH, vh / 2);
-        setBorder(holeW, holeH);
+        lsSetHole(vw, vh, EWIN_W, EWIN_H, vh / 2);
+        setBorder(EWIN_W, EWIN_H);
 
       } else {
         // ── Phase 3 – expansion → beat → hole fills viewport; rings rearrange ─────
@@ -961,8 +957,8 @@ function animate() {
   });
 
   // 3D↔2D tilt/scale transition; IFO+Castles rings transform into CoF rings
-  // revealMul scales all orbits from 0→1 as the loading screen hole blows out.
-  const revealMul = easeInOut(state.lsRevealP);
+  // revealMul: rings start oversized (2.5×) and collapse to 1× as the hole blows out.
+  const revealMul = lerp(2.5, 1.0, easeInOut(state.lsRevealP));
   orbits.forEach((o) => {
     const [rx, ry, rz] = o.pivot.userData.baseTilt;
     const cofR = COF_RING_TARGETS[o.def.id];
