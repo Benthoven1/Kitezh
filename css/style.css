@@ -27,7 +27,7 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body.cosmos-only { overflow: hidden; height: 100vh; height: 100dvh; }
+body.cosmos-only { overflow: hidden; height: 100vh; height: 100dvh; overscroll-behavior: none; }
 
 a { color: inherit; }
 
@@ -97,6 +97,7 @@ button {
   text-transform: uppercase;
   color: var(--ink-soft);
   padding: 12px 10px;
+  min-height: 44px;
   position: relative;
   transition: color 0.25s var(--ease);
 }
@@ -290,6 +291,9 @@ canvas#cosmos {
   width: 100%;
   height: 100%;
   display: block;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .planet-label {
@@ -537,15 +541,63 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   color: var(--clay-deep);
 }
 
-@media (max-width: 720px) {
-  .nav-links { gap: 14px; }
-  .nav-trigger { font-size: 11px; letter-spacing: 0.1em; }
-  .footer-inner { flex-direction: column; }
-  .footer-nav { flex-wrap: wrap; gap: 32px; }
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+
+/* Tablet and below (≤ 900px) */
+@media (max-width: 900px) {
+  .letter-body p { font-size: 16px; }
+  .ifo-prose-body p { font-size: 16px; line-height: 1.78; }
 }
 
-@media (max-width: 600px) {
-  .footer-nav { flex-direction: column; }
+/* Small tablet and large phone (≤ 720px) */
+@media (max-width: 720px) {
+  .nav-links { gap: 14px; }
+  .nav-trigger { font-size: 11px; letter-spacing: 0.10em; }
+  .dropdown { min-width: 220px; }
+  .footer-inner { flex-direction: column; }
+  .footer-nav { flex-wrap: wrap; gap: 32px; }
+  #letter-section { padding: 72px clamp(20px, 7vw, 80px); }
+  .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
+}
+
+/* Small phone (≤ 480px) */
+@media (max-width: 480px) {
+  :root { --nav-h: 60px; }
+  .nav-brand a { font-size: 21px; }
+  .nav-trigger { font-size: 10px; letter-spacing: 0.08em; padding: 10px 8px; }
+  .dropdown { min-width: 200px; }
+  .footer-nav { flex-direction: column; gap: 28px; }
+  .footer-col { min-width: 0; }
+  .footer-inner { padding-top: 40px; padding-bottom: 28px; }
+
+  #letter-section { padding: 56px clamp(18px, 5.5vw, 36px); }
+  .letter-header { margin-bottom: 32px; }
+  .letter-to { font-size: clamp(17px, 5.2vw, 22px); }
+  .letter-body p { font-size: 15px; line-height: 1.75; margin-bottom: 20px; }
+  .letter-close { margin-top: 36px; padding-top: 26px; }
+  .letter-sig { font-size: 22px; }
+
+  .cosmos-hint { font-size: 11px; bottom: 22px; letter-spacing: 0.18em; }
+  .ifo-prose { padding-bottom: 72px; }
+  .ifo-prose-header { margin: 32px 0 28px; }
+  .ifo-prose-body p { font-size: 15px; line-height: 1.75; }
+  .ifo-prose-footnote p { font-size: 12px; }
+}
+
+/* Landscape mobile — short viewport */
+@media (max-height: 500px) and (orientation: landscape) {
+  :root { --nav-h: 52px; }
+  .cosmos-hint { bottom: 14px; font-size: 10px; letter-spacing: 0.18em; }
+  #letter-section { padding-top: 48px; padding-bottom: 48px; }
+  .letter-header { margin-bottom: 24px; }
+  .letter-close { margin-top: 32px; padding-top: 22px; }
+  .ifo-prose { padding-bottom: 64px; }
+  .ifo-prose-header { margin-top: 28px; margin-bottom: 24px; }
+  #mission-section {
+    padding-top: clamp(4px, 1vh, 12px);
+    padding-bottom: clamp(20px, 3vh, 40px);
+    min-height: 12vh;
+  }
 }
 
 .hidden-text {
@@ -646,11 +698,6 @@ body:not(.mode-ifo) .ifo-prose {
   text-decoration: none;
   color: var(--clay-deep);
   border-bottom: 1px dotted var(--clay);
-}
-
-/* ---- Responsive ---- */
-@media (max-width: 720px) {
-  .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
 }
 
 /* ---------- Loading screen ---------- */
