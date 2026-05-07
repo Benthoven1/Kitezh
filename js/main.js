@@ -1203,7 +1203,7 @@ animate();
 
   if (_entering) {
     sessionStorage.removeItem("ls-entering");
-    showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, 2800, true);
+    showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, 4000, true);
   } else if (_ifoHash) {
     // Direct URL access with #ifo — no loading screen, just snap state
     jumpToIFO();
