@@ -459,7 +459,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
     f.style.transform = "translate(-50%, -50%)";
     f.style.visibility = ""; // restore from CSS (visible) — clear any cover-nav hide
   });
-  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.2)"; });
+  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.8)"; });
   loadingScreen.style.clipPath  = "";
   loadingScreen.style.opacity   = startOpaque ? "1" : "0";
   loadingScreen.style.display   = "block";
@@ -524,21 +524,24 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.10, 0.30));
       const cy_off = holeCY - vh / 2;
 
-      // Image inner divs: 1.2x → 1.1x as rects are created, then 1.1x → 1.0x as frames converge
-      const imgScale = 1.2 - 0.1 * ph(t, 0.10, 0.30) - 0.1 * ph(t, 0.62, 0.80);
-      lsF1img.style.transform = `scale(${imgScale})`;
-      lsF2img.style.transform = `scale(${imgScale})`;
-      lsF3img.style.transform = `scale(${imgScale})`;
+      // Each image zooms independently from its own pop-in time toward 1.0x —
+      // staggered start + staggered end gives a cascading sense of depth.
+      lsF1img.style.transform = `scale(${1.8 - 0.8 * ph(t, 0.10, 0.70)})`;
+      lsF2img.style.transform = `scale(${1.8 - 0.8 * ph(t, 0.20, 0.76)})`;
+      lsF3img.style.transform = `scale(${1.8 - 0.8 * ph(t, 0.30, 0.82)})`;
 
       if (t < 0.62) {
-        // ── Phase 1 – frames pop in at full size (staggered); hole + border grow in ──
+        // ── Phase 1 – all four rectangles pop in at full size, staggered by 0.10 ──
         if (t >= 0.10) setF(lsF1, EF1_W, EF1_H, cy_off);
         if (t >= 0.20) setF(lsF2, EF2_W, EF2_H, cy_off);
         if (t >= 0.30) setF(lsF3, EF3_W, EF3_H, cy_off);
-        const winP = ph(t, 0.42, 0.62);
-        const winW = EWIN_W * winP, winH = EWIN_H * winP;
-        lsSetHole(vw, vh, winW, winH, holeCY);
-        setBorder(winW, winH, cy_off);
+        if (t >= 0.40) {
+          lsSetHole(vw, vh, EWIN_W, EWIN_H, holeCY);
+          setBorder(EWIN_W, EWIN_H, cy_off);
+        } else {
+          loadingScreen.style.clipPath = "";
+          lsBorder.style.width = "0"; lsBorder.style.height = "0";
+        }
 
       } else if (t < 0.80) {
         // ── Phase 2 – image frames shrink to match the EFF-scaled rectangle ─────
