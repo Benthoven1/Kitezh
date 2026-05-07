@@ -932,26 +932,82 @@ function trackLabel() {
   }
 }
 
-// ── Continuous rose-curve tracer ─────────────────────────────────────────────
-// One shooting-star that traces r = R * cos(2.5φ), a 5-petal rhodonea that
-// echoes the inner constellation layers. φ advances continuously; the fading
-// tail reveals the petal arcs one at a time, completing the full rose over ~10 s.
-const SS_PTS = 60;    // line-strip resolution
-const SS_ARC = 1.5;   // radians of trail behind the head (~0.7 petals visible)
-const SS_SPD = 1.2;   // radians / second
+// ── Permanent 7-layer rose tracers ──────────────────────────────────────────
+// One THREE.Line per rose layer; each traces petal ellipses then a short
+// connector arc to the next petal. setDrawRange progressively reveals the path;
+// it holds permanent once fully drawn (resets only when starDriftP returns to 0).
+const TRACE_R_WORLD   = 7.4;
+const TRACE_PETAL_PTS = 48;   // ellipse resolution per petal (+ 1 close pt)
+const TRACE_CONN_PTS  = 8;    // connector arc pts between petals
+const TRACE_DRAW_RATE = 150;  // pts revealed per second per tracer
 
-const ssPos = new Float32Array(SS_PTS * 3);
-const ssCol = new Float32Array(SS_PTS * 3);
-const ssGeo = new THREE.BufferGeometry();
-ssGeo.setAttribute('position', new THREE.BufferAttribute(ssPos, 3).setUsage(THREE.DynamicDrawUsage));
-ssGeo.setAttribute('color',    new THREE.BufferAttribute(ssCol, 3).setUsage(THREE.DynamicDrawUsage));
-const ssMat   = new THREE.LineBasicMaterial({
-  vertexColors: true, transparent: true, opacity: 0,
-  depthTest: true, depthWrite: false,
+const TRACE_LAYERS_DEF = [
+  { rFrac: 0.13, n:  5, offset: 0.000 },
+  { rFrac: 0.27, n:  5, offset: 0.611 },
+  { rFrac: 0.42, n:  8, offset: 0.436 },
+  { rFrac: 0.56, n:  8, offset: 0.262 },
+  { rFrac: 0.70, n: 13, offset: 0.027 },
+  { rFrac: 0.83, n: 13, offset: 0.154 },
+  { rFrac: 0.96, n:  8, offset: 0.524 },
+];
+
+function buildLayerPath(def) {
+  const r_base     = TRACE_R_WORLD * def.rFrac;
+  const petalAngle = (2 * Math.PI) / def.n;
+  const radS       = TRACE_R_WORLD * 0.028 + r_base * 0.018;
+  const tanS       = r_base * Math.sin(petalAngle * 0.44);
+  const total      = def.n * (TRACE_PETAL_PTS + 1 + TRACE_CONN_PTS);
+  const pos        = new Float32Array(total * 3);
+
+  let idx = 0;
+  for (let p = 0; p < def.n; p++) {
+    const angle = p * petalAngle + def.offset;
+    const rx = Math.cos(angle), rz = Math.sin(angle);
+    const tx = -Math.sin(angle), tz = Math.cos(angle);
+    const cx = r_base * rx, cz = r_base * rz;
+
+    for (let i = 0; i <= TRACE_PETAL_PTS; i++) {
+      const tau        = (i / TRACE_PETAL_PTS) * 2 * Math.PI;
+      pos[idx * 3]     = cx + radS * Math.cos(tau) * rx + tanS * Math.sin(tau) * tx;
+      pos[idx * 3 + 1] = 0.05;
+      pos[idx * 3 + 2] = cz + radS * Math.cos(tau) * rz + tanS * Math.sin(tau) * tz;
+      idx++;
+    }
+
+    // Connector: arc from current petal close point to next petal open point,
+    // pulled slightly inward at midpoint for a natural curved bridge.
+    const nextAngle = (p + 1) * petalAngle + def.offset;
+    const nrx = Math.cos(nextAngle), nrz = Math.sin(nextAngle);
+    const ex = cx + radS * rx,           ez = cz + radS * rz;
+    const nx = r_base * nrx + radS * nrx, nz = r_base * nrz + radS * nrz;
+    for (let i = 1; i <= TRACE_CONN_PTS; i++) {
+      const f    = i / TRACE_CONN_PTS;
+      const pull = Math.sin(f * Math.PI) * 0.35;
+      const lx   = ex + f * (nx - ex);
+      const lz   = ez + f * (nz - ez);
+      const d    = Math.sqrt(lx * lx + lz * lz);
+      pos[idx * 3]     = d > 0.001 ? lx * (1 - pull) : lx;
+      pos[idx * 3 + 1] = 0.05;
+      pos[idx * 3 + 2] = d > 0.001 ? lz * (1 - pull) : lz;
+      idx++;
+    }
+  }
+  return { pos, total };
+}
+
+const roseTracers = TRACE_LAYERS_DEF.map(def => {
+  const { pos, total } = buildLayerPath(def);
+  const geo  = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setDrawRange(0, 0);
+  const mat  = new THREE.LineBasicMaterial({
+    color: 0xf5eeee, transparent: true, opacity: 0,
+    depthTest: true, depthWrite: false,
+  });
+  const line = new THREE.Line(geo, mat);
+  scene.add(line);
+  return { line, geo, mat, total, ptsDrawn: 0 };
 });
-const ssTrail = new THREE.Line(ssGeo, ssMat);
-scene.add(ssTrail);
-let ssPhi = 0;
 
 // ---------- Animation loop ----------
 function animate() {
@@ -1137,25 +1193,22 @@ function animate() {
   skyStarMat.uniforms.uOpacity.value = p1e;
   skyStarMat.uniforms.uDriftP.value  = easeInOut(state.starDriftP);
 
-  // Rose-curve tracer: single shooting-star traces the rhodonea continuously
-  if (state.starDriftP > 0.05) {
-    const ssAlpha = easeInOut(Math.max(0, (state.starDriftP - 0.05) / 0.95));
-    ssPhi += SS_SPD * dt;
-    for (let i = 0; i < SS_PTS; i++) {
-      const frac = i / (SS_PTS - 1);                     // 0 = tail, 1 = head
-      const φ    = ssPhi - SS_ARC * (1 - frac);
-      const r    = 7.4 * 0.93 * Math.cos(2.5 * φ);      // rhodonea r = R·cos(2.5φ)
-      const b    = frac * frac;                           // quadratic falloff tail→head
-      ssPos[i*3]   = Math.cos(φ) * r;
-      ssPos[i*3+1] = 0.05;
-      ssPos[i*3+2] = Math.sin(φ) * r;
-      ssCol[i*3]   = b * 0.96;  ssCol[i*3+1] = b * 0.93;  ssCol[i*3+2] = b;
-    }
-    ssGeo.attributes.position.needsUpdate = true;
-    ssGeo.attributes.color.needsUpdate    = true;
-    ssMat.opacity = ssAlpha * 0.48;
+  // Permanent rose tracers: advance drawRange until fully drawn; reset on scroll-up
+  if (state.starDriftP > 0.02) {
+    const traceAlpha = easeInOut(Math.min(1, (state.starDriftP - 0.02) / 0.3));
+    roseTracers.forEach(tr => {
+      if (tr.ptsDrawn < tr.total) {
+        tr.ptsDrawn = Math.min(tr.total, tr.ptsDrawn + TRACE_DRAW_RATE * dt);
+      }
+      tr.geo.setDrawRange(0, Math.floor(tr.ptsDrawn));
+      tr.mat.opacity = traceAlpha * 0.45;
+    });
   } else {
-    ssMat.opacity = 0;
+    roseTracers.forEach(tr => {
+      tr.ptsDrawn = 0;
+      tr.geo.setDrawRange(0, 0);
+      tr.mat.opacity = 0;
+    });
   }
 
   updateHover();
