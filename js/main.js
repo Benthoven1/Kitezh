@@ -706,9 +706,14 @@ function snapTo3D() {
   starTargetsComputed = false;
 }
 
-// Fade the loading screen to fully opaque first (covers the canvas without
-// the white-box-appearing-over-animation effect of a transparent fade-in),
-// then hand off to showLoadingScreen with startOpaque=true.
+// Cover the page with the loading screen in a single paint, then hand off
+// to showLoadingScreen with startOpaque=true.
+//
+// A gradual fade-in (even 80 ms) exposes the underlying page elements —
+// the IFO article, navbar, and any container with a white/paper background
+// all become visible white boxes around text against the partially opaque
+// overlay.  Snapping to opacity:1 in one rAF (~16 ms) is imperceptible and
+// eliminates all bleed-through entirely.
 function fadeInLoadingScreen(onReady) {
   if (lsActive) return;
   lsActive = true;
@@ -717,20 +722,16 @@ function fadeInLoadingScreen(onReady) {
   });
   loadingScreen.style.clipPath      = "";
   loadingScreen.style.transition    = "";
-  loadingScreen.style.opacity       = "0";
+  loadingScreen.style.opacity       = "1";   // snap — no ramp
   loadingScreen.style.display       = "block";
   loadingScreen.style.pointerEvents = "all";
   loadingScreen.setAttribute("aria-hidden", "false");
+  // One rAF so the browser commits the opaque white frame before we start
+  // the animation (prevents the first animation tick from running on the
+  // same frame as the display change).
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      loadingScreen.style.transition = "opacity 0.35s ease";
-      loadingScreen.style.opacity    = "1";
-      setTimeout(() => {
-        loadingScreen.style.transition = "";
-        lsActive = false; // reset so showLoadingScreen can claim it
-        showLoadingScreen(onReady, 4000, true);
-      }, 350);
-    });
+    lsActive = false;
+    showLoadingScreen(onReady, 4000, true);
   });
 }
 
