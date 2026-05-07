@@ -667,6 +667,13 @@ body:not(.mode-ifo) .ifo-prose {
   display: none;
   will-change: opacity, clip-path;
 }
+/* Applied by inline <head> script when navigating in from a sub-page;
+   ensures the overlay covers the canvas before the first paint. */
+html.ls-instant-cover #loading-screen {
+  display: block !important;
+  opacity: 1 !important;
+  pointer-events: all !important;
+}
 
 .ls-frame {
   position: absolute;
