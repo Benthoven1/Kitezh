@@ -67,7 +67,8 @@ const brandLink         = document.getElementById("brand-link");
 const body              = document.body;
 const expansionWrapper  = document.getElementById("expansion-wrapper");
 const missionSection    = document.getElementById("mission-section");
-const missionChars      = Array.from(document.querySelectorAll(".mc"));
+const missionOverlay    = document.getElementById("mission-overlay");
+const overlayChars      = Array.from(missionOverlay.querySelectorAll(".mc"));
 
 window.scrollTo(0, 0);
 body.classList.add("cosmos-only");
@@ -75,8 +76,11 @@ body.classList.add("cosmos-only");
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(PAPER);
 
-const PAPER_COLOR = new THREE.Color(PAPER);
-const NIGHT_COLOR = new THREE.Color(0x060412);
+const PAPER_COLOR       = new THREE.Color(PAPER);
+const NIGHT_COLOR       = new THREE.Color(0x060412);
+const PASTEL_STAR_COLOR = new THREE.Color(PASTEL_STAR);
+const WHITE_COLOR       = new THREE.Color(0xffffff);
+const BLACK_COLOR       = new THREE.Color(0x000000);
 
 // Star-field particles — scatter on the ground plane (y ≈ 0) so they are
 // visible from the overhead 2D camera (y = 24, looking straight down).
@@ -122,10 +126,13 @@ function porcelainMat(color, roughness = 0.38) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0, flatShading: false });
 }
 
-// Central star
+// Central star — emissive support needed for the radiant white transition
 const star = new THREE.Mesh(
   new THREE.SphereGeometry(STAR_RADIUS, 96, 96),
-  porcelainMat(PASTEL_STAR)
+  new THREE.MeshStandardMaterial({
+    color: PASTEL_STAR, roughness: 0.38, metalness: 0, flatShading: false,
+    emissive: 0x000000, emissiveIntensity: 0,
+  })
 );
 star.userData = { type: "star" };
 scene.add(star);
@@ -273,6 +280,7 @@ const state = {
   expansionP1: 0,
   expansionP2: 0,
   missionFired: false,
+  overlayFired: false,
 };
 
 let lastW = 0, lastH = 0;
@@ -392,7 +400,10 @@ function goTo3D() {
   state.expansionP1 = 0;
   state.expansionP2 = 0;
   state.missionFired = false;
-  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
+  state.overlayFired = false;
+  overlayChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
+  missionOverlay.classList.remove("visible");
+  missionOverlay.setAttribute("aria-hidden", "true");
   missionSection.setAttribute("aria-hidden", "true");
 }
 
@@ -528,9 +539,10 @@ function trackLabel() {
 
 // ---------- Animation loop ----------
 function animate() {
-  const dt    = Math.min(state.clock.getDelta(), 0.05);
+  const dt       = Math.min(state.clock.getDelta(), 0.05);
   const eased    = easeInOut(state.t);
   const easedIFO = easeInOut(Math.max(0, Math.min(1, state.ifoT)));
+  const p1e      = easeInOut(state.expansionP1);
 
   // Constant circular orbiting (pause while in ifo)
   const orbitActive = state.ifoT < 0.01;
@@ -617,21 +629,18 @@ function animate() {
     cofPlanetInScene = false;
   }
 
-  // Star pulse + hover bump + expansion growth (slower than rings, 2.5× max)
+  // Star: shrinks as expansion progresses, stays centered, transitions to radiant white
   const pulse      = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
-  const starExpand = 1 + easeInOut(state.expansionP1) * 1.5;
-  const starTarget = (state.hoverStar && state.mode === "3d" ? 1.1 : pulse) * starExpand;
+  const starShrink = lerp(1, 0.04, p1e);
+  const starTarget = (state.hoverStar && state.mode === "3d" ? 1.1 : pulse) * starShrink;
   star.scale.lerp(tmpVec.set(starTarget, starTarget, starTarget), 1 - Math.pow(0.0005, dt));
+  star.position.set(0, 0, 0);
 
-  // Phase 2: slide the star to the bottom-right corner of the overhead view
-  if (state.expansionP2 > 0) {
-    const camH  = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 24;
-    const camW  = camH * camera.aspect;
-    const p2e   = easeInOut(state.expansionP2);
-    star.position.set(-camW * 0.72 * p2e, 0, camH * 0.68 * p2e);
-  } else {
-    star.position.set(0, 0, 0);
-  }
+  // Color + emissive: pastel cream → pure white with radiant glow
+  star.material.color.copy(PASTEL_STAR_COLOR).lerp(WHITE_COLOR, p1e);
+  star.material.emissive.copy(BLACK_COLOR).lerp(WHITE_COLOR, p1e);
+  star.material.emissiveIntensity = p1e * 2;
+  star.material.roughness = lerp(0.38, 0, p1e);
 
   orbits.forEach((o) => {
     const target = state.hoverPlanet === o && state.mode === "3d" ? 1.18 : 1;
@@ -704,15 +713,9 @@ function animate() {
   lerpVec(basePos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
 
-  // Expansion: background colour + star-field opacity
-  if (state.expansionP2 > 0) {
-    const p2e = easeInOut(state.expansionP2);
-    scene.background.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p2e);
-    skyStarMat.opacity = p2e;
-  } else {
-    scene.background.copy(PAPER_COLOR);
-    skyStarMat.opacity = 0;
-  }
+  // Expansion: background and star-field fade in from the very start of phase 1
+  scene.background.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p1e);
+  skyStarMat.opacity = p1e;
 
   updateHover();
   trackLabel();
@@ -729,28 +732,41 @@ function updateExpansionScroll() {
   if (totalScroll <= 0) return;
   const rawP = Math.max(0, Math.min(1, window.scrollY / totalScroll));
 
-  // Phase 1 (0–60 %): rings + planets fly outward, star grows slowly
+  // Phase 1 (0–60 %): rings expand outward, star shrinks + goes radiant, night sky fades in
   state.expansionP1 = Math.min(1, rawP / 0.6);
-  // Phase 2 (60–85 %): background goes dark, star-field appears, star drifts to corner
+  // Phase 2 (60–85 %): transition complete, dark starfield held
   state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.25));
+  // Phase 3 (85–100 %): mission overlay animates in
+  const expansionP3 = Math.max(0, Math.min(1, (rawP - 0.85) / 0.15));
 
-  if (state.expansionP2 > 0) {
+  // Night mode begins at phase 1 start
+  if (state.expansionP1 > 0) {
     body.classList.add("night-mode");
   } else {
     body.classList.remove("night-mode");
   }
-}
 
-// Mission text animates in via IntersectionObserver once the section
-// scrolls into view (naturally, after the expansion space ends).
-const missionObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting && !state.missionFired) {
-    state.missionFired = true;
-    missionSection.setAttribute("aria-hidden", "false");
-    missionChars.forEach((el, i) => {
+  // Fire the overlay once when phase 3 begins
+  if (expansionP3 > 0 && !state.overlayFired) {
+    state.overlayFired = true;
+    missionOverlay.setAttribute("aria-hidden", "false");
+    missionOverlay.classList.add("visible");
+    overlayChars.forEach((el, i) => {
       el.style.animationDelay = `${i * 0.033}s`;
       el.classList.add("mc-in");
     });
+  }
+}
+
+// When the mission section scrolls into view, fade out the canvas overlay
+// and reveal the plain-text section.
+const missionObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting) {
+    missionOverlay.classList.remove("visible");
+    if (!state.missionFired) {
+      state.missionFired = true;
+      missionSection.setAttribute("aria-hidden", "false");
+    }
   }
 }, { threshold: 0.1 });
 missionObserver.observe(missionSection);
