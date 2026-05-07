@@ -67,8 +67,8 @@ const brandLink         = document.getElementById("brand-link");
 const body              = document.body;
 const expansionWrapper  = document.getElementById("expansion-wrapper");
 const missionSection    = document.getElementById("mission-section");
-const missionOverlay    = document.getElementById("mission-overlay");
-const overlayChars      = Array.from(missionOverlay.querySelectorAll(".mc"));
+const missionChars      = Array.from(missionSection.querySelectorAll(".mc"));
+const roseSectionEl     = document.getElementById("rose-section");
 
 window.scrollTo(0, 0);
 body.classList.add("cosmos-only");
@@ -82,23 +82,102 @@ const PASTEL_STAR_COLOR = new THREE.Color(PASTEL_STAR);
 const WHITE_COLOR       = new THREE.Color(0xffffff);
 const BLACK_COLOR       = new THREE.Color(0x000000);
 
-// Star-field particles — scatter on the ground plane (y ≈ 0) so they are
-// visible from the overhead 2D camera (y = 24, looking straight down).
-// sizeAttenuation: false keeps them as crisp 2-px dots at any distance.
-const SKY_COUNT  = 1600;
-const skyPosArr  = new Float32Array(SKY_COUNT * 3);
+// Star-field — scattered on the y≈0 plane, visible from the overhead 2D camera.
+// Uses a ShaderMaterial for per-star size variation, subtle colour tint, and twinkle.
+// Original positions are also the geometry's "position" attribute so Three.js frustum
+// culling still works; aTargetPos holds flower-centre targets filled later.
+const SKY_COUNT     = 1600;
+const skyPosArr     = new Float32Array(SKY_COUNT * 3);
+const skySizeArr    = new Float32Array(SKY_COUNT);
+const skyTwinkleArr = new Float32Array(SKY_COUNT);
+const skyColorArr   = new Float32Array(SKY_COUNT * 3);
+const skyTargetArr  = new Float32Array(SKY_COUNT * 3);
+
 for (let i = 0; i < SKY_COUNT; i++) {
   skyPosArr[i * 3]     = (Math.random() - 0.5) * 240;
   skyPosArr[i * 3 + 1] = Math.random() * 2;
   skyPosArr[i * 3 + 2] = (Math.random() - 0.5) * 240;
+
+  // 70% small (1–2 px), 25% medium (2–3 px), 5% bright (3–4 px)
+  const sr = Math.random();
+  skySizeArr[i] = sr < 0.70 ? 1.0 + Math.random()
+               : sr < 0.95 ? 2.0 + Math.random() * 0.8
+               :              3.0 + Math.random() * 0.8;
+
+  skyTwinkleArr[i] = Math.random() * Math.PI * 2;
+
+  // Subtle warm, cool, or neutral white
+  const ct = Math.random();
+  if (ct < 0.15) {
+    skyColorArr[i*3]=1.0; skyColorArr[i*3+1]=0.92+Math.random()*0.08; skyColorArr[i*3+2]=0.76+Math.random()*0.14;
+  } else if (ct < 0.28) {
+    skyColorArr[i*3]=0.80+Math.random()*0.15; skyColorArr[i*3+1]=0.88+Math.random()*0.12; skyColorArr[i*3+2]=1.0;
+  } else {
+    const v = 0.88 + Math.random() * 0.12;
+    skyColorArr[i*3]=v; skyColorArr[i*3+1]=v; skyColorArr[i*3+2]=v;
+  }
 }
+
 const skyStarGeo = new THREE.BufferGeometry();
-skyStarGeo.setAttribute("position", new THREE.BufferAttribute(skyPosArr, 3));
-const skyStarMat = new THREE.PointsMaterial({
-  color: 0xffffff, size: 2, transparent: true, opacity: 0, sizeAttenuation: false,
+skyStarGeo.setAttribute("position",   new THREE.BufferAttribute(skyPosArr,     3));
+skyStarGeo.setAttribute("aSize",      new THREE.BufferAttribute(skySizeArr,    1));
+skyStarGeo.setAttribute("aTwinkle",   new THREE.BufferAttribute(skyTwinkleArr, 1));
+skyStarGeo.setAttribute("aColor",     new THREE.BufferAttribute(skyColorArr,   3));
+const skyTargetBuf = new THREE.BufferAttribute(skyTargetArr, 3);
+skyTargetBuf.setUsage(THREE.DynamicDrawUsage);
+skyStarGeo.setAttribute("aTargetPos", skyTargetBuf);
+
+const skyStarMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime:    { value: 0.0 },
+    uOpacity: { value: 0.0 },
+    uDriftP:  { value: 0.0 },
+  },
+  vertexShader: `
+    attribute float aSize;
+    attribute float aTwinkle;
+    attribute vec3  aColor;
+    attribute vec3  aTargetPos;
+    uniform float uTime;
+    uniform float uOpacity;
+    uniform float uDriftP;
+    varying float vAlpha;
+    varying vec3  vColor;
+    void main() {
+      vec3 pos = mix(position, aTargetPos, uDriftP);
+      float twinkle = 0.72 + 0.28 * sin(uTime * 1.7 + aTwinkle);
+      vAlpha = uOpacity * twinkle;
+      vColor = aColor;
+      gl_PointSize = aSize * (0.88 + 0.12 * sin(uTime * 1.1 + aTwinkle * 1.4));
+      gl_Position  = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+    }
+  `,
+  fragmentShader: `
+    varying float vAlpha;
+    varying vec3  vColor;
+    void main() {
+      vec2  uv = gl_PointCoord - vec2(0.5);
+      float r  = length(uv);
+      float a  = (1.0 - smoothstep(0.25, 0.5, r)) * vAlpha;
+      gl_FragColor = vec4(vColor, a);
+    }
+  `,
+  transparent: true,
+  depthTest:   false,
+  depthWrite:  false,
 });
 const skyStars = new THREE.Points(skyStarGeo, skyStarMat);
 scene.add(skyStars);
+
+// Approximate flower-centre positions as [x_frac, y_frac] of the rose-bush image
+const FLOWER_IMG_POS = [
+  [0.06,0.54],[0.13,0.42],[0.19,0.53],[0.26,0.40],
+  [0.31,0.50],[0.38,0.35],[0.42,0.44],[0.48,0.30],
+  [0.51,0.43],[0.55,0.36],[0.59,0.47],[0.63,0.33],
+  [0.67,0.44],[0.70,0.27],[0.73,0.39],[0.77,0.50],
+  [0.82,0.39],[0.86,0.48],[0.90,0.42],[0.94,0.53],
+];
+let starTargetsComputed = false;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -280,7 +359,7 @@ const state = {
   expansionP1: 0,
   expansionP2: 0,
   missionFired: false,
-  overlayFired: false,
+  starDriftP: 0,
 };
 
 let lastW = 0, lastH = 0;
@@ -400,11 +479,12 @@ function goTo3D() {
   state.expansionP1 = 0;
   state.expansionP2 = 0;
   state.missionFired = false;
-  state.overlayFired = false;
-  overlayChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-  missionOverlay.classList.remove("visible");
-  missionOverlay.setAttribute("aria-hidden", "true");
+  state.starDriftP   = 0;
+  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
+  roseSectionEl.classList.remove("visible");
+  roseSectionEl.setAttribute("aria-hidden", "true");
+  starTargetsComputed = false;
 }
 
 brandLink.addEventListener("click", (e) => {
@@ -715,7 +795,9 @@ function animate() {
 
   // Expansion: background and star-field fade in from the very start of phase 1
   scene.background.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p1e);
-  skyStarMat.opacity = p1e;
+  skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
+  skyStarMat.uniforms.uOpacity.value = p1e;
+  skyStarMat.uniforms.uDriftP.value  = easeInOut(state.starDriftP);
 
   updateHover();
   trackLabel();
@@ -734,49 +816,94 @@ function updateExpansionScroll() {
 
   // Phase 1 (0–60 %): rings expand outward, star shrinks + goes radiant, night sky fades in
   state.expansionP1 = Math.min(1, rawP / 0.6);
-  // Phase 2 (60–85 %): transition complete, dark starfield held
-  state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.25));
-  // Phase 3 (85–100 %): mission overlay animates in
-  const expansionP3 = Math.max(0, Math.min(1, (rawP - 0.85) / 0.15));
+  // Phase 2 (60–100 %): transition held, dark starfield maintained
+  state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.4));
 
-  // Night mode begins at phase 1 start
   if (state.expansionP1 > 0) {
     body.classList.add("night-mode");
   } else {
     body.classList.remove("night-mode");
   }
+}
 
-  // Fire the overlay once when phase 3 begins
-  if (expansionP3 > 0 && !state.overlayFired) {
-    state.overlayFired = true;
-    missionOverlay.setAttribute("aria-hidden", "false");
-    missionOverlay.classList.add("visible");
-    overlayChars.forEach((el, i) => {
+// ---------- Star drift toward rose flower centres ----------
+function computeStarTargets() {
+  const img = document.getElementById("rose-bush-img");
+  if (!img) return;
+  const imgRect    = img.getBoundingClientRect();
+  const canvasRect = canvas.getBoundingClientRect();
+  const plane      = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const tmpRay     = new THREE.Raycaster();
+
+  const worldFlowers = FLOWER_IMG_POS.map(([fx, fy]) => {
+    const sx  = imgRect.left + fx * imgRect.width  - canvasRect.left;
+    const sy  = imgRect.top  + fy * imgRect.height - canvasRect.top;
+    const ndc = new THREE.Vector2(
+      (sx / canvasRect.width)  * 2 - 1,
+      -(sy / canvasRect.height) * 2 + 1
+    );
+    tmpRay.setFromCamera(ndc, camera);
+    const pt = new THREE.Vector3();
+    tmpRay.ray.intersectPlane(plane, pt);
+    return pt.lengthSq() > 0 ? pt : new THREE.Vector3(0, 0, 0);
+  });
+
+  const N = worldFlowers.length;
+  for (let i = 0; i < SKY_COUNT; i++) {
+    const fpt    = worldFlowers[i % N];
+    const spread = 0.35;
+    skyTargetArr[i * 3]     = fpt.x + (Math.random() - 0.5) * spread;
+    skyTargetArr[i * 3 + 1] = fpt.y;
+    skyTargetArr[i * 3 + 2] = fpt.z + (Math.random() - 0.5) * spread;
+  }
+  skyTargetBuf.needsUpdate = true;
+  starTargetsComputed = true;
+}
+
+function updateRoseScroll() {
+  if (!body.classList.contains("expansion-active")) return;
+  const rect = roseSectionEl.getBoundingClientRect();
+  const vh   = window.innerHeight;
+  // 0 when rose bottom edge enters viewport; 1 when rose centre is at viewport centre
+  const raw  = 1 - (rect.top - vh * 0.35) / (vh * 0.85);
+  state.starDriftP = Math.max(0, Math.min(1, raw));
+  if (state.starDriftP > 0.25 && !starTargetsComputed) computeStarTargets();
+}
+
+// Mission section: animate characters in when it first scrolls into view.
+const missionObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting && !state.missionFired) {
+    state.missionFired = true;
+    missionSection.setAttribute("aria-hidden", "false");
+    missionChars.forEach((el, i) => {
       el.style.animationDelay = `${i * 0.033}s`;
       el.classList.add("mc-in");
     });
   }
-}
-
-// When the mission section scrolls into view, fade out the canvas overlay
-// and reveal the plain-text section.
-const missionObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting) {
-    missionOverlay.classList.remove("visible");
-    if (!state.missionFired) {
-      state.missionFired = true;
-      missionSection.setAttribute("aria-hidden", "false");
-    }
-  }
 }, { threshold: 0.1 });
 missionObserver.observe(missionSection);
 
+// Rose section: fade in and show it when it enters the viewport.
+const roseObserver = new IntersectionObserver((entries) => {
+  if (entries[0].isIntersecting) {
+    roseSectionEl.classList.add("visible");
+    roseSectionEl.setAttribute("aria-hidden", "false");
+  }
+}, { threshold: 0.05 });
+roseObserver.observe(roseSectionEl);
+
 window.addEventListener("scroll", () => {
-  if (body.classList.contains("expansion-active")) updateExpansionScroll();
+  if (body.classList.contains("expansion-active")) {
+    updateExpansionScroll();
+    updateRoseScroll();
+  }
 }, { passive: true });
 
 window.addEventListener("resize", () => {
-  if (body.classList.contains("expansion-active")) updateExpansionScroll();
+  if (body.classList.contains("expansion-active")) {
+    updateExpansionScroll();
+    updateRoseScroll();
+  }
 });
 
 animate();
