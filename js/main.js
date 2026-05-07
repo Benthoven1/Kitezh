@@ -593,8 +593,7 @@ document.querySelectorAll("[data-ifo-link]").forEach((el) => {
   el.addEventListener("click", (e) => {
     e.preventDefault();
     if (state.mode === "ifo") return;
-    // Jump directly to IFO state — no animated 3D fly-in under the overlay
-    showLoadingScreen(() => jumpToIFO());
+    fadeInLoadingScreen(() => jumpToIFO());
   });
 });
 
@@ -707,10 +706,38 @@ function snapTo3D() {
   starTargetsComputed = false;
 }
 
+// Fade the loading screen to fully opaque first (covers the canvas without
+// the white-box-appearing-over-animation effect of a transparent fade-in),
+// then hand off to showLoadingScreen with startOpaque=true.
+function fadeInLoadingScreen(onReady) {
+  if (lsActive) return;
+  lsActive = true;
+  [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
+    f.style.width = "0"; f.style.height = "0"; f.style.visibility = "hidden";
+  });
+  loadingScreen.style.clipPath      = "";
+  loadingScreen.style.transition    = "";
+  loadingScreen.style.opacity       = "0";
+  loadingScreen.style.display       = "block";
+  loadingScreen.style.pointerEvents = "all";
+  loadingScreen.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      loadingScreen.style.transition = "opacity 0.35s ease";
+      loadingScreen.style.opacity    = "1";
+      setTimeout(() => {
+        loadingScreen.style.transition = "";
+        lsActive = false; // reset so showLoadingScreen can claim it
+        showLoadingScreen(onReady, 4000, true);
+      }, 350);
+    });
+  });
+}
+
 brandLink.addEventListener("click", (e) => {
   e.preventDefault();
   if (state.mode === "3d") return; // already on the opening page
-  showLoadingScreen(() => snapTo3D());
+  fadeInLoadingScreen(() => snapTo3D());
 });
 
 // Fade to white before navigating to any sub-page from index.html.
