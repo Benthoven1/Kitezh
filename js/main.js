@@ -85,13 +85,12 @@ scene.background = bgColor;
 // Star-field — scattered on the y≈0 plane, visible from the overhead 2D camera.
 // Uses a ShaderMaterial for per-star size variation, subtle colour tint, and twinkle.
 // Original positions are also the geometry's "position" attribute so Three.js frustum
-// culling still works; aTargetPos holds flower-centre targets filled later.
+// culling still works.
 const SKY_COUNT     = 4500;
 const skyPosArr     = new Float32Array(SKY_COUNT * 3);
 const skySizeArr    = new Float32Array(SKY_COUNT);
 const skyTwinkleArr = new Float32Array(SKY_COUNT);
 const skyColorArr   = new Float32Array(SKY_COUNT * 3);
-const skyTargetArr  = new Float32Array(SKY_COUNT * 3);
 
 for (let i = 0; i < SKY_COUNT; i++) {
   // 60% in visible area (±16), 25% near-outer (±45), 15% far scattered (±110)
@@ -126,28 +125,22 @@ skyStarGeo.setAttribute("position",   new THREE.BufferAttribute(skyPosArr,     3
 skyStarGeo.setAttribute("aSize",      new THREE.BufferAttribute(skySizeArr,    1));
 skyStarGeo.setAttribute("aTwinkle",   new THREE.BufferAttribute(skyTwinkleArr, 1));
 skyStarGeo.setAttribute("aColor",     new THREE.BufferAttribute(skyColorArr,   3));
-const skyTargetBuf = new THREE.BufferAttribute(skyTargetArr, 3);
-skyTargetBuf.setUsage(THREE.DynamicDrawUsage);
-skyStarGeo.setAttribute("aTargetPos", skyTargetBuf);
 
 const skyStarMat = new THREE.ShaderMaterial({
   uniforms: {
     uTime:    { value: 0.0 },
     uOpacity: { value: 0.0 },
-    uDriftP:  { value: 0.0 },
   },
   vertexShader: `
     attribute float aSize;
     attribute float aTwinkle;
     attribute vec3  aColor;
-    attribute vec3  aTargetPos;
     uniform float uTime;
     uniform float uOpacity;
-    uniform float uDriftP;
     varying float vAlpha;
     varying vec3  vColor;
     void main() {
-      vec3 pos = mix(position, aTargetPos, uDriftP);
+      vec3 pos = position;
       float twinkle = 0.72 + 0.28 * sin(uTime * 1.7 + aTwinkle);
       vAlpha = uOpacity * twinkle;
       vColor = aColor;
@@ -170,9 +163,64 @@ const skyStarMat = new THREE.ShaderMaterial({
   depthWrite:  false,
 });
 const skyStars = new THREE.Points(skyStarGeo, skyStarMat);
-scene.add(skyStars);
 
-let starTargetsComputed = false;
+// ── Sky group — everything in here rotates together as the user scrolls ───────
+const skyGroup = new THREE.Group();
+skyGroup.add(skyStars);
+scene.add(skyGroup);
+
+// ── Constellation definitions (XZ world positions, top-down view) ─────────────
+// Four constellations placed in different angular sectors; each fades in
+// sequentially as skyRotP advances, giving the feel of scanning across the sky.
+const CONST_DEFS = [
+  {   // "Lyra" — small compact parallelogram, NE quadrant
+    revealAt: 0.08,
+    stars: [ [1.5, 5.8], [0.5, 6.6], [-0.4, 6.2], [-0.3, 5.2], [0.8, 4.8] ],
+    lines: [ [0,1],[1,2],[2,3],[3,4],[4,0],[1,3] ],
+  },
+  {   // "Orion" — hunter silhouette (shoulders, belt, feet), NW quadrant
+    revealAt: 0.30,
+    stars: [ [-5.5,2.8],[-4.5,3.4], [-5.2,1.9],[-5.0,1.9],[-4.7,1.9], [-5.8,0.7],[-4.3,0.5] ],
+    lines: [ [0,1],[0,2],[1,3],[2,3],[3,4],[2,5],[4,6] ],
+  },
+  {   // "Ursa Major" — Big Dipper bowl + handle, SW quadrant
+    revealAt: 0.58,
+    stars: [ [-3.8,-5.0],[-2.8,-5.3],[-2.0,-4.8],[-2.4,-4.0], [-1.2,-3.6],[0.2,-3.1],[1.5,-2.7] ],
+    lines: [ [0,1],[1,2],[2,3],[3,0],[2,4],[4,5],[5,6] ],
+  },
+  {   // "Cassiopeia" — W zigzag, SE quadrant
+    revealAt: 0.80,
+    stars: [ [4.2,-3.8],[5.0,-2.8],[5.8,-3.5],[6.6,-2.5],[7.4,-3.2] ],
+    lines: [ [0,1],[1,2],[2,3],[3,4] ],
+  },
+];
+
+// Build Three.js geometry for each constellation
+const constellations = CONST_DEFS.map(def => {
+  // Highlight stars — slightly larger, crisp white points
+  const starPos = new Float32Array(def.stars.length * 3);
+  def.stars.forEach(([x, z], i) => { starPos[i*3]=x; starPos[i*3+1]=0.1; starPos[i*3+2]=z; });
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.25, transparent: true, opacity: 0, depthTest: false, depthWrite: false, sizeAttenuation: true });
+  const starPts = new THREE.Points(starGeo, starMat);
+  skyGroup.add(starPts);
+
+  // Connecting lines — faint silver
+  const linePos = new Float32Array(def.lines.length * 2 * 3);
+  def.lines.forEach(([a, b], i) => {
+    const [ax, az] = def.stars[a], [bx, bz] = def.stars[b];
+    linePos[i*6]=ax; linePos[i*6+1]=0.1; linePos[i*6+2]=az;
+    linePos[i*6+3]=bx; linePos[i*6+4]=0.1; linePos[i*6+5]=bz;
+  });
+  const lineGeo = new THREE.BufferGeometry();
+  lineGeo.setAttribute('position', new THREE.BufferAttribute(linePos, 3));
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xd0c8c0, transparent: true, opacity: 0, depthTest: false, depthWrite: false });
+  const lineSegs = new THREE.LineSegments(lineGeo, lineMat);
+  skyGroup.add(lineSegs);
+
+  return { starMat, lineMat, revealAt: def.revealAt };
+});
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -354,7 +402,7 @@ const state = {
   expansionP1: 0,
   expansionP2: 0,
   missionFired: false,
-  starDriftP: 0,
+  skyRotP: 0,
 };
 
 let lastW = 0, lastH = 0;
@@ -652,11 +700,11 @@ function goTo3D() {
   state.expansionP1 = 0;
   state.expansionP2 = 0;
   state.missionFired = false;
-  state.starDriftP   = 0;
+  state.skyRotP      = 0;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   bgColor.copy(PAPER_COLOR);
-  starTargetsComputed = false;
+  skyGroup.rotation.y = 0;
 }
 
 // Instantly snaps to full IFO state without playing the animated 3D→IFO
@@ -682,11 +730,11 @@ function jumpToIFO() {
   state.expansionP1  = 0;
   state.expansionP2  = 0;
   state.missionFired = false;
-  state.starDriftP   = 0;
+  state.skyRotP      = 0;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   bgColor.copy(PAPER_COLOR);
-  starTargetsComputed = false;
+  skyGroup.rotation.y = 0;
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
@@ -723,11 +771,11 @@ function snapTo3D() {
   state.expansionP1  = 0;
   state.expansionP2  = 0;
   state.missionFired = false;
-  state.starDriftP   = 0;
+  state.skyRotP      = 0;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   bgColor.copy(PAPER_COLOR);
-  starTargetsComputed = false;
+  skyGroup.rotation.y = 0;
 }
 
 // Fade the current page content out to white, then start the loading animation.
@@ -932,83 +980,6 @@ function trackLabel() {
   }
 }
 
-// ── Permanent 7-layer rose tracers ──────────────────────────────────────────
-// One THREE.Line per rose layer; each traces petal ellipses then a short
-// connector arc to the next petal. setDrawRange progressively reveals the path;
-// it holds permanent once fully drawn (resets only when starDriftP returns to 0).
-const TRACE_R_WORLD   = 7.4;
-const TRACE_PETAL_PTS = 48;   // ellipse resolution per petal (+ 1 close pt)
-const TRACE_CONN_PTS  = 8;    // connector arc pts between petals
-const TRACE_DRAW_RATE = 150;  // pts revealed per second per tracer
-
-const TRACE_LAYERS_DEF = [
-  { rFrac: 0.13, n:  5, offset: 0.000 },
-  { rFrac: 0.27, n:  5, offset: 0.611 },
-  { rFrac: 0.42, n:  8, offset: 0.436 },
-  { rFrac: 0.56, n:  8, offset: 0.262 },
-  { rFrac: 0.70, n: 13, offset: 0.027 },
-  { rFrac: 0.83, n: 13, offset: 0.154 },
-  { rFrac: 0.96, n:  8, offset: 0.524 },
-];
-
-function buildLayerPath(def) {
-  const r_base     = TRACE_R_WORLD * def.rFrac;
-  const petalAngle = (2 * Math.PI) / def.n;
-  const radS       = TRACE_R_WORLD * 0.028 + r_base * 0.018;
-  const tanS       = r_base * Math.sin(petalAngle * 0.44);
-  const total      = def.n * (TRACE_PETAL_PTS + 1 + TRACE_CONN_PTS);
-  const pos        = new Float32Array(total * 3);
-
-  let idx = 0;
-  for (let p = 0; p < def.n; p++) {
-    const angle = p * petalAngle + def.offset;
-    const rx = Math.cos(angle), rz = Math.sin(angle);
-    const tx = -Math.sin(angle), tz = Math.cos(angle);
-    const cx = r_base * rx, cz = r_base * rz;
-
-    for (let i = 0; i <= TRACE_PETAL_PTS; i++) {
-      const tau        = (i / TRACE_PETAL_PTS) * 2 * Math.PI;
-      pos[idx * 3]     = cx + radS * Math.cos(tau) * rx + tanS * Math.sin(tau) * tx;
-      pos[idx * 3 + 1] = 0.05;
-      pos[idx * 3 + 2] = cz + radS * Math.cos(tau) * rz + tanS * Math.sin(tau) * tz;
-      idx++;
-    }
-
-    // Connector: arc from current petal close point to next petal open point,
-    // pulled slightly inward at midpoint for a natural curved bridge.
-    const nextAngle = (p + 1) * petalAngle + def.offset;
-    const nrx = Math.cos(nextAngle), nrz = Math.sin(nextAngle);
-    const ex = cx + radS * rx,           ez = cz + radS * rz;
-    const nx = r_base * nrx + radS * nrx, nz = r_base * nrz + radS * nrz;
-    for (let i = 1; i <= TRACE_CONN_PTS; i++) {
-      const f    = i / TRACE_CONN_PTS;
-      const pull = Math.sin(f * Math.PI) * 0.35;
-      const lx   = ex + f * (nx - ex);
-      const lz   = ez + f * (nz - ez);
-      const d    = Math.sqrt(lx * lx + lz * lz);
-      pos[idx * 3]     = d > 0.001 ? lx * (1 - pull) : lx;
-      pos[idx * 3 + 1] = 0.05;
-      pos[idx * 3 + 2] = d > 0.001 ? lz * (1 - pull) : lz;
-      idx++;
-    }
-  }
-  return { pos, total };
-}
-
-const roseTracers = TRACE_LAYERS_DEF.map(def => {
-  const { pos, total } = buildLayerPath(def);
-  const geo  = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geo.setDrawRange(0, 0);
-  const mat  = new THREE.LineBasicMaterial({
-    color: 0xf5eeee, transparent: true, opacity: 0,
-    depthTest: true, depthWrite: false,
-  });
-  const line = new THREE.Line(geo, mat);
-  scene.add(line);
-  return { line, geo, mat, total, ptsDrawn: 0 };
-});
-
 // ---------- Animation loop ----------
 function animate() {
   const dt       = Math.min(state.clock.getDelta(), 0.05);
@@ -1191,25 +1162,14 @@ function animate() {
   bgColor.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p1e);
   skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
   skyStarMat.uniforms.uOpacity.value = p1e;
-  skyStarMat.uniforms.uDriftP.value  = easeInOut(state.starDriftP);
 
-  // Permanent rose tracers: advance drawRange until fully drawn; reset on scroll-up
-  if (state.starDriftP > 0.02) {
-    const traceAlpha = easeInOut(Math.min(1, (state.starDriftP - 0.02) / 0.3));
-    roseTracers.forEach(tr => {
-      if (tr.ptsDrawn < tr.total) {
-        tr.ptsDrawn = Math.min(tr.total, tr.ptsDrawn + TRACE_DRAW_RATE * dt);
-      }
-      tr.geo.setDrawRange(0, Math.floor(tr.ptsDrawn));
-      tr.mat.opacity = traceAlpha * 0.45;
-    });
-  } else {
-    roseTracers.forEach(tr => {
-      tr.ptsDrawn = 0;
-      tr.geo.setDrawRange(0, 0);
-      tr.mat.opacity = 0;
-    });
-  }
+  // Sky rotation and constellation reveal driven by scroll progress
+  skyGroup.rotation.y = state.skyRotP * Math.PI * 0.6;  // max ~108° rotation
+  constellations.forEach(con => {
+    const alpha = easeInOut(Math.max(0, Math.min(1, (state.skyRotP - con.revealAt) / 0.12)));
+    con.starMat.opacity = alpha * 0.9;
+    con.lineMat.opacity = alpha * 0.28;
+  });
 
   updateHover();
   trackLabel();
@@ -1238,105 +1198,11 @@ function updateExpansionScroll() {
   }
 }
 
-// ---------- Star drift toward a rose-flower shape ----------
-// Matches rose-flower.jpg viewed from above: seven concentric petal layers with
-// Fibonacci petal counts (5→5→8→8→13→13→8), offsets chosen so a 5-armed spiral
-// advances ~35° per layer — matching the visible spiral structure of a real rose.
-// Spiral connector stars and a tight dense centre complete the shape.
-// Each layer receives a slight y-lift proportional to its radius so the petals
-// open in 3D like a real bloom viewed from a low angle, adding clear visual depth.
-function computeRoseTargets() {
-  const R_WORLD = 7.4;
-
-  // rFrac, petal count, angular offset, y-lift fraction (outer layers rise more),
-  // star-size scale (inner=tiny, outer=large, gives distance cue).
-  const LAYERS = [
-    { rFrac: 0.13, n:  5, offset: 0.000, yLift: 0.00, sizeMul: 0.55 },  // inner eye
-    { rFrac: 0.27, n:  5, offset: 0.611, yLift: 0.06, sizeMul: 0.70 },
-    { rFrac: 0.42, n:  8, offset: 0.436, yLift: 0.12, sizeMul: 0.85 },
-    { rFrac: 0.56, n:  8, offset: 0.262, yLift: 0.20, sizeMul: 1.00 },
-    { rFrac: 0.70, n: 13, offset: 0.027, yLift: 0.28, sizeMul: 1.20 },
-    { rFrac: 0.83, n: 13, offset: 0.154, yLift: 0.36, sizeMul: 1.40 },
-    { rFrac: 0.96, n:  8, offset: 0.524, yLift: 0.44, sizeMul: 1.60 },  // outermost petals
-  ];
-
-  // Star budget: 82% across petal layers (outer layers get disproportionately more
-  // to make rings visually dense), 8% spiral connectors, rest = dense centre.
-  const layerTotal  = Math.round(SKY_COUNT * 0.82);
-  const weights     = LAYERS.map((_, i) => i + 3);         // 3..9
-  const weightSum   = weights.reduce((a, b) => a + b, 0);  // 42
-  const layerCounts = weights.map(w => Math.round((w / weightSum) * layerTotal));
-
-  let idx = 0;
-
-  LAYERS.forEach((layer, li) => {
-    const r_base      = R_WORLD * layer.rFrac;
-    const petalAngle  = (2 * Math.PI) / layer.n;
-    const perPetal    = Math.max(1, Math.round(layerCounts[li] / layer.n));
-    // Tight radial spread keeps layers sharply separated; tangential spread fills the arc.
-    const radialSize  = R_WORLD * 0.028 + r_base * 0.018;
-    const tangentSize = r_base * Math.sin(petalAngle * 0.44);
-    // y-range for this layer: petals open upward with increasing radius
-    const yRange = R_WORLD * layer.yLift * 0.30;
-
-    for (let p = 0; p < layer.n && idx < SKY_COUNT; p++) {
-      const petalCenter = p * petalAngle + layer.offset;
-      const rx =  Math.cos(petalCenter);
-      const rz =  Math.sin(petalCenter);
-      const tx = -Math.sin(petalCenter);
-      const tz =  Math.cos(petalCenter);
-
-      for (let s = 0; s < perPetal && idx < SKY_COUNT; s++) {
-        let u, v;
-        do { u = (Math.random() - 0.5) * 2; v = (Math.random() - 0.5) * 2; }
-        while (u * u + v * v > 1);
-
-        skyTargetArr[idx * 3]     = (r_base + u * radialSize) * rx + v * tangentSize * tx;
-        skyTargetArr[idx * 3 + 1] = yRange * (0.5 + 0.5 * Math.random());
-        skyTargetArr[idx * 3 + 2] = (r_base + u * radialSize) * rz + v * tangentSize * tz;
-
-        // Layer-specific star size: inner = tiny/dim, outer = large/bright
-        skySizeArr[idx] = (0.6 + Math.random() * 1.0) * layer.sizeMul;
-        idx++;
-      }
-    }
-  });
-
-  // 5 Archimedean spiral arms sweeping 210° from centre to edge
-  const spiralStars = Math.round(SKY_COUNT * 0.08);
-  for (let i = 0; i < spiralStars && idx < SKY_COUNT; i++) {
-    const arm   = Math.floor(Math.random() * 5);
-    const t     = Math.sqrt(Math.random());
-    const r     = R_WORLD * 0.94 * t;
-    const theta = arm * (2 * Math.PI / 5) + t * (210 * Math.PI / 180);
-    const yFrac = (r / R_WORLD) * 0.25;
-    skyTargetArr[idx * 3]     = r * Math.cos(theta) + (Math.random() - 0.5) * 0.15;
-    skyTargetArr[idx * 3 + 1] = yFrac * Math.random();
-    skyTargetArr[idx * 3 + 2] = r * Math.sin(theta) + (Math.random() - 0.5) * 0.15;
-    skySizeArr[idx] = 0.7 + Math.random() * 0.8;
-    idx++;
-  }
-
-  // Dense centre — tight spiral eye of the rose, nearly flat
-  while (idx < SKY_COUNT) {
-    const angle  = Math.random() * Math.PI * 2;
-    const radius = Math.pow(Math.random(), 0.35) * R_WORLD * 0.10;
-    skyTargetArr[idx * 3]     = Math.cos(angle) * radius;
-    skyTargetArr[idx * 3 + 1] = Math.random() * 0.08;
-    skyTargetArr[idx * 3 + 2] = Math.sin(angle) * radius;
-    skySizeArr[idx] = 0.5 + Math.random() * 0.6;
-    idx++;
-  }
-
-  skyTargetBuf.needsUpdate = true;
-  skyStarGeo.attributes.aSize.needsUpdate = true;
-  starTargetsComputed = true;
-}
-
-// Bidirectional scroll driver: drift=0 when 2/3-mark of letter-body enters
-// viewport, drift=1 when letter-close centre reaches mid-viewport.
-// Rose opacity is derived directly so both directions are fully reversible.
-function updateLetterScroll() {
+// Bidirectional scroll driver: skyRotP=0 when 2/3-mark of letter-body enters
+// viewport, skyRotP=1 when letter-close centre reaches mid-viewport.
+// Both sky rotation and constellation opacity are derived directly so scroll
+// is fully reversible in both directions.
+function updateSkyRotation() {
   if (!body.classList.contains("night-mode")) return;
   const letterBody  = document.querySelector(".letter-body");
   const letterClose = document.getElementById("letter-close");
@@ -1346,19 +1212,13 @@ function updateLetterScroll() {
   const closeRect = letterClose.getBoundingClientRect();
   const vh        = window.innerHeight;
 
-  // startMark: viewport-y of the 2/3 point of the letter body
-  const startMark = bodyRect.top  + bodyRect.height * (2 / 3);
-  // endMark: viewport-y of the centre of letter-close footer
-  const endMark   = closeRect.top + closeRect.height * 0.5;
-
-  // docDist is constant regardless of scroll (relative distance in document)
-  const docDist    = endMark - startMark;
-  // scrolledPast: 0 when startMark == vh (drift trigger), grows as user scrolls down
+  const startMark    = bodyRect.top  + bodyRect.height * (2 / 3);
+  const endMark      = closeRect.top + closeRect.height * 0.5;
+  const docDist      = endMark - startMark;
   const scrolledPast = vh - startMark;
   const totalRange   = Math.max(1, vh * 0.5 + docDist);
 
-  state.starDriftP = Math.max(0, Math.min(1, scrolledPast / totalRange));
-  if (state.starDriftP > 0 && !starTargetsComputed) computeRoseTargets();
+  state.skyRotP = Math.max(0, Math.min(1, scrolledPast / totalRange));
 }
 
 // Mission section: animate characters in when it first scrolls into view.
@@ -1376,12 +1236,12 @@ missionObserver.observe(missionSection);
 
 window.addEventListener("scroll", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
-  if (body.classList.contains("night-mode")) updateLetterScroll();
+  if (body.classList.contains("night-mode")) updateSkyRotation();
 }, { passive: true });
 
 window.addEventListener("resize", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
-  if (body.classList.contains("night-mode")) updateLetterScroll();
+  if (body.classList.contains("night-mode")) updateSkyRotation();
 });
 
 animate();
