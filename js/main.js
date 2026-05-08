@@ -442,22 +442,6 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   const dur = duration || 4000;
   if (lsRaf) { cancelAnimationFrame(lsRaf); lsRaf = null; }
 
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  // Thin concentric borders: each gap is 2 vw / 1.5 vh per side.
-  // WIN is the live-canvas hole (innermost); F1 is the outermost image frame.
-  // EFF scales phases 1–2 to 92 % of viewport so phase 3 can expand to 100 %.
-  const WIN_W = vw * 0.68, WIN_H = vh * 0.62;   // canvas hole / final rectangle
-  const F3_W  = vw * 0.72, F3_H  = vh * 0.65;   // Polymath
-  const F2_W  = vw * 0.76, F2_H  = vh * 0.68;   // Pictorial
-  const F1_W  = vw * 0.80, F1_H  = vh * 0.71;   // Musical (outermost)
-  const EFF   = 0.92;
-  const EWIN_W = WIN_W * EFF, EWIN_H = WIN_H * EFF;
-  const EF3_W  = F3_W  * EFF, EF3_H  = F3_H  * EFF;
-  const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
-  const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
-
   [lsF1, lsF2, lsF3].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
     f.style.transform = "translate(-50%, -50%)";
@@ -517,6 +501,19 @@ function showLoadingScreen(onReady, duration, startOpaque) {
     try {
       if (!t0) t0 = ts;
       const t = Math.min(1, (ts - t0) / dur);
+
+      // Recompute every frame so orientation changes mid-animation are handled cleanly.
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const WIN_W = vw * 0.68, WIN_H = vh * 0.62;
+      const F3_W  = vw * 0.72, F3_H  = vh * 0.65;
+      const F2_W  = vw * 0.76, F2_H  = vh * 0.68;
+      const F1_W  = vw * 0.80, F1_H  = vh * 0.71;
+      const EFF   = 0.92;
+      const EWIN_W = WIN_W * EFF, EWIN_H = WIN_H * EFF;
+      const EF3_W  = F3_W  * EFF, EF3_H  = F3_H  * EFF;
+      const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
+      const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
 
       // Fire mode transition: immediately when overlay is already opaque (cross-page
       // entrance), otherwise wait until overlay has faded in (t ≥ 0.08).
