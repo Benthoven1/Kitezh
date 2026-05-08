@@ -87,7 +87,7 @@ button {
    Parent is inline-flex/align-items:baseline so all text baselines align exactly. */
 .bl { display: inline-block; }
 /* M */ .bl-1 { font-family: "Playfair Display", serif; font-weight: 500; }
-/* u */ .bl-2 { font-family: "Great Vibes", cursive; font-size: 1.35em; }
+/* u */ .bl-2 { font-family: "Great Vibes", cursive; font-size: 1.35em; margin-right: 0.06em; }
 /* l */ .bl-3 { font-family: "Cinzel", serif; font-weight: 400; font-size: 0.9em; }
 /* v */ .bl-4 { font-family: "Italiana", serif; font-size: 1.05em; }
 /* i */ .bl-5 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-style: italic; font-size: 1.08em; }
