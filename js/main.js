@@ -1205,11 +1205,8 @@ animate();
 
   if (_entering) {
     sessionStorage.removeItem("ls-entering");
-    showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, 5000, true);
-  } else if (_ifoHash) {
-    // Direct URL access with #ifo — no loading screen, just snap state
-    jumpToIFO();
   }
+  showLoadingScreen(() => { if (_ifoHash) jumpToIFO(); }, _entering ? 5000 : 4000, true);
 }
 
 // When the page is restored from the browser back-forward cache the WebGL
