@@ -841,12 +841,18 @@ document.querySelectorAll(".nav-item.has-dropdown").forEach((item) => {
     }
   });
   item.addEventListener("mouseleave", () => {
-    leaveTimer = setTimeout(() => item.classList.remove("open"), 150);
+    leaveTimer = setTimeout(() => {
+      item.classList.remove("open");
+      trigger.setAttribute("aria-expanded", "false");
+    }, 150);
   });
 });
 
 document.addEventListener("click", () => {
-  document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
+  document.querySelectorAll(".nav-item.open").forEach((el) => {
+    el.classList.remove("open");
+    el.querySelector(".nav-trigger").setAttribute("aria-expanded", "false");
+  });
 });
 
 
