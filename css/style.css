@@ -638,6 +638,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
     padding-bottom: clamp(20px, 3vh, 40px);
     min-height: 12vh;
   }
+  .footer-copy { font-size: 10px; letter-spacing: 0.10em; }
 }
 
 .hidden-text {
