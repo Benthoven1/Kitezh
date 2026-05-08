@@ -66,6 +66,7 @@ const navbar            = document.getElementById("navbar");
 const brandLink         = document.getElementById("brand-link");
 const body              = document.body;
 const expansionWrapper  = document.getElementById("expansion-wrapper");
+const canvasWrap        = document.getElementById("canvas-wrap");
 const missionSection    = document.getElementById("mission-section");
 const missionChars      = Array.from(missionSection.querySelectorAll(".mc"));
 window.scrollTo(0, 0);
@@ -607,6 +608,9 @@ function goToIFO() {
   body.classList.remove("cosmos-only");
   body.classList.add("mode-ifo");
   ifoModeEl.setAttribute("aria-hidden", "false");
+  // Lock canvas height to the current viewport so mobile address-bar
+  // collapse during IFO scroll doesn't cause a sudden resize.
+  canvasWrap.style.height = window.innerHeight + "px";
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   state.ifoTarget = 1;
   state.mode = "ifo-transitioning";
@@ -617,6 +621,7 @@ function returnFromIFO() {
   state.ifoTarget = 0;
   state.mode = "ifo-transitioning";
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  canvasWrap.style.height = "";   // release the pinned height
   body.classList.add("cosmos-only");
   requestAnimationFrame(() => {
     body.classList.remove("mode-ifo");
@@ -700,6 +705,7 @@ function jumpToIFO() {
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
   bgColor.copy(PAPER_COLOR);
+  canvasWrap.style.height = window.innerHeight + "px";
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
@@ -717,6 +723,7 @@ function snapTo3D() {
   }
   ifoModeEl.setAttribute("aria-hidden", "true");
   body.classList.remove("mode-ifo");
+  canvasWrap.style.height = "";
 
   state.ifoT      = 0;
   state.ifoTarget = 0;
