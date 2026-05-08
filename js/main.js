@@ -505,6 +505,12 @@ function showLoadingScreen(onReady, duration, startOpaque) {
     loadingScreen.style.pointerEvents = "none";
     loadingScreen.setAttribute("aria-hidden", "true");
     lsActive = false;
+    // Trigger letter-collapse animation when revealing IFO content through the loading screen.
+    if (body.classList.contains('ls-ifo-enter')) {
+      body.classList.remove('ls-ifo-enter');
+      body.classList.add('ls-ifo-blowout');
+      setTimeout(() => body.classList.remove('ls-ifo-blowout'), 2200);
+    }
   }
 
   function tick(ts) {
@@ -685,6 +691,9 @@ function jumpToIFO() {
   navbar.setAttribute("aria-hidden", "false");
   body.classList.remove("cosmos-only", "mode-2d", "expansion-active", "night-mode");
   body.classList.add("mode-ifo");
+  // Mark that IFO is being revealed through a loading screen so lsCleanup can
+  // trigger the letter-collapse animation instead of the default fade-in.
+  if (lsActive) body.classList.add('ls-ifo-enter');
   ifoModeEl.setAttribute("aria-hidden", "false");
   label.classList.remove("visible");
   state.labelPlanet = null;
