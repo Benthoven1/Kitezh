@@ -705,7 +705,38 @@ body:not(.mode-ifo) .ifo-prose {
   border-bottom: 1px dotted var(--clay);
 }
 
-/* ---------- Loading screen ---------- */
+/* ---------- Quadrivium intro ---------- */
+/* Four panels tile quadrivium.jpg across the full viewport. On open, the image
+   fades in, then each panel flies diagonally off screen to reveal the cosmos. */
+#qi-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 700; /* above loading screen (600) and navbar (100) */
+  background: #000;
+  pointer-events: all;
+  opacity: 0;
+  display: none;
+}
+
+.qi-panel {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  background-image: url('../quadrivium.jpg');
+  /* 100vw × 100vh makes the image span the full viewport across all four panels */
+  background-size: 100vw 100vh;
+  background-repeat: no-repeat;
+  will-change: transform, opacity;
+}
+
+/* Each panel shows its quadrant by anchoring the full-viewport image to the
+   matching corner — the panel's overflow:hidden clips away the rest. */
+.qi-tl { top: 0;    left: 0;  background-position: left  top;    }
+.qi-tr { top: 0;    right: 0; background-position: right top;    }
+.qi-bl { bottom: 0; left: 0;  background-position: left  bottom; }
+.qi-br { bottom: 0; right: 0; background-position: right bottom; }
+
+/* ---------- Loading screen ----------*/
 /* The canvas-window hole is punched via clip-path (a nonzero-winding polygon
    with an outer CW rectangle and an inner CCW rectangle). This avoids
    mix-blend-mode compositing issues with hardware-accelerated WebGL canvases. */

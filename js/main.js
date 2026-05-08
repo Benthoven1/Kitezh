@@ -599,6 +599,62 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   lsRaf = requestAnimationFrame(tick);
 }
 
+// ── Quadrivium intro ──────────────────────────────────────────────────────────
+// Plays on direct page open (no sub-page navigation, no #ifo hash).
+// quadrivium.jpg is displayed as a composed full-viewport image tiled across
+// four panels. After a hold, the panels split diagonally off screen.
+function showQuadriviumIntro() {
+  const overlay = document.getElementById("qi-overlay");
+  if (!overlay) return;
+
+  const panels = Array.from(overlay.querySelectorAll(".qi-panel"));
+  // Exit direction (dx, dy) for each panel: TL, TR, BL, BR
+  const dirs = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+
+  const DUR    = 3400;  // ms total
+  const T_FADE = 0.22;  // 0 → T_FADE: image fades in
+  const T_HOLD = 0.40;  // T_FADE → T_HOLD: full image holds
+                        // T_HOLD → 1.0: panels split and exit
+
+  function easeOut3(t) { return 1 - Math.pow(1 - t, 3); }
+  function easeIn3(t)  { return t * t * t; }
+
+  overlay.style.display = "block";
+  let t0 = null;
+
+  function tick(ts) {
+    if (!t0) t0 = ts;
+    const t = Math.min(1, (ts - t0) / DUR);
+
+    if (t < T_FADE) {
+      overlay.style.opacity = String(easeOut3(t / T_FADE));
+      panels.forEach(p => { p.style.transform = ""; p.style.opacity = "1"; });
+    } else if (t < T_HOLD) {
+      overlay.style.opacity = "1";
+      panels.forEach(p => { p.style.transform = ""; p.style.opacity = "1"; });
+    } else {
+      const sp = easeIn3((t - T_HOLD) / (1 - T_HOLD));
+      overlay.style.opacity = "1";
+      panels.forEach((p, i) => {
+        const tx = dirs[i][0] * sp * 120;
+        const ty = dirs[i][1] * sp * 110;
+        p.style.transform = `translate(${tx}%, ${ty}%)`;
+        p.style.opacity   = String(Math.max(0, 1 - sp * 1.5));
+      });
+    }
+
+    if (t < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      overlay.style.display  = "none";
+      overlay.style.opacity  = "0";
+      panels.forEach(p => { p.style.transform = ""; p.style.opacity = ""; });
+    }
+  }
+
+  requestAnimationFrame(tick);
+}
+
 function goToIFO() {
   if (state.mode !== "3d") return;
   label.classList.remove("visible");
@@ -1209,6 +1265,9 @@ animate();
   } else if (_ifoHash) {
     // Direct URL access with #ifo — no loading screen, just snap state
     jumpToIFO();
+  } else {
+    // Fresh direct open — play the quadrivium intro
+    showQuadriviumIntro();
   }
 }
 
