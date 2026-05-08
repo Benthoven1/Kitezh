@@ -71,25 +71,49 @@ button {
 
 /* Mulvium brand link — hover color signals it returns to landing */
 .nav-brand a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
   font-size: 26px;
   letter-spacing: 0;
   text-decoration: none;
   color: var(--ink);
   transition: color 0.3s var(--ease);
-  line-height: 1;
 }
 
 .nav-brand a:hover { color: var(--pastel-hover); }
 
-/* Collage brand letters — each letter of "Mulvium" in a different editorial font */
-.bl { display: inline-block; vertical-align: baseline; }
-.bl-1 { font-family: "Playfair Display", serif; font-weight: 500; }
-.bl-2 { font-family: "Great Vibes", cursive; font-size: 1.4em; vertical-align: -0.18em; }
-.bl-3 { font-family: "Cinzel", serif; font-weight: 400; font-size: 0.9em; }
-.bl-4 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-style: italic; font-size: 1.08em; }
-.bl-5 { font-family: "Italiana", serif; }
-.bl-6 { font-family: "Cormorant SC", serif; font-weight: 500; font-size: 1.0em; }
-.bl-7 { font-family: "Pinyon Script", cursive; font-size: 1.38em; vertical-align: -0.16em; }
+/* Collage brand letters — each letter of "Mulvium" in a different editorial font.
+   Parent is inline-flex/align-items:baseline so all text baselines align exactly. */
+.bl { display: inline-block; }
+/* M */ .bl-1 { font-family: "Playfair Display", serif; font-weight: 500; }
+/* u */ .bl-2 { font-family: "Great Vibes", cursive; font-size: 1.35em; }
+/* l */ .bl-3 { font-family: "Italiana", serif; font-size: 1.05em; }
+/* v */ .bl-4 { font-family: "Cinzel", serif; font-weight: 400; font-size: 0.88em; letter-spacing: 0.04em; }
+/* i */ .bl-5 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-style: italic; font-size: 1.08em; }
+/* u */ .bl-6 { font-family: "Cormorant SC", serif; font-weight: 500; }
+/* m */ .bl-7 { font-family: "Pinyon Script", cursive; font-size: 1.35em; }
+
+/* Hover wiggle — letters wave in sequence */
+@keyframes blWiggle {
+  0%   { transform: translateY(0)    rotate(0deg);  }
+  25%  { transform: translateY(-5px) rotate(-6deg); }
+  55%  { transform: translateY(2px)  rotate(4deg);  }
+  78%  { transform: translateY(-2px) rotate(-2deg); }
+  100% { transform: translateY(0)    rotate(0deg);  }
+}
+
+.nav-brand a:hover .bl,
+.footer-wordmark:hover .bl {
+  animation: blWiggle 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+.nav-brand a:hover .bl-1, .footer-wordmark:hover .bl-1 { animation-delay:   0ms; }
+.nav-brand a:hover .bl-2, .footer-wordmark:hover .bl-2 { animation-delay:  45ms; }
+.nav-brand a:hover .bl-3, .footer-wordmark:hover .bl-3 { animation-delay:  90ms; }
+.nav-brand a:hover .bl-4, .footer-wordmark:hover .bl-4 { animation-delay: 135ms; }
+.nav-brand a:hover .bl-5, .footer-wordmark:hover .bl-5 { animation-delay: 180ms; }
+.nav-brand a:hover .bl-6, .footer-wordmark:hover .bl-6 { animation-delay: 225ms; }
+.nav-brand a:hover .bl-7, .footer-wordmark:hover .bl-7 { animation-delay: 270ms; }
 
 .nav-links {
   display: flex;
@@ -428,11 +452,11 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .footer-brand { flex-shrink: 0; }
 
 .footer-wordmark {
+  display: inline-flex;
+  align-items: baseline;
   font-size: 32px;
   letter-spacing: 0;
-  line-height: 1;
   color: var(--ink);
-  display: block;
 }
 
 .footer-nav {
