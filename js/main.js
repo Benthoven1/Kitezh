@@ -458,11 +458,16 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
   const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
 
-  [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
+  [lsF1, lsF2, lsF3].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
     f.style.transform = "translate(-50%, -50%)";
     f.style.visibility = ""; // restore from CSS (visible) — clear any cover-nav hide
   });
+  // lsBorder has overflow:visible + a CSS border, so width=0/height=0 still paints a
+  // tiny box. Keep it hidden until setBorder() gives it real dimensions.
+  lsBorder.style.width = "0"; lsBorder.style.height = "0";
+  lsBorder.style.transform = "translate(-50%, -50%)";
+  lsBorder.style.visibility = "hidden";
   [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.2)"; });
   loadingScreen.style.clipPath  = "";
   loadingScreen.style.opacity   = startOpaque ? "1" : "0";
@@ -486,6 +491,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
   // Border ring: 3 px wider on each side than the hole so it sits around the edge
   function setBorder(w, h, cy_off = 0) {
+    lsBorder.style.visibility = "";
     lsBorder.style.width  = (w + 6) + "px";
     lsBorder.style.height = (h + 6) + "px";
     lsBorder.style.transform = `translate(-50%, calc(-50% + ${cy_off}px))`;
