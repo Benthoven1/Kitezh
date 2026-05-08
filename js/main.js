@@ -570,17 +570,17 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setBorder(EWIN_W, EWIN_H);
 
       } else {
-        // ── Phase 3 – expansion (0.74→0.85) → beat (0.85→0.90) → blowout (0.90→1.0)
-        const expand = ph(t, 0.74, 0.85);
-        const curW = EWIN_W + (WIN_W - EWIN_W) * expand;
-        const curH = EWIN_H + (WIN_H - EWIN_H) * expand;
-        setF(lsF1, curW, curH, 0);
-        setF(lsF2, curW, curH, 0);
-        setF(lsF3, curW, curH, 0);
-        // blowout: hole + border expand to fill viewport (ring collapse handled above)
-        const ep = ph(t, 0.90, 1.0);
-        const hw = curW + (vw - curW) * ep;
-        const hh = curH + (vh - curH) * ep;
+        // ── Phase 3 – single continuous expansion: EWIN → full viewport ──────────
+        // No beat/pause: hole and frames begin moving immediately and never stop.
+        // Frames cap at WIN_W/WIN_H; hole continues to fill the full viewport.
+        const ep = ph(t, 0.74, 1.0);
+        const hw = EWIN_W + (vw    - EWIN_W) * ep;
+        const hh = EWIN_H + (vh    - EWIN_H) * ep;
+        const fw = Math.min(hw, WIN_W);
+        const fh = Math.min(hh, WIN_H);
+        setF(lsF1, fw, fh, 0);
+        setF(lsF2, fw, fh, 0);
+        setF(lsF3, fw, fh, 0);
         lsSetHole(vw, vh, hw, hh, vh / 2);
         setBorder(hw, hh);
       }
