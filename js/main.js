@@ -505,12 +505,6 @@ function showLoadingScreen(onReady, duration, startOpaque) {
     loadingScreen.style.pointerEvents = "none";
     loadingScreen.setAttribute("aria-hidden", "true");
     lsActive = false;
-    // Trigger letter-collapse animation when revealing IFO content through the loading screen.
-    if (body.classList.contains('ls-ifo-enter')) {
-      body.classList.remove('ls-ifo-enter');
-      body.classList.add('ls-ifo-blowout');
-      setTimeout(() => body.classList.remove('ls-ifo-blowout'), 2200);
-    }
   }
 
   function tick(ts) {
@@ -691,9 +685,6 @@ function jumpToIFO() {
   navbar.setAttribute("aria-hidden", "false");
   body.classList.remove("cosmos-only", "mode-2d", "expansion-active", "night-mode");
   body.classList.add("mode-ifo");
-  // Mark that IFO is being revealed through a loading screen so lsCleanup can
-  // trigger the letter-collapse animation instead of the default fade-in.
-  if (lsActive) body.classList.add('ls-ifo-enter');
   ifoModeEl.setAttribute("aria-hidden", "false");
   label.classList.remove("visible");
   state.labelPlanet = null;
@@ -1101,20 +1092,25 @@ function animate() {
     const R_KEY  = 3.6;  // orbit outside the outer ring (2.8)
     const R_ACC  = 2.2;  // orbit between/outside the rings
     const now    = performance.now() * 0.0004;
+    // Mirrors the ring revealMul: sprites collapse from 7× orbit radius during the
+    // loading screen, reaching normal radius as lsRevealP approaches 1.
+    const cofMul = lerp(7.0, 1.0, easeInOut(state.lsRevealP));
 
     cofKeySprites.forEach((s, i) => {
-      const θ   = cofAngle + (i / 12) * Math.PI * 2;
+      const θ    = cofAngle + (i / 12) * Math.PI * 2;
       const yBob = Math.sin(now + i * 0.52) * 0.12;
-      s.position.set(Math.sin(θ) * R_KEY, yBob, Math.cos(θ) * R_KEY);
+      const r    = R_KEY * cofMul;
+      s.position.set(Math.sin(θ) * r, yBob, Math.cos(θ) * r);
       s.material.opacity = easedIFO;
     });
 
     // Accidentals share the exact same θ as their paired key (index i) at inner radius
     cofAccSprites.forEach((s, i) => {
       if (!s) return;
-      const θ   = cofAngle + (i / 12) * Math.PI * 2;
+      const θ    = cofAngle + (i / 12) * Math.PI * 2;
       const yBob = Math.sin(now + i * 0.52 + 0.3) * 0.08;
-      s.position.set(Math.sin(θ) * R_ACC, yBob, Math.cos(θ) * R_ACC);
+      const r    = R_ACC * cofMul;
+      s.position.set(Math.sin(θ) * r, yBob, Math.cos(θ) * r);
       s.material.opacity = easedIFO * 0.85;
     });
 
