@@ -102,9 +102,9 @@ button {
 /* U */ .bl-2 { font-family: "Playfair Display", serif; font-weight: 500; }
 /* L */ .bl-3 { font-family: "Cinzel", serif; font-weight: 400; }
 /* V */ .bl-4 { font-family: "Italiana", serif; -webkit-text-fill-color: transparent; -webkit-text-stroke: 1.5px currentColor; }
-/* i */ .bl-5 { font-family: "Inter", sans-serif; font-weight: 900; }
-/* u */ .bl-6 { font-family: "Cormorant SC", serif; font-weight: 500; }
-/* M */ .bl-7 { font-family: "Cinzel", serif; font-weight: 500; }
+/* i */ .bl-5 { font-family: "Inter", sans-serif; font-weight: 900; margin-left: -0.04em; }
+/* u */ .bl-6 { font-family: "Cormorant SC", serif; font-weight: 500; margin-left: 0.02em; }
+/* M */ .bl-7 { font-family: "Cinzel", serif; font-weight: 500; margin-left: 0.03em; }
 
 /* Hover wiggle — letters wave in sequence */
 @keyframes blWiggle {
