@@ -7,7 +7,7 @@ const PASTEL_CASTLES = 0xB8CAE0;
 const PASTEL_EDU     = 0xE0B8C8;
 const PASTEL_ZONES   = 0xB8DDD8;
 const CREAM_DEEP     = 0xcdbe96;
-const PAPER          = 0xffffff;
+const PAPER          = 0xeceae5;
 
 const STAR_RADIUS = 1.25;
 
