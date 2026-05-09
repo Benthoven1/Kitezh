@@ -530,10 +530,15 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         state.lsRevealP = ph(t, 0.10, 1.0);
       }
 
-      // Images slightly lag behind their frames (parallax inertia).
-      lsF1img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.08, 0.30, eRise)})`;
-      lsF2img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.14, 0.32, eRise)})`;
-      lsF3img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.20, 0.34, eRise)})`;
+      // Slow directional drift — each image pans in its own direction across the
+      // full animation, giving a sense of the camera moving through the photograph.
+      // translate() before scale() keeps drift in screen-pixel space.
+      const d1 = ph(t, 0.08, 1.0);
+      const d2 = ph(t, 0.14, 1.0);
+      const d3 = ph(t, 0.20, 1.0);
+      lsF1img.style.transform = `translate(${-7 + 14 * d1}px, ${ 4 -  8 * d1}px) scale(${1.3 - 0.3 * ph(t, 0.08, 0.30, eRise)})`;
+      lsF2img.style.transform = `translate(${ 6 - 12 * d2}px, ${-5 + 10 * d2}px) scale(${1.3 - 0.3 * ph(t, 0.14, 0.32, eRise)})`;
+      lsF3img.style.transform = `translate(${ 5 - 10 * d3}px, ${ 6 - 11 * d3}px) scale(${1.3 - 0.3 * ph(t, 0.20, 0.34, eRise)})`;
 
       // Group rises from below — cubic ease-out locks into position.
       const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.06, 0.28, eRise));
@@ -543,14 +548,15 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         // ── Phase 1: Each frame opens as a slit — width snaps, height reveals ──
         // Musical (lsF1) first, Pictorial (lsF2) second, Polymath (lsF3) third.
         // Width: fast cubic snap to full target width.
-        // Height: expo ease-out from 3 px to full target height (the slit open).
+        // Height: expo ease-out from 3 px to full target height — slightly slower
+        //         than before to let each emergence breathe.
         const f1w = ph(t, 0.08, 0.14, eRise);
         const f2w = ph(t, 0.14, 0.20, eRise);
         const f3w = ph(t, 0.20, 0.26, eRise);
 
-        const f1h = ph(t, 0.08, 0.28, eSlit);
-        const f2h = ph(t, 0.14, 0.34, eSlit);
-        const f3h = ph(t, 0.20, 0.40, eSlit);
+        const f1h = ph(t, 0.08, 0.32, eSlit);
+        const f2h = ph(t, 0.14, 0.38, eSlit);
+        const f3h = ph(t, 0.20, 0.44, eSlit);
 
         if (t >= 0.08) setF(lsF1, EF1_W * f1w, Math.max(3, EF1_H * f1h), cy_off);
         if (t >= 0.14) setF(lsF2, EF2_W * f2w, Math.max(3, EF2_H * f2h), cy_off);
@@ -559,7 +565,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         // 4th rectangle — canvas hole — also opens as a slit.
         if (t >= 0.30) {
           const hw = ph(t, 0.30, 0.36, eRise);
-          const hh = ph(t, 0.30, 0.44, eSlit);
+          const hh = ph(t, 0.30, 0.48, eSlit);
           const holeW = EWIN_W * hw;
           const holeH = Math.max(3, EWIN_H * hh);
           lsSetHole(vw, vh, holeW, holeH, holeCY);
@@ -568,7 +574,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
           loadingScreen.style.clipPath = "";
           lsBorder.style.width = "0"; lsBorder.style.height = "0";
         }
-        // t 0.44→0.54: all four fully open — still moment before the pull.
+        // t 0.48→0.54: all four fully open — still moment before the pull.
 
       } else if (t < 0.67) {
         // ── Phase 2: Quartic ease-in converge — barely moves then slams in ────
