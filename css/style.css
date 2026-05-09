@@ -4,8 +4,8 @@
   --clay-deep: #8f5a42;
   --ink: #1b1613;
   --ink-soft: #3b332f;
-  --paper: #ffffff;
-  --paper-warm: #ffffff;
+  --paper: #eceae5;
+  --paper-warm: #f0ede7;
   --hairline: rgba(27, 22, 19, 0.12);
   --nav-h: 72px;
   --ease: cubic-bezier(0.65, 0.05, 0.25, 1);
@@ -19,12 +19,29 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--paper);
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(ellipse 58% 48% at 41% 20%, rgba(242, 168, 192, 0.70) 0%, transparent 70%),
+    radial-gradient(ellipse 52% 58% at 20% 62%, rgba(218, 222, 88, 0.62) 0%, transparent 65%),
+    radial-gradient(ellipse 58% 52% at 80% 64%, rgba(140, 196, 232, 0.68) 0%, transparent 65%);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fine grain overlay — matches the paper-grain texture in the PDF */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.055;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
 }
 
 body.cosmos-only { overflow: hidden; height: 100vh; height: 100dvh; overscroll-behavior: none; }
@@ -73,7 +90,7 @@ button {
 .nav-brand a {
   display: inline-flex;
   align-items: baseline;
-  gap: 0;
+  gap: 0.07em;
   font-size: 26px;
   letter-spacing: 0;
   text-decoration: none;
@@ -86,13 +103,13 @@ button {
 /* Collage brand letters — each letter of "Mulvium" in a different editorial font.
    Parent is inline-flex/align-items:baseline so all text baselines align exactly. */
 .bl { display: inline-block; }
-/* M */ .bl-1 { font-family: "Playfair Display", serif; font-weight: 500; }
-/* u */ .bl-2 { font-family: "Great Vibes", cursive; font-size: 1.35em; margin-right: 0.06em; }
-/* l */ .bl-3 { font-family: "Cinzel", serif; font-weight: 400; font-size: 0.9em; }
-/* v */ .bl-4 { font-family: "Italiana", serif; font-size: 1.05em; }
-/* i */ .bl-5 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-style: italic; font-size: 1.08em; }
+/* M */ .bl-1 { font-family: "Cinzel", serif; font-weight: 500; }
+/* U */ .bl-2 { font-family: "Playfair Display", serif; font-weight: 500; font-size: 1.0em; }
+/* L */ .bl-3 { font-family: "Cinzel", serif; font-weight: 400; font-size: 0.9em; }
+/* V */ .bl-4 { font-family: "Italiana", serif; font-size: 1.08em; -webkit-text-fill-color: transparent; -webkit-text-stroke: 1.5px currentColor; }
+/* i */ .bl-5 { font-family: "Inter", sans-serif; font-weight: 900; font-size: 0.88em; }
 /* u */ .bl-6 { font-family: "Cormorant SC", serif; font-weight: 500; }
-/* m */ .bl-7 { font-family: "Pinyon Script", cursive; font-size: 1.35em; }
+/* M */ .bl-7 { font-family: "Cinzel", serif; font-weight: 500; font-size: 1.0em; }
 
 /* Hover wiggle — letters wave in sequence */
 @keyframes blWiggle {
@@ -748,7 +765,11 @@ body:not(.mode-ifo) .ifo-prose {
   position: fixed;
   inset: 0;
   z-index: 600;
-  background: #ffffff;
+  background-color: #eceae5;
+  background-image:
+    radial-gradient(ellipse 58% 48% at 41% 20%, rgba(242, 168, 192, 0.70) 0%, transparent 70%),
+    radial-gradient(ellipse 52% 58% at 20% 62%, rgba(218, 222, 88, 0.62) 0%, transparent 65%),
+    radial-gradient(ellipse 58% 52% at 80% 64%, rgba(140, 196, 232, 0.68) 0%, transparent 65%);
   pointer-events: none;
   opacity: 0;
   display: none;
