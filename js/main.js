@@ -506,14 +506,10 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      // Main center frame — aperture that opens from a slit.
-      const WIN_W = vw * 0.68, WIN_H = vh * 0.62;
-      // Side panels — slightly smaller, flanking left and right.
-      const SIDE_W = vw * 0.54, SIDE_H = vh * 0.52;
-      // Horizontal offset of side panels from center when fully arrived.
-      const SIDE_TX = vw * 0.20;
-      // How far off-screen the side panels start before sweeping in.
-      const SLIDE_DIST = vw * 0.58;
+      // All three frames centered. Staggered sizes let lower-z edges show as depth.
+      const WIN_W = vw * 0.68, WIN_H = vh * 0.62;  // topmost (lsF3)
+      const F2_W  = WIN_W * 1.07, F2_H = WIN_H * 1.07;  // middle (lsF2)
+      const F1_W  = WIN_W * 1.14, F1_H = WIN_H * 1.14;  // bottommost (lsF1)
 
       // Fire mode transition immediately when opaque, else after fade-in.
       if (!readyCalled && (startOpaque || t >= 0.08)) {
@@ -529,63 +525,56 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
       // Ken-burns: images drift from 1.15× toward 1.0× as each frame opens.
       lsF3img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.10, 0.68)})`;
-      lsF1img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.30, 0.70)})`;
-      lsF2img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.36, 0.70)})`;
+      lsF2img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.16, 0.70)})`;
+      lsF1img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.22, 0.72)})`;
 
       if (t < 0.62) {
-        // ── Phase 1 + 2: Aperture opens; side panels sweep in ────────────────
-        // lsF3 opens from a thin horizontal slit — height expands with expo ease-out,
-        // width reaches full size quickly then holds.
-        const ap = ph(t, 0.10, 0.52, eExpoOut);
-        const slitH = 3 + (WIN_H - 3) * ap;
-        const slitW = WIN_W * Math.min(1, 0.28 + 0.72 * ph(t, 0.10, 0.28, eCubicOut));
+        // ── Phase 1: All frames open from a centered slit, staggered ─────────
+        // lsF3 (topmost): opens first to WIN_W × WIN_H
+        // lsF2 (middle):  opens slightly later, slightly larger — edges show around lsF3
+        // lsF1 (bottom):  opens last, largest — edges show around lsF2
+        const ap3 = ph(t, 0.10, 0.52, eExpoOut);
+        const ap2 = ph(t, 0.16, 0.54, eExpoOut);
+        const ap1 = ph(t, 0.22, 0.56, eExpoOut);
+
+        // Width snaps quickly to full; height opens slowly from a slit.
+        const wSnap3 = WIN_W * Math.min(1, 0.25 + 0.75 * ph(t, 0.10, 0.26, eCubicOut));
+        const wSnap2 = F2_W  * Math.min(1, 0.25 + 0.75 * ph(t, 0.16, 0.32, eCubicOut));
+        const wSnap1 = F1_W  * Math.min(1, 0.25 + 0.75 * ph(t, 0.22, 0.38, eCubicOut));
 
         if (t >= 0.10) {
-          setF(lsF3, slitW, slitH, 0, 0);
-          if (ap > 0.20) setBorder(slitW, slitH);
+          setF(lsF3, wSnap3, Math.max(3, WIN_H * ap3), 0, 0);
+          if (ap3 > 0.20) setBorder(wSnap3, Math.max(3, WIN_H * ap3));
         }
-
-        // Side panels sweep from off-screen to their flanking positions.
-        // lsF1 (z-index 1) from left; lsF2 (z-index 2) from right.
-        const lp = ph(t, 0.30, 0.58, eCubicOut);
-        const rp = ph(t, 0.36, 0.60, eCubicOut);
-
-        if (t >= 0.30) setF(lsF1, SIDE_W, SIDE_H, -SIDE_TX - SLIDE_DIST * (1 - lp), 0);
-        if (t >= 0.36) setF(lsF2, SIDE_W, SIDE_H,  SIDE_TX + SLIDE_DIST * (1 - rp), 0);
+        if (t >= 0.16) setF(lsF2, wSnap2, Math.max(3, F2_H * ap2), 0, 0);
+        if (t >= 0.22) setF(lsF1, wSnap1, Math.max(3, F1_H * ap1), 0, 0);
 
         loadingScreen.style.clipPath = "";
 
       } else if (t < 0.74) {
-        // ── Phase 3: Converge — side panels slide to center and resize to match ─
-        // Brief hold (0.62-0.66) then quartic ease-out snap (0.66-0.74).
+        // ── Phase 2: Hold then snap — lsF1 and lsF2 converge to WIN_W × WIN_H ─
+        // Brief still moment (0.62–0.66) then quartic ease-out snap (0.66–0.74).
         const cp = ph(t, 0.66, 0.74, eQuartOut);
 
         setF(lsF3, WIN_W, WIN_H, 0, 0);
         setBorder(WIN_W, WIN_H);
+        setF(lsF2, F2_W + (WIN_W - F2_W) * cp, F2_H + (WIN_H - F2_H) * cp, 0, 0);
+        setF(lsF1, F1_W + (WIN_W - F1_W) * cp, F1_H + (WIN_H - F1_H) * cp, 0, 0);
 
-        setF(lsF1,
-          SIDE_W + (WIN_W - SIDE_W) * cp,
-          SIDE_H + (WIN_H - SIDE_H) * cp,
-          -SIDE_TX * (1 - cp), 0);
-        setF(lsF2,
-          SIDE_W + (WIN_W - SIDE_W) * cp,
-          SIDE_H + (WIN_H - SIDE_H) * cp,
-           SIDE_TX * (1 - cp), 0);
-
-        // Canvas hole opens as panels converge.
+        // Canvas hole opens in sync with the snap.
         const hp = ph(t, 0.68, 0.74, eCubicOut);
         lsSetHole(vw, vh, WIN_W * hp, WIN_H * hp, vh / 2);
 
       } else {
-        // ── Phase 4: Canvas hole expands to fill the screen ───────────────────
+        // ── Phase 3: Canvas hole expands to fill the screen ───────────────────
         const ep = ph(t, 0.74, 1.0, eExpoOut);
         const hw = WIN_W + (vw - WIN_W) * ep;
         const hh = WIN_H + (vh - WIN_H) * ep;
         const fw = Math.min(hw, WIN_W), fh = Math.min(hh, WIN_H);
 
         setF(lsF3, fw, fh, 0, 0);
-        setF(lsF1, fw, fh, 0, 0);
         setF(lsF2, fw, fh, 0, 0);
+        setF(lsF1, fw, fh, 0, 0);
         lsSetHole(vw, vh, hw, hh, vh / 2);
         setBorder(hw, hh);
       }
