@@ -20,11 +20,6 @@ html, body {
   margin: 0;
   padding: 0;
   background-color: var(--paper);
-  background-image:
-    radial-gradient(ellipse 58% 48% at 41% 20%, rgba(242, 168, 192, 0.70) 0%, transparent 70%),
-    radial-gradient(ellipse 52% 58% at 20% 62%, rgba(218, 222, 88, 0.62) 0%, transparent 65%),
-    radial-gradient(ellipse 58% 52% at 80% 64%, rgba(140, 196, 232, 0.68) 0%, transparent 65%);
-  background-attachment: fixed;
   color: var(--ink);
   font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   font-weight: 300;
@@ -767,9 +762,10 @@ body:not(.mode-ifo) .ifo-prose {
   z-index: 600;
   background-color: #eceae5;
   background-image:
-    radial-gradient(ellipse 58% 48% at 41% 20%, rgba(242, 168, 192, 0.70) 0%, transparent 70%),
-    radial-gradient(ellipse 52% 58% at 20% 62%, rgba(218, 222, 88, 0.62) 0%, transparent 65%),
-    radial-gradient(ellipse 58% 52% at 80% 64%, rgba(140, 196, 232, 0.68) 0%, transparent 65%);
+    radial-gradient(ellipse 60% 50% at 38% 18%, rgba(240, 213, 187, 0.55) 0%, transparent 68%),
+    radial-gradient(ellipse 54% 60% at 18% 65%, rgba(196, 221, 184, 0.48) 0%, transparent 62%),
+    radial-gradient(ellipse 60% 54% at 82% 66%, rgba(184, 202, 224, 0.52) 0%, transparent 62%),
+    radial-gradient(ellipse 40% 44% at 72% 22%, rgba(224, 184, 200, 0.38) 0%, transparent 60%);
   pointer-events: none;
   opacity: 0;
   display: none;
