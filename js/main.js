@@ -443,49 +443,42 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   const dur = duration || 4000;
   if (lsRaf) { cancelAnimationFrame(lsRaf); lsRaf = null; }
 
-  [lsF1, lsF2, lsF3].forEach(f => {
+  // Hide all frames until animation places them deliberately.
+  [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
     f.style.transform = "translate(-50%, -50%)";
-    f.style.visibility = ""; // restore from CSS (visible) — clear any cover-nav hide
+    f.style.visibility = "hidden";
   });
-  // lsBorder has overflow:visible + a CSS border, so width=0/height=0 still paints a
-  // tiny box. Keep it hidden until setBorder() gives it real dimensions.
-  lsBorder.style.width = "0"; lsBorder.style.height = "0";
-  lsBorder.style.transform = "translate(-50%, -50%)";
-  lsBorder.style.visibility = "hidden";
-  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.2)"; });
+  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.15)"; });
   loadingScreen.style.clipPath  = "";
   loadingScreen.style.opacity   = startOpaque ? "1" : "0";
   loadingScreen.style.display   = "block";
   loadingScreen.style.pointerEvents = "all";
   loadingScreen.setAttribute("aria-hidden", "false");
-  // Remove the pre-paint cover class now that JS has taken ownership
   document.documentElement.classList.remove("ls-instant-cover");
 
   let readyCalled = false, t0 = null;
 
-  // Per-phase easing — each has a distinct cinematic character
-  function eCubicInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
-  function eBloom(t)    { return 1 - Math.pow(1 - t, 5); }          // quintic ease-out: explosive burst
-  function eRise(t)     { return 1 - Math.pow(1 - t, 3); }          // cubic ease-out: decelerated settle
-  function eConverge(t) { return t * t * t * t; }                     // quartic ease-in: suck into hole
-  function eExpand(t)   { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); } // expo ease-out: dramatic fill
+  function eExpoOut(t) { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+  function eCubicOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function eQuartOut(t) { return 1 - Math.pow(1 - t, 4); }
   function ph(t, a, b, efn) {
-    return (efn || eCubicInOut)(Math.max(0, Math.min(1, (t - a) / (b - a))));
+    return (efn || eCubicOut)(Math.max(0, Math.min(1, (t - a) / (b - a))));
   }
 
-  function setF(el, w, h, cy_off) {
-    el.style.width     = w + "px";
-    el.style.height    = h + "px";
-    el.style.transform = `translate(-50%, calc(-50% + ${cy_off}px))`;
+  // tx/ty are pixel offsets from the centered position.
+  function setF(el, w, h, tx, ty) {
+    el.style.width  = w + "px";
+    el.style.height = h + "px";
+    el.style.transform = `translate(calc(-50% + ${tx || 0}px), calc(-50% + ${ty || 0}px))`;
+    el.style.visibility = "";
   }
 
-  // Border ring: 3 px wider on each side than the hole so it sits around the edge
-  function setBorder(w, h, cy_off = 0) {
+  function setBorder(w, h, tx, ty) {
     lsBorder.style.visibility = "";
     lsBorder.style.width  = (w + 6) + "px";
     lsBorder.style.height = (h + 6) + "px";
-    lsBorder.style.transform = `translate(-50%, calc(-50% + ${cy_off}px))`;
+    lsBorder.style.transform = `translate(calc(-50% + ${tx || 0}px), calc(-50% + ${ty || 0}px))`;
   }
 
   function lsCleanup() {
@@ -512,78 +505,87 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       // Recompute every frame so orientation changes mid-animation are handled cleanly.
       const vw = window.innerWidth;
       const vh = window.innerHeight;
-      const WIN_W = vw * 0.68, WIN_H = vh * 0.62;
-      const F3_W  = vw * 0.72, F3_H  = vh * 0.65;
-      const F2_W  = vw * 0.76, F2_H  = vh * 0.68;
-      const F1_W  = vw * 0.80, F1_H  = vh * 0.71;
-      const EFF   = 0.92;
-      const EWIN_W = WIN_W * EFF, EWIN_H = WIN_H * EFF;
-      const EF3_W  = F3_W  * EFF, EF3_H  = F3_H  * EFF;
-      const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
-      const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
 
-      // Fire mode transition: immediately when overlay is already opaque (cross-page
-      // entrance), otherwise wait until overlay has faded in (t ≥ 0.08).
+      // Main center frame — aperture that opens from a slit.
+      const WIN_W = vw * 0.68, WIN_H = vh * 0.62;
+      // Side panels — slightly smaller, flanking left and right.
+      const SIDE_W = vw * 0.54, SIDE_H = vh * 0.52;
+      // Horizontal offset of side panels from center when fully arrived.
+      const SIDE_TX = vw * 0.20;
+      // How far off-screen the side panels start before sweeping in.
+      const SLIDE_DIST = vw * 0.58;
+
+      // Fire mode transition immediately when opaque, else after fade-in.
       if (!readyCalled && (startOpaque || t >= 0.08)) {
         readyCalled = true;
         try { if (onReady) onReady(); } catch (err) { console.error(err); }
       }
 
-      // Fade in [0→0.08]; already opaque for cross-page. Hold at 1 until lsCleanup.
       loadingScreen.style.opacity = String(startOpaque ? 1 : ph(t, 0, 0.08));
 
-      // Rings collapse from 7× oversized to 1× independently of rectangle phases.
-      // Start advancing once the overlay is fully opaque so there's no visible jump.
       if (startOpaque || t >= 0.08) {
         state.lsRevealP = ph(t, 0.10, 1.0);
       }
 
-      // Group erupts from below — cubic ease-out decelerates as it locks into position.
-      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.06, 0.28, eRise));
-      const cy_off = holeCY - vh / 2;
+      // Ken-burns: images drift from 1.15× toward 1.0× as each frame opens.
+      lsF3img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.10, 0.68)})`;
+      lsF1img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.30, 0.70)})`;
+      lsF2img.style.transform = `scale(${1.15 - 0.15 * ph(t, 0.36, 0.70)})`;
 
-      // Images slightly lag behind their frames (parallax inertia).
-      lsF1img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.08, 0.30, eRise)})`;
-      lsF2img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.14, 0.32, eRise)})`;
-      lsF3img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.20, 0.34, eRise)})`;
+      if (t < 0.62) {
+        // ── Phase 1 + 2: Aperture opens; side panels sweep in ────────────────
+        // lsF3 opens from a thin horizontal slit — height expands with expo ease-out,
+        // width reaches full size quickly then holds.
+        const ap = ph(t, 0.10, 0.52, eExpoOut);
+        const slitH = 3 + (WIN_H - 3) * ap;
+        const slitW = WIN_W * Math.min(1, 0.28 + 0.72 * ph(t, 0.10, 0.28, eCubicOut));
 
-      if (t < 0.54) {
-        // ── Phase 1 – frames burst on with quintic ease-out; canvas hole last ───────
-        const f1p = ph(t, 0.08, 0.16, eBloom);
-        const f2p = ph(t, 0.14, 0.22, eBloom);
-        const f3p = ph(t, 0.20, 0.28, eBloom);
-        if (t >= 0.08) setF(lsF1, EF1_W * f1p, EF1_H * f1p, cy_off);
-        if (t >= 0.14) setF(lsF2, EF2_W * f2p, EF2_H * f2p, cy_off);
-        if (t >= 0.20) setF(lsF3, EF3_W * f3p, EF3_H * f3p, cy_off);
-        if (t >= 0.30) {
-          const hf = ph(t, 0.30, 0.42, eBloom);
-          lsSetHole(vw, vh, EWIN_W * hf, EWIN_H * hf, holeCY);
-          setBorder(EWIN_W * hf, EWIN_H * hf, cy_off);
-        } else {
-          loadingScreen.style.clipPath = "";
-          lsBorder.style.width = "0"; lsBorder.style.height = "0";
+        if (t >= 0.10) {
+          setF(lsF3, slitW, slitH, 0, 0);
+          if (ap > 0.20) setBorder(slitW, slitH);
         }
-        // t 0.42→0.54: frames hold at EFF sizes — the still moment before the pull.
 
-      } else if (t < 0.67) {
-        // ── Phase 2 – quartic ease-in: barely moves, then slams into the hole ───────
-        const cp = ph(t, 0.54, 0.67, eConverge);
-        setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
-        setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
-        setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
-        lsSetHole(vw, vh, EWIN_W, EWIN_H, vh / 2);
-        setBorder(EWIN_W, EWIN_H);
+        // Side panels sweep from off-screen to their flanking positions.
+        // lsF1 (z-index 1) from left; lsF2 (z-index 2) from right.
+        const lp = ph(t, 0.30, 0.58, eCubicOut);
+        const rp = ph(t, 0.36, 0.60, eCubicOut);
+
+        if (t >= 0.30) setF(lsF1, SIDE_W, SIDE_H, -SIDE_TX - SLIDE_DIST * (1 - lp), 0);
+        if (t >= 0.36) setF(lsF2, SIDE_W, SIDE_H,  SIDE_TX + SLIDE_DIST * (1 - rp), 0);
+
+        loadingScreen.style.clipPath = "";
+
+      } else if (t < 0.74) {
+        // ── Phase 3: Converge — side panels slide to center and resize to match ─
+        // Brief hold (0.62-0.66) then quartic ease-out snap (0.66-0.74).
+        const cp = ph(t, 0.66, 0.74, eQuartOut);
+
+        setF(lsF3, WIN_W, WIN_H, 0, 0);
+        setBorder(WIN_W, WIN_H);
+
+        setF(lsF1,
+          SIDE_W + (WIN_W - SIDE_W) * cp,
+          SIDE_H + (WIN_H - SIDE_H) * cp,
+          -SIDE_TX * (1 - cp), 0);
+        setF(lsF2,
+          SIDE_W + (WIN_W - SIDE_W) * cp,
+          SIDE_H + (WIN_H - SIDE_H) * cp,
+           SIDE_TX * (1 - cp), 0);
+
+        // Canvas hole opens as panels converge.
+        const hp = ph(t, 0.68, 0.74, eCubicOut);
+        lsSetHole(vw, vh, WIN_W * hp, WIN_H * hp, vh / 2);
 
       } else {
-        // ── Phase 3 – expo ease-out: canvas explodes through the hole to fill screen ─
-        const ep = ph(t, 0.67, 1.0, eExpand);
-        const hw = EWIN_W + (vw    - EWIN_W) * ep;
-        const hh = EWIN_H + (vh    - EWIN_H) * ep;
-        const fw = Math.min(hw, WIN_W);
-        const fh = Math.min(hh, WIN_H);
-        setF(lsF1, fw, fh, 0);
-        setF(lsF2, fw, fh, 0);
-        setF(lsF3, fw, fh, 0);
+        // ── Phase 4: Canvas hole expands to fill the screen ───────────────────
+        const ep = ph(t, 0.74, 1.0, eExpoOut);
+        const hw = WIN_W + (vw - WIN_W) * ep;
+        const hh = WIN_H + (vh - WIN_H) * ep;
+        const fw = Math.min(hw, WIN_W), fh = Math.min(hh, WIN_H);
+
+        setF(lsF3, fw, fh, 0, 0);
+        setF(lsF1, fw, fh, 0, 0);
+        setF(lsF2, fw, fh, 0, 0);
         lsSetHole(vw, vh, hw, hh, vh / 2);
         setBorder(hw, hh);
       }
