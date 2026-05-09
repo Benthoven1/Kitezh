@@ -21,8 +21,8 @@ html, body {
   padding: 0;
   background-color: var(--paper);
   color: var(--ink);
-  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-weight: 300;
+  font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -99,12 +99,12 @@ button {
    Parent is inline-flex/align-items:baseline so all text baselines align exactly. */
 .bl { display: inline-block; }
 /* M */ .bl-1 { font-family: "Cinzel", serif; font-weight: 500; }
-/* U */ .bl-2 { font-family: "Playfair Display", serif; font-weight: 500; font-size: 1.0em; }
-/* L */ .bl-3 { font-family: "Cinzel", serif; font-weight: 400; font-size: 0.9em; }
-/* V */ .bl-4 { font-family: "Italiana", serif; font-size: 1.08em; -webkit-text-fill-color: transparent; -webkit-text-stroke: 1.5px currentColor; }
-/* i */ .bl-5 { font-family: "Inter", sans-serif; font-weight: 900; font-size: 0.88em; }
+/* U */ .bl-2 { font-family: "Playfair Display", serif; font-weight: 500; }
+/* L */ .bl-3 { font-family: "Cinzel", serif; font-weight: 400; }
+/* V */ .bl-4 { font-family: "Italiana", serif; -webkit-text-fill-color: transparent; -webkit-text-stroke: 1.5px currentColor; }
+/* i */ .bl-5 { font-family: "Inter", sans-serif; font-weight: 900; }
 /* u */ .bl-6 { font-family: "Cormorant SC", serif; font-weight: 500; }
-/* M */ .bl-7 { font-family: "Cinzel", serif; font-weight: 500; font-size: 1.0em; }
+/* M */ .bl-7 { font-family: "Cinzel", serif; font-weight: 500; }
 
 /* Hover wiggle — letters wave in sequence */
 @keyframes blWiggle {
@@ -301,7 +301,7 @@ body.night-mode .footer-copy p {
 }
 
 .mission-kicker {
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0.42em;
@@ -312,7 +312,7 @@ body.night-mode .footer-copy p {
 }
 
 .mission-heading {
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 300;
   font-size: clamp(36px, 5.5vw, 72px);
   line-height: 1.15;
@@ -405,7 +405,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .letter-header { margin-bottom: 52px; }
 
 .letter-to {
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 300;
   font-style: italic;
   font-size: clamp(22px, 2.4vw, 30px);
@@ -437,7 +437,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 .letter-sig {
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 300;
   font-style: italic;
   font-size: 26px;
@@ -535,7 +535,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .page-shell .eyebrow { margin-bottom: 18px; }
 
 .page-shell h1 {
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 300;
   font-size: clamp(40px, 6vw, 72px);
   line-height: 1.06;
@@ -584,7 +584,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 .static-nav .back-home {
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-size: 12px;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -709,7 +709,7 @@ body:not(.mode-ifo) .ifo-prose {
 .ifo-prose-header { text-align: center; margin: 48px 0 40px; }
 
 .ifo-prose-title {
-  font-family: "Inter", sans-serif;
+  font-family: "DM Sans", sans-serif;
   font-weight: 300;
   font-size: clamp(34px, 4.6vw, 52px);
   line-height: 1.1;

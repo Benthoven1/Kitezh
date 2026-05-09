@@ -796,8 +796,7 @@ function fadeInLoadingScreen(onReady) {
 
 brandLink.addEventListener("click", (e) => {
   e.preventDefault();
-  if (state.mode === "3d") return; // already on the opening page
-  fadeInLoadingScreen(() => snapTo3D());
+  window.location.reload();
 });
 
 // Fade to white before navigating to any sub-page from index.html.
