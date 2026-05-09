@@ -464,9 +464,15 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
   let readyCalled = false, t0 = null;
 
-  // Cubic ease-in-out — smoother than quadratic
-  function e(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
-  function ph(t, a, b) { return e(Math.max(0, Math.min(1, (t - a) / (b - a)))); }
+  // Per-phase easing — each has a distinct cinematic character
+  function eCubicInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2; }
+  function eBloom(t)    { return 1 - Math.pow(1 - t, 5); }          // quintic ease-out: explosive burst
+  function eRise(t)     { return 1 - Math.pow(1 - t, 3); }          // cubic ease-out: decelerated settle
+  function eConverge(t) { return t * t * t * t; }                     // quartic ease-in: suck into hole
+  function eExpand(t)   { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); } // expo ease-out: dramatic fill
+  function ph(t, a, b, efn) {
+    return (efn || eCubicInOut)(Math.max(0, Math.min(1, (t - a) / (b - a))));
+  }
 
   function setF(el, w, h, cy_off) {
     el.style.width     = w + "px";
@@ -532,35 +538,36 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         state.lsRevealP = ph(t, 0.10, 1.0);
       }
 
-      // Group rises from below viewport [0.08→0.28]; holeCY tracks with it.
-      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.08, 0.28));
+      // Group erupts from below — cubic ease-out decelerates as it locks into position.
+      const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.06, 0.28, eRise));
       const cy_off = holeCY - vh / 2;
 
-      // Each image zooms in from its pop-in time, settling to 1.0× by t=0.38.
-      lsF1img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.10, 0.38)})`;
-      lsF2img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.18, 0.38)})`;
-      lsF3img.style.transform = `scale(${1.2 - 0.2 * ph(t, 0.26, 0.38)})`;
+      // Images slightly lag behind their frames (parallax inertia).
+      lsF1img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.08, 0.30, eRise)})`;
+      lsF2img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.14, 0.32, eRise)})`;
+      lsF3img.style.transform = `scale(${1.3 - 0.3 * ph(t, 0.20, 0.34, eRise)})`;
 
-      if (t < 0.58) {
-        // ── Phase 1 – rectangles bloom in smoothly, staggered; canvas hole last ─────
-        const f1p = ph(t, 0.10, 0.17);
-        const f2p = ph(t, 0.18, 0.25);
-        const f3p = ph(t, 0.26, 0.33);
-        if (t >= 0.10) setF(lsF1, EF1_W * f1p, EF1_H * f1p, cy_off);
-        if (t >= 0.18) setF(lsF2, EF2_W * f2p, EF2_H * f2p, cy_off);
-        if (t >= 0.26) setF(lsF3, EF3_W * f3p, EF3_H * f3p, cy_off);
-        if (t >= 0.34) {
-          const hf = ph(t, 0.34, 0.42);
+      if (t < 0.54) {
+        // ── Phase 1 – frames burst on with quintic ease-out; canvas hole last ───────
+        const f1p = ph(t, 0.08, 0.16, eBloom);
+        const f2p = ph(t, 0.14, 0.22, eBloom);
+        const f3p = ph(t, 0.20, 0.28, eBloom);
+        if (t >= 0.08) setF(lsF1, EF1_W * f1p, EF1_H * f1p, cy_off);
+        if (t >= 0.14) setF(lsF2, EF2_W * f2p, EF2_H * f2p, cy_off);
+        if (t >= 0.20) setF(lsF3, EF3_W * f3p, EF3_H * f3p, cy_off);
+        if (t >= 0.30) {
+          const hf = ph(t, 0.30, 0.42, eBloom);
           lsSetHole(vw, vh, EWIN_W * hf, EWIN_H * hf, holeCY);
           setBorder(EWIN_W * hf, EWIN_H * hf, cy_off);
         } else {
           loadingScreen.style.clipPath = "";
           lsBorder.style.width = "0"; lsBorder.style.height = "0";
         }
+        // t 0.42→0.54: frames hold at EFF sizes — the still moment before the pull.
 
-      } else if (t < 0.74) {
-        // ── Phase 2 – image frames converge to the canvas hole; hole stays fixed ────
-        const cp = ph(t, 0.58, 0.74);
+      } else if (t < 0.67) {
+        // ── Phase 2 – quartic ease-in: barely moves, then slams into the hole ───────
+        const cp = ph(t, 0.54, 0.67, eConverge);
         setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
         setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
         setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
@@ -568,10 +575,8 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setBorder(EWIN_W, EWIN_H);
 
       } else {
-        // ── Phase 3 – single continuous expansion: EWIN → full viewport ──────────
-        // No beat/pause: hole and frames begin moving immediately and never stop.
-        // Frames cap at WIN_W/WIN_H; hole continues to fill the full viewport.
-        const ep = ph(t, 0.74, 1.0);
+        // ── Phase 3 – expo ease-out: canvas explodes through the hole to fill screen ─
+        const ep = ph(t, 0.67, 1.0, eExpand);
         const hw = EWIN_W + (vw    - EWIN_W) * ep;
         const hh = EWIN_H + (vh    - EWIN_H) * ep;
         const fw = Math.min(hw, WIN_W);
