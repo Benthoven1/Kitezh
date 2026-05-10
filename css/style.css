@@ -40,6 +40,8 @@ body::before {
 }
 
 body.cosmos-only { overflow: hidden; height: 100vh; height: 100dvh; overscroll-behavior: none; }
+/* iOS ignores overflow:hidden on body alone — lock html too */
+html:has(body.cosmos-only) { overflow: hidden; }
 
 a { color: inherit; }
 
@@ -220,6 +222,14 @@ main#stage { position: relative; width: 100%; }
   background: var(--paper);
 }
 
+/* Fix canvas-wrap in cosmos mode so iOS scroll bleed can't move it */
+body.cosmos-only #canvas-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
 /* Once the Three.js 3D→2D transition completes, fix the canvas so it
    stays in place while scroll drives the expansion sequence. */
 body.expansion-active #canvas-wrap {
@@ -345,6 +355,10 @@ canvas#cosmos {
   user-select: none;
   -webkit-user-select: none;
 }
+
+/* In cosmos mode no scrolling is wanted — disable pan so iOS doesn't
+   hide the address bar and jump the viewport height */
+body.cosmos-only canvas#cosmos { touch-action: none; }
 
 .planet-label {
   position: absolute;
