@@ -39,7 +39,7 @@ body::before {
   background-size: 200px 200px;
 }
 
-body.cosmos-only { overflow: hidden; height: 100vh; height: 100dvh; overscroll-behavior: none; }
+body.cosmos-only { overflow: hidden; height: 100vh; height: 100svh; overscroll-behavior: none; }
 /* iOS ignores overflow:hidden on body alone — lock html too */
 html:has(body.cosmos-only) { overflow: hidden; }
 
@@ -217,26 +217,33 @@ main#stage { position: relative; width: 100%; }
   position: relative;
   width: 100%;
   height: 100vh;
-  height: 100dvh;
+  height: 100svh;
   overflow: hidden;
   background: var(--paper);
 }
 
-/* Fix canvas-wrap in cosmos mode so iOS scroll bleed can't move it */
+/* Fix canvas-wrap in cosmos mode so iOS scroll bleed can't move it.
+   Explicit height pins the canvas to a stable unit so the mobile address bar
+   appearing/disappearing never triggers a resize or background flash. */
 body.cosmos-only #canvas-wrap {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
+  height: 100vh;
+  height: 100svh;
 }
 
 /* Once the Three.js 3D→2D transition completes, fix the canvas so it
-   stays in place while scroll drives the expansion sequence. */
+   stays in place while scroll drives the expansion sequence. Explicit
+   stable height prevents address-bar resize events from reflowing the canvas. */
 body.expansion-active #canvas-wrap {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
+  height: 100vh;
+  height: 100svh;
   z-index: 0;
 }
 
