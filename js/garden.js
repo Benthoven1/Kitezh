@@ -29,8 +29,7 @@ const PALETTES = [
   { petal: "#d9f99d", accent: "#bef264", center: "#4d7c0f" },
 ];
 
-// Medium greens — visible on both the warm paper background and the night sky
-const FG = { dk: "#3a6e30", md: "#4e8e3e", lt: "#6ab050", br: "#90d464" };
+const FG = { dk: "#162a14", md: "#254822", lt: "#3d7030", br: "#56963e" };
 
 // ── SVG flower builders ───────────────────────────────────────────────────────
 
@@ -147,19 +146,40 @@ function buildGardenSVG(vw, gardenH) {
     style: "display:block",
   });
 
-  // SVG is transparent — page background (paper or night sky) shows through.
-  // A thin ground-line and soil strip anchor the plants on both light and dark.
-  svg.appendChild(se("rect", { x: 0, y: ground, width: W, height: H - ground, fill: "rgba(30,60,20,0.18)" }));
-  svg.appendChild(se("rect", { x: 0, y: ground, width: W, height: 2, fill: "rgba(100,180,60,0.35)" }));
+  const defs = se("defs");
+
+  // Gradient: sky at top → earth at bottom
+  const bgGrad = se("linearGradient", { id: "gGradBg", x1: 0, y1: 0, x2: 0, y2: 1, gradientUnits: "objectBoundingBox" });
+  [["0%", "#060412"], ["55%", "#060412"], ["100%", "#0c180a"]].forEach(([o, c]) => {
+    const s = se("stop", { offset: o }); s.setAttribute("stop-color", c); bgGrad.appendChild(s);
+  });
+  defs.appendChild(bgGrad);
+
+  // Soft radial glow behind the garden for moonlight effect
+  const moonGlow = se("radialGradient", { id: "gMoon", cx: "50%", cy: "60%", r: "55%", gradientUnits: "userSpaceOnUse",
+    gradientTransform: `scale(${W}, ${H})` });
+  [["0%", "rgba(200,210,255,0.07)"], ["100%", "rgba(0,0,0,0)"]].forEach(([o, c]) => {
+    const s = se("stop", { offset: o }); s.setAttribute("stop-color", c); moonGlow.appendChild(s);
+  });
+  defs.appendChild(moonGlow);
+
+  svg.appendChild(defs);
+  svg.appendChild(se("rect", { width: W, height: H, fill: "url(#gGradBg)" }));
+  svg.appendChild(se("rect", { width: W, height: H, fill: "url(#gMoon)" }));
+
+  // ── Ground earth ────────────────────────────────────────────────────────────
+  svg.appendChild(se("rect", { x: 0, y: ground, width: W, height: H - ground, fill: "#0c1a08" }));
+  // Subtle ground highlight
+  svg.appendChild(se("rect", { x: 0, y: ground, width: W, height: 2, fill: "rgba(100,160,70,0.2)" }));
 
   // ── Layer 1: Far background hedge row ───────────────────────────────────────
-  const farG = se("g", { opacity: 0.65 });
+  const farG = se("g", { opacity: 0.38 });
   hedgeBlob(0,        ground * 0.90, W * 0.55, H * 0.20, FG.dk, farG);
   hedgeBlob(W * 0.38, ground * 0.88, W * 0.65, H * 0.22, FG.dk, farG);
   svg.appendChild(farG);
 
   // ── Layer 2: Midground formal elements ─────────────────────────────────────
-  const midG = se("g", { opacity: 0.88 });
+  const midG = se("g", { opacity: 0.72 });
 
   // Symmetrical topiary balls on stems (formal garden pillars)
   const topiaryXs = [0.06, 0.18, 0.82, 0.94];
