@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { initGarden } from "./garden.js";
 
 // Pastel porcelain colors
 const PASTEL_STAR    = 0xF0D5BB;
@@ -1240,6 +1239,4 @@ window.addEventListener('pageshow', (e) => {
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) state.clock.getDelta();
 });
-
-initGarden();
 
