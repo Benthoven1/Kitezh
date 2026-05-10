@@ -474,7 +474,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   function eRise(t)     { return 1 - Math.pow(1 - t, 3); }
   function eSlit(t)     { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); } // expo ease-out: height reveal
   function eConverge(t) { return t * t * t * t; }
-  function eExpand(t)   { return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+  function eExpand(t)   { return 1 - (1 - t) * (1 - t); } // quadratic ease-out: consistent velocity, no asymptotic tail
   function ph(t, a, b, efn) {
     return (efn || eCubicInOut)(Math.max(0, Math.min(1, (t - a) / (b - a))));
   }
@@ -537,7 +537,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       // Fade the overlay out during Phase 3 so the asymptotic tail of the
       // expansion is invisible — prevents the near-full rectangle from looking frozen.
       const fadeIn  = startOpaque ? 1 : ph(t, 0, 0.08);
-      const fadeOut = ph(t, 0.82, 1.0);
+      const fadeOut = ph(t, 0.78, 1.0); // start fading while expansion is still visibly moving
       loadingScreen.style.opacity = String(fadeIn * (1 - fadeOut));
 
       if (startOpaque || t >= 0.08) {
@@ -580,7 +580,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         if (t >= 0.30) {
           lsHoleVisible = true;
           const hw = ph(t, 0.30, 0.36, eRise);
-          const hh = ph(t, 0.30, 0.48, eSlit);
+          const hh = ph(t, 0.30, 0.48, eRise); // cubic ease-out: smooth reveal, no expo hang
           const holeW = EWIN_W * hw;
           const holeH = Math.max(3, EWIN_H * hh);
           lsSetHole(vw, vh, holeW, holeH, holeCY);
