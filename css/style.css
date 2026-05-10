@@ -296,6 +296,7 @@ body.night-mode .footer-copy p {
 }
 
 /* ---------- Mission text section (scrolls naturally after expansion space) ---------- */
+/* Hidden until the user enters the expansion sequence via "Enter Mulvium" */
 #mission-section {
   position: relative;
   z-index: 1;
@@ -303,12 +304,14 @@ body.night-mode .footer-copy p {
   text-align: center;
   padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 60px) clamp(40px, 6vh, 80px);
   min-height: 20vh;
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   pointer-events: none;
 }
+
+body.expansion-active #mission-section { display: flex; }
 
 .mission-kicker {
   font-family: "DM Sans", sans-serif;
