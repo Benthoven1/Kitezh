@@ -832,3 +832,70 @@ html.ls-instant-cover #loading-screen {
   background: transparent;
   border: 3px solid rgba(27, 22, 19, 0.45);
 }
+
+/* ── Botanical scroll experience ────────────────────────────────────────────── */
+
+/* Floating flower overlay — fixed during night-sky scroll */
+#flower-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+#flower-layer.flower-layer--active { opacity: 1; }
+
+/* Individual floating flower */
+.scroll-flower {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+@keyframes flowerBloom {
+  0%   { transform: scale(0.04) rotate(0deg);   opacity: 0;   filter: blur(3px); }
+  18%  { transform: scale(0.22) rotate(18deg);  opacity: 0.5; filter: blur(1px); }
+  55%  { transform: scale(1.10) rotate(-4deg);  opacity: 0.95;filter: blur(0); }
+  75%  { transform: scale(0.95) rotate(2deg);   opacity: 1; }
+  100% { transform: scale(1)    rotate(0deg);   opacity: 1; }
+}
+
+@keyframes flowerFall {
+  0%   { opacity: 1;   transform: translateY(0)     rotate(0deg); }
+  100% { opacity: 0;   transform: translateY(160px) rotate(200deg); }
+}
+
+.scroll-flower--bloom { animation: flowerBloom 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.scroll-flower--fall  { animation: flowerFall  1.4s cubic-bezier(0.36, 0, 0.66, -0.56) 0.2s both; }
+
+/* Garden scene container — sits at the very top of the footer */
+#garden-scene {
+  width: 100%;
+  overflow: visible;
+  line-height: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease 0.3s;
+}
+
+body.night-mode #garden-scene { opacity: 1; }
+
+/* Footer adjustments when garden is present */
+body.night-mode #site-footer {
+  padding-top: 0;
+}
+
+/* Star-glow effect: small radial halo behind each flower before it blooms */
+.scroll-flower::before {
+  content: "";
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,245,220,0.55) 0%, transparent 70%);
+  pointer-events: none;
+  animation: inherit;
+  animation-name: none;
+}
