@@ -263,16 +263,20 @@ body.night-mode #letter-section {
 
 body.night-mode .letter-to,
 body.night-mode .letter-sig {
-  color: rgba(220, 212, 245, 0.88);
+  color: #ffffff;
 }
 
 body.night-mode .letter-body p,
 body.night-mode .letter-close p {
-  color: rgba(200, 195, 230, 0.70);
+  color: rgba(255, 255, 255, 0.80);
+}
+
+body.night-mode .letter-body em {
+  color: #ffffff;
 }
 
 body.night-mode .letter-close {
-  border-top-color: rgba(220, 212, 245, 0.18);
+  border-top-color: rgba(255, 255, 255, 0.18);
 }
 
 body.night-mode #site-footer {
