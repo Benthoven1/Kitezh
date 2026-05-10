@@ -1191,7 +1191,7 @@ function updateExpansionScroll() {
 
 // Mission section: animate characters in when it first scrolls into view.
 const missionObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting && !state.missionFired) {
+  if (entries[0].isIntersecting && !state.missionFired && body.classList.contains("expansion-active")) {
     state.missionFired = true;
     missionSection.setAttribute("aria-hidden", "false");
     missionChars.forEach((el, i) => {
