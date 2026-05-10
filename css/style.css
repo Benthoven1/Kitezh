@@ -808,7 +808,7 @@ html.ls-instant-cover #loading-screen {
   width: 0;
   height: 0;
   overflow: hidden;
-  will-change: width, height, transform;
+  will-change: transform;
 }
 
 .ls-img {

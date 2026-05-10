@@ -351,8 +351,17 @@ const state = {
   lsRevealP: 1,
 };
 
+let lsVW = window.innerWidth;
+let lsVH = window.innerHeight;
+let cachedCanvasRect = canvas.getBoundingClientRect();
+let cachedScrollTotal = 0;
+
 let lastW = 0, lastH = 0;
 function resize() {
+  lsVW = window.innerWidth;
+  lsVH = window.innerHeight;
+  cachedScrollTotal = expansionWrapper.offsetHeight - lsVH;
+  cachedCanvasRect = canvas.getBoundingClientRect();
   const w = canvas.clientWidth, h = canvas.clientHeight;
   if (w === lastW && h === lastH) return;
   lastW = w; lastH = h;
@@ -368,9 +377,8 @@ const pointer   = new THREE.Vector2();
 let pointerInside = false;
 
 canvas.addEventListener("pointermove", (e) => {
-  const rect = canvas.getBoundingClientRect();
-  pointer.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-  pointer.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+  pointer.x = ((e.clientX - cachedCanvasRect.left) / cachedCanvasRect.width)  * 2 - 1;
+  pointer.y = -((e.clientY - cachedCanvasRect.top)  / cachedCanvasRect.height) * 2 + 1;
   pointerInside = true;
 });
 
@@ -386,9 +394,8 @@ canvas.addEventListener("pointerleave", (e) => {
 // Touch: update pointer on tap so the click handler finds the right object via raycasting
 canvas.addEventListener("pointerdown", (e) => {
   if (e.pointerType !== "touch") return;
-  const rect = canvas.getBoundingClientRect();
-  pointer.x = ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-  pointer.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+  pointer.x = ((e.clientX - cachedCanvasRect.left) / cachedCanvasRect.width)  * 2 - 1;
+  pointer.y = -((e.clientY - cachedCanvasRect.top)  / cachedCanvasRect.height) * 2 + 1;
   pointerInside = true;
   updateHover();
 });
@@ -419,8 +426,9 @@ const lsBorder = document.getElementById("ls-border");
 const lsF1img = lsF1.querySelector(".ls-img");
 const lsF2img = lsF2.querySelector(".ls-img");
 const lsF3img = lsF3.querySelector(".ls-img");
-let lsRaf    = null;
-let lsActive = false;
+let lsRaf         = null;
+let lsActive      = false;
+let lsHoleVisible = false; // true once the canvas window hole first opens
 
 // Sets a transparent canvas-window hole in the loading screen via a nonzero-
 // winding clip-path: outer CW rectangle + inner CCW rectangle = hole.
@@ -440,6 +448,7 @@ function lsSetHole(vw, vh, hW, hH, hCY) {
 function showLoadingScreen(onReady, duration, startOpaque) {
   if (lsActive) return;
   lsActive = true;
+  lsHoleVisible = false;
   const dur = duration || 4000;
   if (lsRaf) { cancelAnimationFrame(lsRaf); lsRaf = null; }
 
@@ -498,6 +507,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
     loadingScreen.style.pointerEvents = "none";
     loadingScreen.setAttribute("aria-hidden", "true");
     lsActive = false;
+    lsHoleVisible = false;
   }
 
   function tick(ts) {
@@ -505,9 +515,9 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       if (!t0) t0 = ts;
       const t = Math.min(1, (ts - t0) / dur);
 
-      // Recompute every frame so orientation changes mid-animation are handled cleanly.
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
+      // Use cached viewport dimensions; updated by the resize handler on orientation change.
+      const vw = lsVW;
+      const vh = lsVH;
       const WIN_W = vw * 0.68, WIN_H = vh * 0.62;
       const F3_W  = vw * 0.72, F3_H  = vh * 0.65;
       const F2_W  = vw * 0.76, F2_H  = vh * 0.68;
@@ -564,6 +574,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
         // 4th rectangle — canvas hole — also opens as a slit.
         if (t >= 0.30) {
+          lsHoleVisible = true;
           const hw = ph(t, 0.30, 0.36, eRise);
           const hh = ph(t, 0.30, 0.48, eSlit);
           const holeW = EWIN_W * hw;
@@ -884,13 +895,13 @@ function lerpVec(a, b, t, out) {
 }
 function easeInOut(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
 
-const tmpVec  = new THREE.Vector3();
+const tmpVec   = new THREE.Vector3();
 const worldPos = new THREE.Vector3();
+const baseCamPos = new THREE.Vector3();
 
 function projectToCanvas(pos) {
-  const v = pos.clone().project(camera);
-  const rect = canvas.getBoundingClientRect();
-  return { x: (v.x * 0.5 + 0.5) * rect.width, y: (-v.y * 0.5 + 0.5) * rect.height };
+  tmpVec.copy(pos).project(camera);
+  return { x: (tmpVec.x * 0.5 + 0.5) * cachedCanvasRect.width, y: (-tmpVec.y * 0.5 + 0.5) * cachedCanvasRect.height };
 }
 
 function updateHover() {
@@ -1151,9 +1162,8 @@ function animate() {
   }
 
   // Camera: blend 3D→2D then blend toward CAM_IFO
-  const basePos = new THREE.Vector3();
-  lerpVec(CAM_3D, CAM_2D, eased, basePos);
-  lerpVec(basePos, CAM_IFO, easedIFO, camera.position);
+  lerpVec(CAM_3D, CAM_2D, eased, baseCamPos);
+  lerpVec(baseCamPos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
 
   // Expansion: background fades from paper to #060412; star-field fades in
@@ -1165,16 +1175,17 @@ function animate() {
   trackLabel();
   resize();
 
-  renderer.render(scene, camera);
+  // Skip GPU render while the loading screen fully covers the canvas (hole not open yet).
+  // All scene state still updates so the 3D world is at the correct position when visible.
+  if (!lsActive || lsHoleVisible) renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 
 // ---------- Expansion scroll sequence ----------
 function updateExpansionScroll() {
   if (!body.classList.contains("expansion-active")) return;
-  const totalScroll = expansionWrapper.offsetHeight - window.innerHeight;
-  if (totalScroll <= 0) return;
-  const rawP = Math.max(0, Math.min(1, window.scrollY / totalScroll));
+  if (cachedScrollTotal <= 0) return;
+  const rawP = Math.max(0, Math.min(1, window.scrollY / cachedScrollTotal));
 
   // Phase 1 (0–60 %): rings expand outward, star shrinks + goes radiant, night sky fades in
   state.expansionP1 = Math.min(1, rawP / 0.6);
