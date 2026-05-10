@@ -534,7 +534,11 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         try { if (onReady) onReady(); } catch (err) { console.error(err); }
       }
 
-      loadingScreen.style.opacity = String(startOpaque ? 1 : ph(t, 0, 0.08));
+      // Fade the overlay out during Phase 3 so the asymptotic tail of the
+      // expansion is invisible — prevents the near-full rectangle from looking frozen.
+      const fadeIn  = startOpaque ? 1 : ph(t, 0, 0.08);
+      const fadeOut = ph(t, 0.82, 1.0);
+      loadingScreen.style.opacity = String(fadeIn * (1 - fadeOut));
 
       if (startOpaque || t >= 0.08) {
         state.lsRevealP = ph(t, 0.10, 1.0);
@@ -597,8 +601,9 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setBorder(EWIN_W, EWIN_H);
 
       } else {
-        // ── Phase 3: Expo ease-out — canvas explodes through hole to fill screen
-        const ep = ph(t, 0.67, 1.0, eExpand);
+        // ── Phase 3: Expo ease-out expansion completes at t=0.90; the overlay
+        // fades out from t=0.82 so the asymptotic tail is never visible.
+        const ep = ph(t, 0.67, 0.90, eExpand);
         const hw = EWIN_W + (vw    - EWIN_W) * ep;
         const hh = EWIN_H + (vh    - EWIN_H) * ep;
         const fw = Math.min(hw, WIN_W);
