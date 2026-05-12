@@ -282,6 +282,18 @@ body.night-mode .letter-body em {
   color: #ffffff;
 }
 
+body.night-mode .letter-quote {
+  border-left-color: rgba(255, 255, 255, 0.25);
+}
+
+body.night-mode .letter-quote p {
+  color: rgba(255, 255, 255, 0.70);
+}
+
+body.night-mode .letter-title {
+  color: rgba(255, 255, 255, 0.60);
+}
+
 body.night-mode .letter-close {
   border-top-color: rgba(255, 255, 255, 0.18);
 }
@@ -443,13 +455,37 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 .letter-body p {
-  font-size: 17px;
-  line-height: 1.8;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 19px;
+  line-height: 1.85;
   color: var(--ink-soft);
   margin: 0 0 28px;
 }
 
 .letter-body p:last-child { margin-bottom: 0; }
+
+.letter-quote {
+  margin: 4px 0 28px 0;
+  padding: 20px 32px;
+  border-left: 2px solid var(--hairline);
+}
+
+.letter-quote p {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 17px;
+  font-style: italic;
+  line-height: 1.85;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.letter-rule {
+  text-align: left;
+  color: var(--hairline);
+  font-size: 22px;
+  margin: 36px 0 !important;
+  user-select: none;
+}
 
 .letter-close {
   margin-top: 56px;
@@ -458,19 +494,27 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 .letter-close p {
-  font-size: 15px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 17px;
   color: var(--ink-soft);
   margin: 0 0 8px;
-  letter-spacing: 0.02em;
 }
 
 .letter-sig {
-  font-family: "DM Sans", sans-serif;
-  font-weight: 300;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
   font-style: italic;
-  font-size: 26px;
+  font-size: 28px;
   color: var(--ink);
+  margin: 8px 0 4px;
+}
+
+.letter-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 15px;
+  color: var(--ink-soft);
   margin: 0;
+  letter-spacing: 0.02em;
 }
 
 /* ---------- Site Footer ---------- */
