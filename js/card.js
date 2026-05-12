@@ -21,22 +21,20 @@ new IntersectionObserver(([entry], obs) => {
 const EASE_OUT = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 const EASE_IN  = 'cubic-bezier(0.55, 0.06, 0.68, 0.19)';
 
-function setTransitions({ sceneTrans, coverTrans }) {
-  cardScene.style.transition = sceneTrans;
-  cardCover.style.transition = coverTrans;
-}
-
-// ── Open ──────────────────────────────────────────────────────────────────────
+// ── Open (two-step) ───────────────────────────────────────────────────────────
+// Step 1 — pan: scene slides right, clip expands. Cover is pinned at rotateY(0)
+//           via inline style so the .is-open CSS rule cannot rotate it yet.
+// Step 2 — fold: inline pin is released; CSS class drives the cover rotation.
 let isOpen = false;
 
 function openCard() {
   if (isOpen) return;
   isOpen = true;
 
-  setTransitions({
-    sceneTrans: `transform 0.82s ${EASE_OUT}, clip-path 0.82s ${EASE_OUT}`,
-    coverTrans: `transform 0.82s ${EASE_OUT}`,
-  });
+  // Pin cover so it doesn't rotate during the pan
+  cardCover.style.transition = 'none';
+  cardCover.style.transform  = 'rotateY(0deg)';
+  cardScene.style.transition = `transform 0.60s ${EASE_OUT}, clip-path 0.60s ${EASE_OUT}`;
 
   cardScene.classList.add('is-open');
   cardCover.setAttribute('aria-expanded', 'true');
@@ -44,28 +42,39 @@ function openCard() {
   cardInside.removeAttribute('aria-hidden');
   cardInside.style.pointerEvents = '';
 
-  setTimeout(() => document.getElementById('ci-name')?.focus(), 950);
+  // After pan settles, release the pin and fold the cover open
+  setTimeout(() => {
+    cardCover.style.transition = `transform 0.82s ${EASE_OUT}`;
+    cardCover.style.transform  = ''; // CSS .is-open rule takes over → rotateY(-175deg)
+    setTimeout(() => document.getElementById('ci-name')?.focus(), 900);
+  }, 660);
 }
 
-// ── Close ─────────────────────────────────────────────────────────────────────
+// ── Close (two-step, reversed) ────────────────────────────────────────────────
+// Step 1 — fold shut: cover rotates back to 0 via inline override.
+// Step 2 — pan back: scene slides left and clip re-hides; inline pin removed.
 function closeCard() {
   if (!isOpen) return;
+  isOpen = false; // block re-entry immediately
 
-  setTransitions({
-    sceneTrans: `transform 0.75s ${EASE_IN}, clip-path 0.75s ${EASE_IN}`,
-    coverTrans: `transform 0.75s ${EASE_IN}`,
-  });
+  // Step 1 — fold the cover shut
+  cardCover.style.transition = `transform 0.65s ${EASE_IN}`;
+  cardCover.style.transform  = 'rotateY(0deg)';
 
-  cardScene.classList.remove('is-open');
-  cardCover.setAttribute('aria-expanded', 'false');
-
-  // Restore cover interactivity once animation settles
   setTimeout(() => {
-    isOpen = false;
-    cardCover.setAttribute('tabindex', '0');
-    cardInside.setAttribute('aria-hidden', 'true');
-    cardInside.style.pointerEvents = 'none';
-  }, 800);
+    // Step 2 — pan back to closed position
+    cardScene.style.transition = `transform 0.58s ${EASE_IN}, clip-path 0.58s ${EASE_IN}`;
+    cardCover.style.transition = 'none';
+    cardCover.style.transform  = ''; // base CSS rule keeps cover at rotateY(0deg)
+    cardScene.classList.remove('is-open');
+    cardCover.setAttribute('aria-expanded', 'false');
+
+    setTimeout(() => {
+      cardCover.setAttribute('tabindex', '0');
+      cardInside.setAttribute('aria-hidden', 'true');
+      cardInside.style.pointerEvents = 'none';
+    }, 620);
+  }, 700);
 }
 
 // ── Event listeners ───────────────────────────────────────────────────────────
