@@ -1057,6 +1057,15 @@ function animate() {
         o.planet.material.transparent = false;
       }
     }
+
+    // On wide viewports (mobile landscape / tablet) the camera frustum is
+    // broad enough that innermost orbits remain in frame long after expansion
+    // begins. Opacity alone is not enough — near-zero transparent geometry can
+    // still produce rendering artefacts against the dark night sky.
+    // Fully suppress draw calls once the fade is essentially complete.
+    const fullyFaded = isExpanding && expansionFade < 0.02;
+    o.ring.visible   = !fullyFaded;
+    o.planet.visible = !fullyFaded;
   });
 
   // Star fully disappears during ifo
