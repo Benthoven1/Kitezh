@@ -86,8 +86,8 @@ cardForm.addEventListener('submit', async e => {
 });
 
 function showSuccess() {
-  cardForm.hidden = true;
-  ciSuccess.hidden = false;
+  cardForm.style.display = 'none';
+  ciSuccess.style.display = 'flex';
 }
 
 function resetBtn(btn, html) {
