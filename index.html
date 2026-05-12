@@ -229,10 +229,11 @@
       <div class="card-scene" id="card-scene">
         <div class="card-wrap" id="card-wrap">
 
-          <!-- Front cover -->
+          <!-- Front cover — two faces (front: "Thinking of you.", back: "Dear Benjamin") -->
           <div class="card-cover" id="card-cover"
                role="button" tabindex="0"
                aria-label="Open greeting card" aria-expanded="false">
+            <!-- Front face -->
             <div class="card-face">
               <figure class="card-rose-fig">
                 <img src="rose-flower.jpg" alt="" class="card-rose-img" aria-hidden="true" />
@@ -240,27 +241,36 @@
               <p class="card-greeting">Thinking of you.</p>
               <p class="card-open-hint" aria-hidden="true">open &nbsp;&rarr;</p>
             </div>
+            <!-- Back face — revealed when cover flips open -->
+            <div class="card-face card-face--back" aria-hidden="true">
+              <p class="ci-salutation">Dear Benjamin,</p>
+              <div class="ci-field ci-field--fill">
+                <label class="ci-label" for="ci-message">Message</label>
+                <textarea class="ci-input ci-textarea" id="ci-message"
+                          placeholder="Write a note&hellip;"></textarea>
+              </div>
+            </div>
           </div>
 
-          <!-- Inside — two-page spread revealed when card opens -->
+          <!-- Inside — right page only (left page / back face is on the cover) -->
           <div class="card-inside" id="card-inside" aria-hidden="true" style="pointer-events:none">
             <button class="card-close-btn" id="card-close-btn" aria-label="Close card">&#8592;</button>
             <!-- Set data-endpoint to your Formspree URL, e.g. https://formspree.io/f/your-id
                  Omit or leave empty to use the mailto fallback. -->
             <form id="card-form" class="card-pages" novalidate data-endpoint="">
 
-              <!-- Left page: salutation + message -->
+              <!-- Left page: salutation + message (hidden on desktop; shown on mobile) -->
               <div class="card-page card-page--left">
                 <p class="ci-salutation">Dear Benjamin,</p>
                 <div class="ci-field ci-field--fill">
-                  <label class="ci-label" for="ci-message">Message</label>
-                  <textarea class="ci-input ci-textarea" id="ci-message"
+                  <label class="ci-label" for="ci-message-mobile">Message</label>
+                  <textarea class="ci-input ci-textarea" id="ci-message-mobile"
                             name="message"
                             placeholder="Write a note&hellip;"></textarea>
                 </div>
               </div>
 
-              <!-- Centre binding -->
+              <!-- Centre binding (hidden on desktop; shown on mobile) -->
               <div class="card-page-divider" aria-hidden="true"></div>
 
               <!-- Right page: contact fields + submit -->
