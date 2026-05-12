@@ -581,11 +581,10 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   transform: none;
 }
 
-/* Card wrap: sets the physical card dimensions and handles scroll-reveal */
-/* width transition is set by JS; opacity/transform are for scroll-reveal */
+/* Card wrap: two-page spread, always full open size — no width animation */
 .card-wrap {
   position: relative;
-  width: min(380px, 92vw);
+  width: min(730px, 94vw);
   height: 570px;
   /* scroll-reveal initial state */
   opacity: 0;
@@ -600,17 +599,12 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   transform: translateY(0);
 }
 
-.card-scene.is-open .card-wrap {
-  width: min(730px, 94vw);
-}
-
-/* ---- Cover (front face) ---- */
+/* ---- Cover (front face) — right half, hinge at center spine ---- */
 /* transform transition set by JS for asymmetric open/close feel */
 .card-cover {
   position: absolute;
-  top: 0; left: 0; bottom: 0;
-  /* explicit width so it never stretches when card-wrap expands */
-  width: min(380px, 92vw);
+  top: 0; right: 0; bottom: 0;
+  width: 50%;
   z-index: 2;
   transform-origin: left center;
   transform: rotateY(0deg);
@@ -701,6 +695,22 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   margin: 0;
 }
 
+/* Overlay that hides the inside-left page while the card is closed */
+.card-inside::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; width: 50%;
+  background: var(--paper-warm);
+  z-index: 5;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 0.15s ease 0s;
+}
+.card-scene.is-open .card-inside::before {
+  opacity: 0;
+  transition: opacity 0.2s ease 0.4s;
+}
+
 /* ---- Close button ---- */
 .card-close-btn {
   position: absolute;
@@ -717,14 +727,15 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   background: none;
   border: none;
   cursor: pointer;
-  opacity: 0.4;
+  opacity: 0;
   padding: 0;
   line-height: 1;
   transition: opacity 0.18s ease;
   font-family: "DM Sans", sans-serif;
 }
 
-.card-close-btn:hover { opacity: 0.9; }
+.card-scene.is-open .card-close-btn { opacity: 0.4; }
+.card-close-btn:hover { opacity: 0.9 !important; }
 .card-close-btn:focus-visible { outline: 2px solid var(--purple); border-radius: 2px; }
 
 /* ---- Inside (contact form) ---- */
@@ -1105,17 +1116,19 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
 }
 
-/* Card responsive — stack pages vertically on narrow screens */
+/* Card responsive — portrait card on narrow screens */
 @media (max-width: 639px) {
-  .card-scene.is-open .card-wrap { width: min(380px, 92vw); } /* no width expansion */
+  /* Revert to portrait: full-width cover, inside pages stack vertically */
+  .card-wrap { width: min(380px, 92vw); height: auto; min-height: 570px; }
+  .card-cover { left: 0; right: auto; width: 100%; height: 570px; bottom: auto; }
+  /* Hide the inside overlay on mobile (cover already covers everything) */
+  .card-inside::before { display: none; }
   .card-pages { flex-direction: column; }
   .card-page-divider { width: auto; height: 1px; flex-shrink: 0; }
   .card-page-divider::before { top: auto; bottom: 100%; right: 0; left: 0; width: auto; height: 14px;
     background: linear-gradient(to top, rgba(0,0,0,0.06), transparent); }
   .card-page-divider::after { bottom: auto; top: 100%; right: 0; left: 0; width: auto; height: 12px;
     background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent); }
-  .card-wrap { height: auto; min-height: 570px; }
-  .card-cover { height: 570px; bottom: auto; }
   .card-inside { overflow-y: auto; }
   .card-page--left { padding: 24px 22px 16px; min-height: 220px; }
   .card-page--right { padding: 16px 22px 24px; }

@@ -21,10 +21,8 @@ new IntersectionObserver(([entry], obs) => {
 const EASE_OUT = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 const EASE_IN  = 'cubic-bezier(0.55, 0.06, 0.68, 0.19)';
 
-function setTransitions({ wrapWidthTrans, coverTrans }) {
-  // Preserve scroll-reveal opacity/transform transitions alongside width
-  cardWrap.style.transition   = `${wrapWidthTrans}, opacity 0.75s var(--ease), transform 0.75s var(--ease)`;
-  cardCover.style.transition  = coverTrans;
+function setTransitions({ coverTrans }) {
+  cardCover.style.transition = coverTrans;
 }
 
 // ── Open ──────────────────────────────────────────────────────────────────────
@@ -35,8 +33,7 @@ function openCard() {
   isOpen = true;
 
   setTransitions({
-    wrapWidthTrans:`width 0.88s ${EASE_OUT} 0.04s`,       // right page slides out just after fold starts
-    coverTrans:    `transform 0.82s ${EASE_OUT}`,          // cover swings open, decelerating to rest
+    coverTrans: `transform 0.82s ${EASE_OUT}`,
   });
 
   cardScene.classList.add('is-open');
@@ -53,8 +50,7 @@ function closeCard() {
   if (!isOpen) return;
 
   setTransitions({
-    wrapWidthTrans:`width 0.72s ${EASE_IN}`,               // width contracts immediately
-    coverTrans:    `transform 0.75s ${EASE_IN}`,           // cover swings shut, accelerating
+    coverTrans: `transform 0.75s ${EASE_IN}`,
   });
 
   cardScene.classList.remove('is-open');
