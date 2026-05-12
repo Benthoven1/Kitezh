@@ -139,6 +139,9 @@ cardForm.addEventListener('submit', async e => {
   btn.innerHTML = '<span>Sending&hellip;</span>';
 
   const payload = Object.fromEntries(new FormData(cardForm));
+  // On desktop the message textarea lives on the cover's back face (outside the form element)
+  const msgEl = document.getElementById('ci-message');
+  if (msgEl?.value) payload.message = msgEl.value;
   const endpoint = cardForm.dataset.endpoint?.trim();
 
   if (endpoint) {

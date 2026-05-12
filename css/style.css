@@ -604,7 +604,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   transform: translateY(0);
 }
 
-/* ---- Cover (front face) — right half, hinge at center spine ---- */
+/* ---- Cover — right half, hinge at center spine; two-faced (front + back) ---- */
 /* transform transition set by JS for asymmetric open/close feel */
 .card-cover {
   position: absolute;
@@ -613,12 +613,10 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   z-index: 2;
   transform-origin: left center;
   transform: rotateY(0deg);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
   border-radius: 3px;
-  overflow: hidden;
   cursor: pointer;
-  background: var(--paper-warm);
   box-shadow:
     0 2px 6px rgba(0,0,0,0.12),
     0 10px 30px rgba(0,0,0,0.20),
@@ -640,13 +638,26 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   pointer-events: none;
 }
 
-/* Face layout */
+/* Face layout — both faces share absolute positioning and backface hiding */
 .card-face {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%;
   padding: 28px 28px 24px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--paper-warm);
+}
+
+/* Back face — "Dear Benjamin" + message textarea */
+.card-face--back {
+  align-items: flex-start;
+  padding: 32px 28px;
+  transform: rotateY(180deg);
 }
 
 .card-rose-fig {
@@ -727,15 +738,18 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .card-close-btn:hover { opacity: 0.9 !important; }
 .card-close-btn:focus-visible { outline: 2px solid var(--purple); border-radius: 2px; }
 
-/* ---- Inside (contact form) ---- */
+/* ---- Inside (contact form) — right half only on desktop ---- */
 .card-inside {
   position: absolute;
-  inset: 0;
+  top: 0; right: 0; bottom: 0;
+  left: auto;
+  width: 50%;
   z-index: 1;
   border-radius: 3px;
   overflow: hidden;
   background: var(--paper-warm);
   box-shadow:
+    -3px 0 10px rgba(0,0,0,0.10),
     0 2px 6px rgba(0,0,0,0.12),
     0 10px 30px rgba(0,0,0,0.20),
     0 30px 80px rgba(0,0,0,0.22),
@@ -757,12 +771,12 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   min-width: 0;
 }
 
-.card-page--left {
-  padding-right: 24px;
-}
+/* Left page + binding hidden on desktop — content lives on the cover's back face */
+.card-page--left { display: none; }
+.card-page-divider { display: none; }
 
 .card-page--right {
-  padding-left: 24px;
+  padding-left: 28px;
   gap: 14px;
 }
 
@@ -1113,14 +1127,18 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   /* Revert to portrait: full-width cover, inside pages stack vertically */
   .card-wrap { width: min(380px, 92vw); height: auto; min-height: 570px; }
   .card-cover { left: 0; right: auto; width: 100%; height: 570px; bottom: auto; }
-  .card-pages { flex-direction: column; }
-  .card-page-divider { width: auto; height: 1px; flex-shrink: 0; }
+  /* Back face not used on mobile — cover is a simple single-face flip */
+  .card-face--back { display: none; }
+  /* Card-inside reverts to full width; left page + divider restored for mobile layout */
+  .card-inside { left: 0; width: auto; box-shadow: none; }
+  .card-page--left { display: flex; padding: 24px 22px 16px; min-height: 220px; }
+  .card-page-divider { display: block; width: auto; height: 1px; flex-shrink: 0; }
   .card-page-divider::before { top: auto; bottom: 100%; right: 0; left: 0; width: auto; height: 14px;
     background: linear-gradient(to top, rgba(0,0,0,0.06), transparent); }
   .card-page-divider::after { bottom: auto; top: 100%; right: 0; left: 0; width: auto; height: 12px;
     background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent); }
+  .card-pages { flex-direction: column; }
   .card-inside { overflow-y: auto; }
-  .card-page--left { padding: 24px 22px 16px; min-height: 220px; }
   .card-page--right { padding: 16px 22px 24px; }
   .ci-field--fill .ci-textarea { min-height: 110px; flex: none; }
   .ci-actions { margin-top: 16px; padding-top: 0; }
