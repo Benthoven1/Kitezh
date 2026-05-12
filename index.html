@@ -243,6 +243,7 @@
             </div>
             <!-- Back face — revealed when cover flips open -->
             <div class="card-face card-face--back" aria-hidden="true">
+              <button class="card-close-btn" id="card-close-btn" aria-label="Close card">&#8592;</button>
               <p class="ci-salutation">Dear Benjamin,</p>
               <div class="ci-field ci-field--fill">
                 <label class="ci-label" for="ci-message">Message</label>
@@ -254,7 +255,7 @@
 
           <!-- Inside — right page only (left page / back face is on the cover) -->
           <div class="card-inside" id="card-inside" aria-hidden="true" style="pointer-events:none">
-            <button class="card-close-btn" id="card-close-btn" aria-label="Close card">&#8592;</button>
+            <button class="card-close-btn card-close-btn--mobile" aria-label="Close card">&#8592;</button>
             <!-- Set data-endpoint to your Formspree URL, e.g. https://formspree.io/f/your-id
                  Omit or leave empty to use the mailto fallback. -->
             <form id="card-form" class="card-pages" novalidate data-endpoint="">
