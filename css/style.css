@@ -515,15 +515,16 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .letter-ornament::after {
   content: '';
   flex: 1;
+  max-width: 72px;
   height: 1px;
   background: rgba(27, 22, 19, 0.38);
 }
 
 .letter-sig-img {
   display: block;
-  width: 220px;
+  width: 300px;
   height: auto;
-  margin: 12px 0 4px -45px; /* -45px aligns the B stroke with the text left edge */
+  margin: 12px 0 4px -61px; /* -61px aligns the B stroke with the text left edge */
 }
 
 .letter-close {
