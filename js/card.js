@@ -17,57 +17,85 @@ new IntersectionObserver(([entry], obs) => {
 }, { threshold: 0.12 }).observe(cardWrap);
 
 // ── Transition presets ────────────────────────────────────────────────────────
-// easeOut feels like pushing/swinging open; easeIn feels like falling back shut
 const EASE_OUT = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 const EASE_IN  = 'cubic-bezier(0.55, 0.06, 0.68, 0.19)';
 
 // ── Open (two-step) ───────────────────────────────────────────────────────────
-// Step 1 — pan: scene slides right, clip expands. Cover is pinned at rotateY(0)
-//           via inline style so the .is-open CSS rule cannot rotate it yet.
-// Step 2 — fold: inline pin is released; CSS class drives the cover rotation.
+// Step 1 — pan:  scene slides right via transform only; clip stays at 50% so
+//                the inside-left ("Dear Benjamin") is never visible during pan.
+// Step 2 — fold: cover rotates open AND clip expands simultaneously — the left
+//                page is revealed exactly as the cover sweeps away.
 let isOpen = false;
 
 function openCard() {
   if (isOpen) return;
   isOpen = true;
 
-  // Pin cover so it doesn't rotate during the pan
-  cardCover.style.transition = 'none';
-  cardCover.style.transform  = 'rotateY(0deg)';
-  cardScene.style.transition = `transform 0.60s ${EASE_OUT}, clip-path 0.60s ${EASE_OUT}`;
-
-  cardScene.classList.add('is-open');
+  cardScene.classList.add('is-open'); // enables close-button visibility etc.
   cardCover.setAttribute('aria-expanded', 'true');
   cardCover.removeAttribute('tabindex');
   cardInside.removeAttribute('aria-hidden');
   cardInside.style.pointerEvents = '';
 
-  // After pan settles, release the pin and fold the cover open
+  if (window.innerWidth <= 639) {
+    // Mobile portrait: single-step fold only
+    cardCover.style.transition = `transform 0.82s ${EASE_OUT}`;
+    cardCover.style.transform  = 'rotateY(-175deg)';
+    setTimeout(() => document.getElementById('ci-name')?.focus(), 900);
+    return;
+  }
+
+  // Step 1 — pan (transform only, clip locked at 50%)
+  cardCover.style.transition = 'none';
+  cardCover.style.transform  = 'rotateY(0deg)';     // pin cover during pan
+  cardScene.style.transition = `transform 0.60s ${EASE_OUT}`;
+  cardScene.style.transform  = 'translateX(0)';     // slide to spread position
+  cardScene.style.clipPath   = 'inset(0 0 0 50%)';  // hold — inside-left stays hidden
+
+  // Step 2 — fold (cover rotates, inside-left revealed in sync)
   setTimeout(() => {
     cardCover.style.transition = `transform 0.82s ${EASE_OUT}`;
-    cardCover.style.transform  = ''; // CSS .is-open rule takes over → rotateY(-175deg)
+    cardCover.style.transform  = 'rotateY(-175deg)';
+    cardScene.style.transition = `clip-path 0.82s ${EASE_OUT}`;
+    cardScene.style.clipPath   = 'inset(0 0 0 0%)';
     setTimeout(() => document.getElementById('ci-name')?.focus(), 900);
   }, 660);
 }
 
-// ── Close (two-step, reversed) ────────────────────────────────────────────────
-// Step 1 — fold shut: cover rotates back to 0 via inline override.
-// Step 2 — pan back: scene slides left and clip re-hides; inline pin removed.
+// ── Close (reversed two-step) ─────────────────────────────────────────────────
+// Step 1 — fold shut: cover rotates back AND clip hides the inside-left in sync.
+// Step 2 — pan back: scene slides left to re-centre the cover; clip stays at 50%.
 function closeCard() {
   if (!isOpen) return;
-  isOpen = false; // block re-entry immediately
+  isOpen = false;
 
-  // Step 1 — fold the cover shut
+  cardCover.setAttribute('aria-expanded', 'false');
+
+  if (window.innerWidth <= 639) {
+    // Mobile portrait: single-step close
+    cardCover.style.transition = `transform 0.75s ${EASE_IN}`;
+    cardCover.style.transform  = 'rotateY(0deg)';
+    setTimeout(() => {
+      cardScene.classList.remove('is-open');
+      cardCover.setAttribute('tabindex', '0');
+      cardInside.setAttribute('aria-hidden', 'true');
+      cardInside.style.pointerEvents = 'none';
+    }, 800);
+    return;
+  }
+
+  // Step 1 — fold shut (cover closes, inside-left hides in sync)
   cardCover.style.transition = `transform 0.65s ${EASE_IN}`;
   cardCover.style.transform  = 'rotateY(0deg)';
+  cardScene.style.transition = `clip-path 0.65s ${EASE_IN}`;
+  cardScene.style.clipPath   = 'inset(0 0 0 50%)';
 
+  // Step 2 — pan back (cover returns to centred position)
   setTimeout(() => {
-    // Step 2 — pan back to closed position
-    cardScene.style.transition = `transform 0.58s ${EASE_IN}, clip-path 0.58s ${EASE_IN}`;
     cardCover.style.transition = 'none';
-    cardCover.style.transform  = ''; // base CSS rule keeps cover at rotateY(0deg)
+    cardScene.style.transition = `transform 0.58s ${EASE_IN}`;
+    cardScene.style.transform  = 'translateX(-25%)';
     cardScene.classList.remove('is-open');
-    cardCover.setAttribute('aria-expanded', 'false');
 
     setTimeout(() => {
       cardCover.setAttribute('tabindex', '0');
