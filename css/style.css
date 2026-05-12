@@ -636,6 +636,12 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   transform: rotateY(-175deg);
   cursor: default;
   pointer-events: none;
+  box-shadow: none;
+}
+
+/* Back face is interactive once flipped open */
+.card-scene.is-open .card-face--back {
+  pointer-events: auto;
 }
 
 /* Face layout — both faces share absolute positioning and backface hiding */
@@ -737,6 +743,12 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .card-scene.is-open .card-close-btn { opacity: 0.4; }
 .card-close-btn:hover { opacity: 0.9 !important; }
 .card-close-btn:focus-visible { outline: 2px solid var(--purple); border-radius: 2px; }
+
+/* Back face is rotateY(180deg) so X-axis is mirrored: right:10px maps to visual top-left */
+.card-face--back .card-close-btn { left: auto; right: 10px; }
+
+/* Mobile close button lives in card-inside; hidden on desktop where back face has the button */
+.card-close-btn--mobile { display: none; }
 
 /* ---- Inside (contact form) — right half only on desktop ---- */
 .card-inside {
@@ -1129,6 +1141,8 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .card-cover { left: 0; right: auto; width: 100%; height: 570px; bottom: auto; }
   /* Back face not used on mobile — cover is a simple single-face flip */
   .card-face--back { display: none; }
+  /* Mobile close button (in card-inside) is used instead */
+  .card-close-btn--mobile { display: flex; }
   /* Card-inside reverts to full width; left page + divider restored for mobile layout */
   .card-inside { left: 0; width: auto; box-shadow: none; }
   .card-page--left { display: flex; padding: 24px 22px 16px; min-height: 220px; }

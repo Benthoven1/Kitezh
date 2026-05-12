@@ -112,6 +112,7 @@ cardCover.addEventListener('keydown', e => {
 });
 
 cardCloseBtn.addEventListener('click', closeCard);
+document.querySelector('.card-close-btn--mobile')?.addEventListener('click', closeCard);
 
 // ── Input error-state clearing ────────────────────────────────────────────────
 ['ci-name', 'ci-email', 'ci-interest'].forEach(id => {
