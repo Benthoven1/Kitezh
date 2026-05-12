@@ -221,6 +221,90 @@
       </article>
     </section>
 
+    <!-- ============================================================
+         GREETING CARD — appears after the letter; click to open and
+         reveal the contact form.
+         =========================================================== -->
+    <section id="card-section">
+      <div class="card-scene" id="card-scene">
+        <div class="card-wrap" id="card-wrap">
+
+          <!-- Front cover -->
+          <div class="card-cover" id="card-cover"
+               role="button" tabindex="0"
+               aria-label="Open greeting card" aria-expanded="false">
+            <div class="card-face">
+              <figure class="card-rose-fig">
+                <img src="rose-flower.jpg" alt="" class="card-rose-img" aria-hidden="true" />
+              </figure>
+              <p class="card-greeting">Thinking of you.</p>
+              <p class="card-open-hint" aria-hidden="true">open &nbsp;&rarr;</p>
+            </div>
+          </div>
+
+          <!-- Inside — contact form, revealed when card is opened -->
+          <div class="card-inside" id="card-inside" aria-hidden="true" style="pointer-events:none">
+            <div class="card-inside-body">
+              <p class="ci-eyebrow">Get in Touch</p>
+              <h3 class="ci-heading">Let&rsquo;s talk about beauty.</h3>
+              <p class="ci-lede">
+                If you want to power the frontier and not the simulacrum,
+                we&rsquo;d love to hear from you.
+              </p>
+              <!-- Set data-endpoint to your Formspree URL once ready,
+                   e.g. https://formspree.io/f/your-id
+                   Without it the form falls back to mailto. -->
+              <form id="card-form" class="ci-form" novalidate data-endpoint="">
+                <div class="ci-pair">
+                  <div class="ci-field">
+                    <label class="ci-label" for="ci-name">Name</label>
+                    <input class="ci-input" id="ci-name" name="name"
+                           type="text" autocomplete="name" required
+                           placeholder="Your name" />
+                  </div>
+                  <div class="ci-field">
+                    <label class="ci-label" for="ci-email">Email</label>
+                    <input class="ci-input" id="ci-email" name="email"
+                           type="email" autocomplete="email" required
+                           placeholder="your@email.com" />
+                  </div>
+                </div>
+                <div class="ci-field">
+                  <label class="ci-label" for="ci-interest">I&rsquo;m interested in&hellip;</label>
+                  <select class="ci-input ci-select" id="ci-interest" name="interest" required>
+                    <option value="" disabled selected>Select an area of interest</option>
+                    <option value="Becoming a patron">Becoming a patron</option>
+                    <option value="Board of Advisors">Joining the Board of Advisors</option>
+                    <option value="Artist inquiry">Artist or composer inquiry</option>
+                    <option value="Press">Press &amp; media</option>
+                    <option value="General inquiry">General inquiry</option>
+                  </select>
+                </div>
+                <div class="ci-field">
+                  <label class="ci-label" for="ci-message">Message</label>
+                  <textarea class="ci-input ci-textarea" id="ci-message"
+                            name="message" rows="4"
+                            placeholder="Write a note&hellip;"></textarea>
+                </div>
+                <div class="ci-actions">
+                  <button type="submit" class="ci-submit">
+                    <span>Send a note</span>
+                    <span class="ci-arrow" aria-hidden="true">&rarr;</span>
+                  </button>
+                </div>
+              </form>
+              <div class="ci-success" id="ci-success" hidden>
+                <div class="ci-success-icon">&#10022;</div>
+                <p class="ci-success-title">Thank you.</p>
+                <p class="ci-success-msg">We&rsquo;ll be in touch soon.</p>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- .card-wrap -->
+      </div><!-- .card-scene -->
+    </section>
+
     <!-- ===========================================================
          IFO MODE: shown when the IFO planet is clicked. The Three.js
          canvas displays a Circle of Fifths animation around the IFO
@@ -336,6 +420,7 @@
     { "imports": { "three": "https://unpkg.com/three@0.161.0/build/three.module.js" } }
   </script>
   <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/card.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
