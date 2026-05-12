@@ -2,6 +2,7 @@
   --clay: #b87758;
   --clay-soft: #c88a6c;
   --clay-deep: #8f5a42;
+  --purple: #7c5ce8;
   --ink: #1b1613;
   --ink-soft: #3b332f;
   --paper: #eceae5;
@@ -156,7 +157,7 @@ button {
   position: absolute;
   left: 4px; right: 4px; bottom: 4px;
   height: 1px;
-  background: var(--clay);
+  background: var(--purple);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.3s var(--ease);
@@ -319,22 +320,22 @@ body.night-mode .letter-close {
 
 body.night-mode #site-footer {
   background: transparent;
-  border-top-color: rgba(220, 212, 245, 0.12);
+  border-top-color: rgba(195, 175, 255, 0.20);
   position: relative;
   z-index: 1;
 }
 
 body.night-mode .footer-wordmark {
-  color: rgba(220, 212, 245, 0.80);
+  color: rgba(200, 180, 255, 0.95);
 }
 
 body.night-mode .footer-links a,
 body.night-mode .footer-col-title {
-  color: rgba(190, 180, 225, 0.65);
+  color: rgba(188, 162, 255, 0.85);
 }
 
 body.night-mode .footer-copy p {
-  color: rgba(170, 160, 210, 0.45);
+  color: rgba(178, 152, 248, 0.65);
 }
 
 /* ---------- Mission text section (scrolls naturally after expansion space) ---------- */
@@ -576,7 +577,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 .card-scene.is-open {
-  transform: scale(1.05);
+  transform: none;
 }
 
 /* Card wrap: sets the physical card dimensions and handles scroll-reveal */
@@ -630,7 +631,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   box-shadow:
     0 2px 6px rgba(0,0,0,0.12),
     0 10px 30px rgba(0,0,0,0.20),
-    0 0 0 3px var(--clay);
+    0 0 0 3px var(--purple);
 }
 
 .card-scene.is-open .card-cover {
@@ -723,7 +724,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 .card-close-btn:hover { opacity: 0.9; }
-.card-close-btn:focus-visible { outline: 2px solid var(--clay); border-radius: 2px; }
+.card-close-btn:focus-visible { outline: 2px solid var(--purple); border-radius: 2px; }
 
 /* ---- Inside (contact form) ---- */
 .card-inside {
@@ -846,7 +847,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   transition: border-color 0.2s ease;
 }
 
-.ci-input:focus { border-bottom-color: var(--clay); }
+.ci-input:focus { border-bottom-color: var(--purple); }
 .ci-input::placeholder { color: rgba(27,22,19,0.32); }
 .ci-input--error { border-bottom-color: #b94040; }
 
@@ -912,7 +913,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 
 .ci-success-icon {
   font-size: 26px;
-  color: var(--clay);
+  color: var(--purple);
   margin-bottom: 10px;
   animation: ci-pop 0.5s var(--ease) both;
 }
@@ -1049,9 +1050,9 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   font-size: 12px;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--clay-deep);
+  color: var(--purple);
   text-decoration: none;
-  border-bottom: 1px solid var(--clay);
+  border-bottom: 1px solid var(--purple);
   padding-bottom: 2px;
 }
 
@@ -1119,7 +1120,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .card-page--right { padding: 16px 22px 24px; }
   .ci-field--fill .ci-textarea { min-height: 110px; flex: none; }
   .ci-actions { margin-top: 16px; padding-top: 0; }
-  .card-scene.is-open { transform: scale(1); }
   .card-greeting { font-size: 32px; }
 }
 
@@ -1262,8 +1262,8 @@ body:not(.mode-ifo) .ifo-prose {
 
 .ifo-fnref {
   text-decoration: none;
-  color: var(--clay-deep);
-  border-bottom: 1px dotted var(--clay);
+  color: var(--purple);
+  border-bottom: 1px dotted var(--purple);
 }
 
 /* ---------- Loading screen ---------- */
