@@ -305,8 +305,12 @@ body.night-mode #card-section {
 }
 
 body.night-mode .letter-ornament {
-  color: rgba(255, 255, 255, 0.4);
-  opacity: 0.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.night-mode .letter-ornament::before,
+body.night-mode .letter-ornament::after {
+  background: rgba(255, 255, 255, 0.45);
 }
 
 body.night-mode .letter-close {
@@ -501,9 +505,8 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   align-items: center;
   gap: 18px;
   margin: 44px 0;
-  color: var(--ink-soft);
+  color: var(--ink);
   font-size: 18px;
-  opacity: 0.5;
   user-select: none;
 }
 
@@ -512,7 +515,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--hairline);
+  background: rgba(27, 22, 19, 0.38);
 }
 
 .letter-sig-img {
@@ -574,7 +577,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 .card-scene.is-open {
-  transform: scale(1.10);
+  transform: scale(1.05);
 }
 
 /* Card wrap: sets the physical card dimensions and handles scroll-reveal */
@@ -585,7 +588,10 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   /* scroll-reveal initial state */
   opacity: 0;
   transform: translateY(52px);
-  transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
+  transition:
+    width 0.95s var(--ease) 0.08s,
+    opacity 0.75s var(--ease),
+    transform 0.75s var(--ease);
 }
 
 .card-wrap.card-in {
@@ -593,10 +599,16 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   transform: translateY(0);
 }
 
+.card-scene.is-open .card-wrap {
+  width: min(730px, 94vw);
+}
+
 /* ---- Cover (front face) ---- */
 .card-cover {
   position: absolute;
-  inset: 0;
+  top: 0; left: 0; bottom: 0;
+  /* explicit width so it never stretches when card-wrap expands */
+  width: min(380px, 92vw);
   z-index: 2;
   transform-origin: left center;
   transform: rotateY(0deg);
@@ -710,64 +722,80 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   opacity: 1;
 }
 
-/* Spine shadow — simulates the crease of an opened card */
-.card-inside::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; bottom: 0;
-  width: 14px;
-  background: linear-gradient(to right, rgba(0,0,0,0.07), transparent);
-  pointer-events: none;
-  z-index: 1;
-}
-
-.card-inside-body {
+/* Two-page spread */
+.card-pages {
+  display: flex;
   height: 100%;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding: 28px 28px 28px 34px;
 }
 
-/* ---- Inside typography ---- */
-.ci-eyebrow {
-  font-family: "Cinzel", serif;
-  font-size: 9.5px;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--clay);
-  margin: 0 0 8px;
-}
-
-.ci-heading {
-  font-family: "Cormorant Garamond", serif;
-  font-weight: 500;
-  font-size: 21px;
-  color: var(--ink);
-  margin: 0 0 8px;
-  line-height: 1.25;
-}
-
-.ci-lede {
-  font-family: "Cormorant Garamond", serif;
-  font-weight: 500;
-  font-size: 13.5px;
-  color: var(--ink-soft);
-  margin: 0 0 18px;
-  line-height: 1.6;
-}
-
-/* ---- Form ---- */
-.ci-form {
+.card-page {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 13px;
+  padding: 32px 28px;
+  overflow: hidden;
+  min-width: 0;
 }
 
-.ci-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.card-page--left {
+  padding-right: 24px;
+}
+
+.card-page--right {
+  padding-left: 24px;
+  gap: 14px;
+}
+
+/* Centre binding — hairline with soft shadow on each side */
+.card-page-divider {
+  width: 1px;
+  flex-shrink: 0;
+  background: rgba(27, 22, 19, 0.14);
+  position: relative;
+}
+
+.card-page-divider::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; right: 100%;
+  width: 18px;
+  background: linear-gradient(to left, rgba(0,0,0,0.06), transparent);
+}
+
+.card-page-divider::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0; left: 100%;
+  width: 18px;
+  background: linear-gradient(to right, rgba(0,0,0,0.05), transparent);
+}
+
+/* Salutation on left page */
+.ci-salutation {
+  font-family: "Great Vibes", cursive;
+  font-size: 30px;
+  color: var(--ink);
+  margin: 0 0 14px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+/* Message field fills remaining height of left page */
+.ci-field--fill {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ci-field--fill .ci-label { flex-shrink: 0; }
+
+.ci-field--fill .ci-textarea {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  max-height: none;
+  line-height: 1.7;
 }
 
 .ci-field {
@@ -818,7 +846,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   line-height: 1.6;
 }
 
-.ci-actions { margin-top: 2px; }
+.ci-actions { margin-top: auto; padding-top: 16px; }
 
 .ci-submit {
   font-family: "DM Sans", sans-serif;
@@ -849,16 +877,19 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .ci-arrow { transition: transform 0.22s ease; }
 .ci-submit:hover:not(:disabled) .ci-arrow { transform: translateX(4px); }
 
-/* ---- Success state ---- */
+/* ---- Success state — full overlay on card-inside ---- */
 .ci-success {
+  position: absolute;
+  inset: 0;
+  background: var(--paper-warm);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   padding: 32px 20px;
-  min-height: 220px;
   gap: 6px;
+  border-radius: 3px;
 }
 
 .ci-success-icon {
@@ -1054,13 +1085,24 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
 }
 
-/* Card responsive */
-@media (max-width: 480px) {
-  .card-wrap { height: 510px; }
+/* Card responsive — stack pages vertically on narrow screens */
+@media (max-width: 639px) {
+  .card-scene.is-open .card-wrap { width: min(380px, 92vw); } /* no width expansion */
+  .card-pages { flex-direction: column; }
+  .card-page-divider { width: auto; height: 1px; flex-shrink: 0; }
+  .card-page-divider::before { top: auto; bottom: 100%; right: 0; left: 0; width: auto; height: 14px;
+    background: linear-gradient(to top, rgba(0,0,0,0.06), transparent); }
+  .card-page-divider::after { bottom: auto; top: 100%; right: 0; left: 0; width: auto; height: 12px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent); }
+  .card-wrap { height: auto; min-height: 570px; }
+  .card-cover { height: 570px; bottom: auto; }
+  .card-inside { overflow-y: auto; }
+  .card-page--left { padding: 24px 22px 16px; min-height: 220px; }
+  .card-page--right { padding: 16px 22px 24px; }
+  .ci-field--fill .ci-textarea { min-height: 110px; flex: none; }
+  .ci-actions { margin-top: 16px; padding-top: 0; }
+  .card-scene.is-open { transform: scale(1); }
   .card-greeting { font-size: 32px; }
-  .ci-pair { grid-template-columns: 1fr; }
-  .card-inside-body { padding: 24px 22px 24px 26px; }
-  .card-scene.is-open { transform: scale(1); } /* no zoom on small screens */
 }
 
 /* Small phone (≤ 480px) */

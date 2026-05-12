@@ -242,37 +242,44 @@
             </div>
           </div>
 
-          <!-- Inside — contact form, revealed when card is opened -->
+          <!-- Inside — two-page spread revealed when card opens -->
           <div class="card-inside" id="card-inside" aria-hidden="true" style="pointer-events:none">
-            <div class="card-inside-body">
-              <p class="ci-eyebrow">Get in Touch</p>
-              <h3 class="ci-heading">Let&rsquo;s talk about beauty.</h3>
-              <p class="ci-lede">
-                If you want to power the frontier and not the simulacrum,
-                we&rsquo;d love to hear from you.
-              </p>
-              <!-- Set data-endpoint to your Formspree URL once ready,
-                   e.g. https://formspree.io/f/your-id
-                   Without it the form falls back to mailto. -->
-              <form id="card-form" class="ci-form" novalidate data-endpoint="">
-                <div class="ci-pair">
-                  <div class="ci-field">
-                    <label class="ci-label" for="ci-name">Name</label>
-                    <input class="ci-input" id="ci-name" name="name"
-                           type="text" autocomplete="name" required
-                           placeholder="Your name" />
-                  </div>
-                  <div class="ci-field">
-                    <label class="ci-label" for="ci-email">Email</label>
-                    <input class="ci-input" id="ci-email" name="email"
-                           type="email" autocomplete="email" required
-                           placeholder="your@email.com" />
-                  </div>
+            <!-- Set data-endpoint to your Formspree URL, e.g. https://formspree.io/f/your-id
+                 Omit or leave empty to use the mailto fallback. -->
+            <form id="card-form" class="card-pages" novalidate data-endpoint="">
+
+              <!-- Left page: salutation + message -->
+              <div class="card-page card-page--left">
+                <p class="ci-salutation">Dear Benjamin,</p>
+                <div class="ci-field ci-field--fill">
+                  <label class="ci-label" for="ci-message">Message</label>
+                  <textarea class="ci-input ci-textarea" id="ci-message"
+                            name="message"
+                            placeholder="Write a note&hellip;"></textarea>
+                </div>
+              </div>
+
+              <!-- Centre binding -->
+              <div class="card-page-divider" aria-hidden="true"></div>
+
+              <!-- Right page: contact fields + submit -->
+              <div class="card-page card-page--right">
+                <div class="ci-field">
+                  <label class="ci-label" for="ci-name">Name</label>
+                  <input class="ci-input" id="ci-name" name="name"
+                         type="text" autocomplete="name" required
+                         placeholder="Your name" />
+                </div>
+                <div class="ci-field">
+                  <label class="ci-label" for="ci-email">Email</label>
+                  <input class="ci-input" id="ci-email" name="email"
+                         type="email" autocomplete="email" required
+                         placeholder="your@email.com" />
                 </div>
                 <div class="ci-field">
                   <label class="ci-label" for="ci-interest">I&rsquo;m interested in&hellip;</label>
                   <select class="ci-input ci-select" id="ci-interest" name="interest" required>
-                    <option value="" disabled selected>Select an area of interest</option>
+                    <option value="" disabled selected>Select</option>
                     <option value="Becoming a patron">Becoming a patron</option>
                     <option value="Board of Advisors">Joining the Board of Advisors</option>
                     <option value="Artist inquiry">Artist or composer inquiry</option>
@@ -280,24 +287,21 @@
                     <option value="General inquiry">General inquiry</option>
                   </select>
                 </div>
-                <div class="ci-field">
-                  <label class="ci-label" for="ci-message">Message</label>
-                  <textarea class="ci-input ci-textarea" id="ci-message"
-                            name="message" rows="4"
-                            placeholder="Write a note&hellip;"></textarea>
-                </div>
                 <div class="ci-actions">
                   <button type="submit" class="ci-submit">
-                    <span>Send a note</span>
+                    Send a Note
                     <span class="ci-arrow" aria-hidden="true">&rarr;</span>
                   </button>
                 </div>
-              </form>
-              <div class="ci-success" id="ci-success" hidden>
-                <div class="ci-success-icon">&#10022;</div>
-                <p class="ci-success-title">Thank you.</p>
-                <p class="ci-success-msg">We&rsquo;ll be in touch soon.</p>
               </div>
+
+            </form>
+
+            <!-- Success overlay — replaces both pages on submission -->
+            <div class="ci-success" id="ci-success" hidden>
+              <div class="ci-success-icon">&#10022;</div>
+              <p class="ci-success-title">Thank you.</p>
+              <p class="ci-success-msg">We&rsquo;ll be in touch soon.</p>
             </div>
           </div>
 
