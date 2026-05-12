@@ -504,6 +504,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .letter-ornament {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 18px;
   margin: 44px 0;
   color: var(--ink);
@@ -570,15 +571,19 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   z-index: 1;
 }
 
-/* Scene: perspective container + zoom target */
-/* Transition is set by JS for asymmetric open/close feel */
+/* Scene: perspective container + clip/slide host */
+/* clip-path hides left half; translateX(-25%) centers the visible right half.
+   Transitions are set by JS for asymmetric open/close easing. */
 .card-scene {
   perspective: 1400px;
-  will-change: transform;
+  will-change: transform, clip-path;
+  transform: translateX(-25%);
+  clip-path: inset(0 0 0 50%);
 }
 
 .card-scene.is-open {
-  transform: none;
+  transform: translateX(0);
+  clip-path: inset(0 0 0 0%);
 }
 
 /* Card wrap: two-page spread, always full open size — no width animation */
@@ -693,22 +698,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   color: var(--ink-soft);
   opacity: 0.45;
   margin: 0;
-}
-
-/* Overlay that hides the inside-left page while the card is closed */
-.card-inside::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; bottom: 0; width: 50%;
-  background: var(--paper-warm);
-  z-index: 5;
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 0.15s ease 0s;
-}
-.card-scene.is-open .card-inside::before {
-  opacity: 0;
-  transition: opacity 0.2s ease 0.4s;
 }
 
 /* ---- Close button ---- */
@@ -1118,11 +1107,12 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 
 /* Card responsive — portrait card on narrow screens */
 @media (max-width: 639px) {
+  /* No clip/slide on mobile: full-width cover handles hiding the inside */
+  .card-scene { transform: none; clip-path: none; }
+  .card-scene.is-open { transform: none; clip-path: none; }
   /* Revert to portrait: full-width cover, inside pages stack vertically */
   .card-wrap { width: min(380px, 92vw); height: auto; min-height: 570px; }
   .card-cover { left: 0; right: auto; width: 100%; height: 570px; bottom: auto; }
-  /* Hide the inside overlay on mobile (cover already covers everything) */
-  .card-inside::before { display: none; }
   .card-pages { flex-direction: column; }
   .card-page-divider { width: auto; height: 1px; flex-shrink: 0; }
   .card-page-divider::before { top: auto; bottom: 100%; right: 0; left: 0; width: auto; height: 14px;

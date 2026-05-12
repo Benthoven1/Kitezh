@@ -21,7 +21,8 @@ new IntersectionObserver(([entry], obs) => {
 const EASE_OUT = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)';
 const EASE_IN  = 'cubic-bezier(0.55, 0.06, 0.68, 0.19)';
 
-function setTransitions({ coverTrans }) {
+function setTransitions({ sceneTrans, coverTrans }) {
+  cardScene.style.transition = sceneTrans;
   cardCover.style.transition = coverTrans;
 }
 
@@ -33,6 +34,7 @@ function openCard() {
   isOpen = true;
 
   setTransitions({
+    sceneTrans: `transform 0.82s ${EASE_OUT}, clip-path 0.82s ${EASE_OUT}`,
     coverTrans: `transform 0.82s ${EASE_OUT}`,
   });
 
@@ -50,6 +52,7 @@ function closeCard() {
   if (!isOpen) return;
 
   setTransitions({
+    sceneTrans: `transform 0.75s ${EASE_IN}, clip-path 0.75s ${EASE_IN}`,
     coverTrans: `transform 0.75s ${EASE_IN}`,
   });
 
