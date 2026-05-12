@@ -294,6 +294,15 @@ body.night-mode .letter-title {
   color: rgba(255, 255, 255, 0.60);
 }
 
+body.night-mode .letter-sig-img {
+  filter: invert(1);
+}
+
+body.night-mode .letter-ornament {
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 0.6;
+}
+
 body.night-mode .letter-close {
   border-top-color: rgba(255, 255, 255, 0.18);
 }
@@ -456,6 +465,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 
 .letter-body p {
   font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
   font-size: 19px;
   line-height: 1.85;
   color: var(--ink-soft);
@@ -472,6 +482,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 
 .letter-quote p {
   font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
   font-size: 17px;
   font-style: italic;
   line-height: 1.85;
@@ -479,12 +490,30 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   margin: 0;
 }
 
-.letter-rule {
-  text-align: left;
-  color: var(--hairline);
-  font-size: 22px;
-  margin: 36px 0 !important;
+.letter-ornament {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 44px 0;
+  color: var(--ink-soft);
+  font-size: 18px;
+  opacity: 0.5;
   user-select: none;
+}
+
+.letter-ornament::before,
+.letter-ornament::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.letter-sig-img {
+  display: block;
+  width: 220px;
+  height: auto;
+  margin: 12px 0 4px;
 }
 
 .letter-close {
@@ -495,6 +524,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 
 .letter-close p {
   font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
   font-size: 17px;
   color: var(--ink-soft);
   margin: 0 0 8px;
@@ -502,15 +532,15 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 
 .letter-sig {
   font-family: "Cormorant Garamond", serif;
-  font-weight: 500;
-  font-style: italic;
-  font-size: 28px;
+  font-weight: 600;
+  font-size: 18px;
   color: var(--ink);
-  margin: 8px 0 4px;
+  margin: 4px 0 2px;
 }
 
 .letter-title {
   font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
   font-size: 15px;
   color: var(--ink-soft);
   margin: 0;
