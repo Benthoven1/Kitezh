@@ -522,7 +522,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   display: block;
   width: 220px;
   height: auto;
-  margin: 12px 0 4px;
+  margin: 12px 0 4px -45px; /* -45px aligns the B stroke with the text left edge */
 }
 
 .letter-close {
@@ -569,10 +569,9 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 /* Scene: perspective container + zoom target */
+/* Transition is set by JS for asymmetric open/close feel */
 .card-scene {
   perspective: 1400px;
-  /* zoom transition is delayed until after the cover has nearly finished folding */
-  transition: transform 1s var(--ease) 0.5s;
   will-change: transform;
 }
 
@@ -581,6 +580,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 /* Card wrap: sets the physical card dimensions and handles scroll-reveal */
+/* width transition is set by JS; opacity/transform are for scroll-reveal */
 .card-wrap {
   position: relative;
   width: min(380px, 92vw);
@@ -589,7 +589,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   opacity: 0;
   transform: translateY(52px);
   transition:
-    width 0.95s var(--ease) 0.08s,
     opacity 0.75s var(--ease),
     transform 0.75s var(--ease);
 }
@@ -604,6 +603,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 }
 
 /* ---- Cover (front face) ---- */
+/* transform transition set by JS for asymmetric open/close feel */
 .card-cover {
   position: absolute;
   top: 0; left: 0; bottom: 0;
@@ -612,7 +612,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   z-index: 2;
   transform-origin: left center;
   transform: rotateY(0deg);
-  transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1.000);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: 3px;
@@ -699,6 +698,32 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   opacity: 0.45;
   margin: 0;
 }
+
+/* ---- Close button ---- */
+.card-close-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 20;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.4;
+  padding: 0;
+  line-height: 1;
+  transition: opacity 0.18s ease;
+  font-family: "DM Sans", sans-serif;
+}
+
+.card-close-btn:hover { opacity: 0.9; }
+.card-close-btn:focus-visible { outline: 2px solid var(--clay); border-radius: 2px; }
 
 /* ---- Inside (contact form) ---- */
 .card-inside {
