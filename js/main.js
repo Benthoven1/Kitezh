@@ -420,18 +420,20 @@ const ifoModeEl = document.getElementById("ifo-mode");
 
 // ── Loading screen ────────────────────────────────────────────────────────────
 // Plays a nested-rectangle reveal sequence when navigating via top/footer nav.
-// Four concentric frames animate up from the bottom: Musical → Pictorial →
-// Polymath (images from the repo) → transparent knockout that shows the live
-// Three.js canvas. The knockout expands to fill the viewport, seamlessly
-// becoming the destination animation before the overlay fades away.
+// Five concentric frames animate up from the bottom: Musical → Pictorial →
+// image (13) → Horticulture (images from the repo) → transparent knockout that
+// shows the live Three.js canvas. The knockout expands to fill the viewport,
+// seamlessly becoming the destination animation before the overlay fades away.
 const loadingScreen = document.getElementById("loading-screen");
 const lsF1 = document.getElementById("ls-f1");
 const lsF2 = document.getElementById("ls-f2");
 const lsF3 = document.getElementById("ls-f3");
+const lsF4 = document.getElementById("ls-f4");
 const lsBorder = document.getElementById("ls-border");
 const lsF1img = lsF1.querySelector(".ls-img");
 const lsF2img = lsF2.querySelector(".ls-img");
 const lsF3img = lsF3.querySelector(".ls-img");
+const lsF4img = lsF4.querySelector(".ls-img");
 let lsRaf         = null;
 let lsActive      = false;
 let lsHoleVisible = false; // true once the canvas window hole first opens
@@ -458,7 +460,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   const dur = duration || 4000;
   if (lsRaf) { cancelAnimationFrame(lsRaf); lsRaf = null; }
 
-  [lsF1, lsF2, lsF3].forEach(f => {
+  [lsF1, lsF2, lsF3, lsF4].forEach(f => {
     f.style.width = "0"; f.style.height = "0";
     f.style.transform = "translate(-50%, -50%)";
     f.style.visibility = "";
@@ -466,7 +468,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
   lsBorder.style.width = "0"; lsBorder.style.height = "0";
   lsBorder.style.transform = "translate(-50%, -50%)";
   lsBorder.style.visibility = "hidden";
-  [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = "scale(1.2)"; });
+  [lsF1img, lsF2img, lsF3img, lsF4img].forEach(f => { f.style.transform = "scale(1.2)"; });
   loadingScreen.style.clipPath  = "";
   loadingScreen.style.opacity   = startOpaque ? "1" : "0";
   loadingScreen.style.display   = "block";
@@ -501,12 +503,12 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
   function lsCleanup() {
     state.lsRevealP = 1;
-    [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
+    [lsF1, lsF2, lsF3, lsF4, lsBorder].forEach(f => {
       f.style.width = "0"; f.style.height = "0";
       f.style.transform = "translate(-50%, -50%)";
       f.style.visibility = "hidden";
     });
-    [lsF1img, lsF2img, lsF3img].forEach(f => { f.style.transform = ""; });
+    [lsF1img, lsF2img, lsF3img, lsF4img].forEach(f => { f.style.transform = ""; });
     loadingScreen.style.opacity    = "0";
     loadingScreen.style.clipPath   = "";
     loadingScreen.style.display    = "none";
@@ -525,11 +527,13 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       const vw = lsVW;
       const vh = lsVH;
       const WIN_W = vw * 0.68, WIN_H = vh * 0.62;
+      const F4_W  = vw * 0.70, F4_H  = vh * 0.635;
       const F3_W  = vw * 0.72, F3_H  = vh * 0.65;
       const F2_W  = vw * 0.76, F2_H  = vh * 0.68;
       const F1_W  = vw * 0.80, F1_H  = vh * 0.71;
       const EFF   = 0.92;
       const EWIN_W = WIN_W * EFF, EWIN_H = WIN_H * EFF;
+      const EF4_W  = F4_W  * EFF, EF4_H  = F4_H  * EFF;
       const EF3_W  = F3_W  * EFF, EF3_H  = F3_H  * EFF;
       const EF2_W  = F2_W  * EFF, EF2_H  = F2_H  * EFF;
       const EF1_W  = F1_W  * EFF, EF1_H  = F1_H  * EFF;
@@ -556,9 +560,11 @@ function showLoadingScreen(onReady, duration, startOpaque) {
       const d1 = ph(t, 0.08, 1.0);
       const d2 = ph(t, 0.14, 1.0);
       const d3 = ph(t, 0.20, 1.0);
+      const d4 = ph(t, 0.26, 1.0);
       lsF1img.style.transform = `translate(${-7 + 14 * d1}px, ${ 4 -  8 * d1}px) scale(${1.3 - 0.3 * ph(t, 0.08, 0.30, eRise)})`;
       lsF2img.style.transform = `translate(${ 6 - 12 * d2}px, ${-5 + 10 * d2}px) scale(${1.3 - 0.3 * ph(t, 0.14, 0.32, eRise)})`;
       lsF3img.style.transform = `translate(${ 5 - 10 * d3}px, ${ 6 - 11 * d3}px) scale(${1.3 - 0.3 * ph(t, 0.20, 0.34, eRise)})`;
+      lsF4img.style.transform = `translate(${-5 + 10 * d4}px, ${-7 + 14 * d4}px) scale(${1.3 - 0.3 * ph(t, 0.26, 0.38, eRise)})`;
 
       // Group rises from below — cubic ease-out locks into position.
       const holeCY = vh / 2 + vh * 0.5 * (1 - ph(t, 0.06, 0.28, eRise));
@@ -566,23 +572,24 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
       if (t < 0.54) {
         // ── Phase 1: Each frame opens as a slit — width snaps, height reveals ──
-        // Musical (lsF1) first, Pictorial (lsF2) second, Polymath (lsF3) third.
-        // Width: fast cubic snap to full target width.
-        // Height: expo ease-out from 3 px to full target height — slightly slower
-        //         than before to let each emergence breathe.
+        // Musical (lsF1) first, Pictorial (lsF2) second, image(13) (lsF3) third,
+        // Horticulture (lsF4) fourth. Width: fast cubic snap. Height: expo ease-out.
         const f1w = ph(t, 0.08, 0.14, eRise);
         const f2w = ph(t, 0.14, 0.20, eRise);
         const f3w = ph(t, 0.20, 0.26, eRise);
+        const f4w = ph(t, 0.26, 0.32, eRise);
 
         const f1h = ph(t, 0.08, 0.32, eSlit);
         const f2h = ph(t, 0.14, 0.38, eSlit);
         const f3h = ph(t, 0.20, 0.44, eSlit);
+        const f4h = ph(t, 0.26, 0.46, eSlit);
 
         if (t >= 0.08) setF(lsF1, EF1_W * f1w, Math.max(3, EF1_H * f1h), cy_off);
         if (t >= 0.14) setF(lsF2, EF2_W * f2w, Math.max(3, EF2_H * f2h), cy_off);
         if (t >= 0.20) setF(lsF3, EF3_W * f3w, Math.max(3, EF3_H * f3h), cy_off);
+        if (t >= 0.26) setF(lsF4, EF4_W * f4w, Math.max(3, EF4_H * f4h), cy_off);
 
-        // 4th rectangle — canvas hole — also opens as a slit.
+        // 5th rectangle — canvas hole — also opens as a slit.
         if (t >= 0.30) {
           lsHoleVisible = true;
           const hw = ph(t, 0.30, 0.36, eRise);
@@ -595,7 +602,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
           loadingScreen.style.clipPath = "";
           lsBorder.style.width = "0"; lsBorder.style.height = "0";
         }
-        // t 0.48→0.54: all four fully open — still moment before the pull.
+        // t 0.48→0.54: all five fully open — still moment before the pull.
 
       } else if (t < 0.67) {
         // ── Phase 2: Quartic ease-in converge — barely moves then slams in ────
@@ -603,6 +610,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setF(lsF1, EF1_W + (EWIN_W - EF1_W) * cp, EF1_H + (EWIN_H - EF1_H) * cp, 0);
         setF(lsF2, EF2_W + (EWIN_W - EF2_W) * cp, EF2_H + (EWIN_H - EF2_H) * cp, 0);
         setF(lsF3, EF3_W + (EWIN_W - EF3_W) * cp, EF3_H + (EWIN_H - EF3_H) * cp, 0);
+        setF(lsF4, EF4_W + (EWIN_W - EF4_W) * cp, EF4_H + (EWIN_H - EF4_H) * cp, 0);
         lsSetHole(vw, vh, EWIN_W, EWIN_H, vh / 2);
         setBorder(EWIN_W, EWIN_H);
 
@@ -617,6 +625,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
         setF(lsF1, fw, fh, 0);
         setF(lsF2, fw, fh, 0);
         setF(lsF3, fw, fh, 0);
+        setF(lsF4, fw, fh, 0);
         lsSetHole(vw, vh, hw, hh, vh / 2);
         setBorder(hw, hh);
       }
@@ -794,7 +803,7 @@ function snapTo3D() {
 function fadeInLoadingScreen(onReady) {
   if (lsActive) return;
   lsActive = true;
-  [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
+  [lsF1, lsF2, lsF3, lsF4, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0"; f.style.visibility = "hidden";
   });
   loadingScreen.style.clipPath      = "";
@@ -837,7 +846,7 @@ function coverAndNavigate(href) {
   // visibility:hidden suppresses rendering entirely — prevents image frames
   // from showing at residual sizes AND prevents #ls-border's CSS border from
   // collapsing to a visible 6 px square when width/height are zeroed.
-  [lsF1, lsF2, lsF3, lsBorder].forEach(f => {
+  [lsF1, lsF2, lsF3, lsF4, lsBorder].forEach(f => {
     f.style.width = "0"; f.style.height = "0"; f.style.visibility = "hidden";
   });
   loadingScreen.style.transition = ""; // clear any leftover transition
