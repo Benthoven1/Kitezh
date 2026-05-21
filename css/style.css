@@ -1353,11 +1353,13 @@ html.ls-instant-cover #loading-screen {
 #ls-f1 { z-index: 1; }
 #ls-f2 { z-index: 2; }
 #ls-f3 { z-index: 3; }
-#ls-f1 .ls-img { background-image: url('../Musical.png');   }
-#ls-f2 .ls-img { background-image: url('../Pictorial.png'); }
-#ls-f3 .ls-img { background-image: url('../Polymath.jpg');  }
+#ls-f4 { z-index: 4; }
+#ls-f1 .ls-img { background-image: url('../Musical.png');        }
+#ls-f2 .ls-img { background-image: url('../Pictorial.png');      }
+#ls-f3 .ls-img { background-image: url('../image (13).png');     }
+#ls-f4 .ls-img { background-image: url('../Horticulture.png');   }
 #ls-border {
-  z-index: 4;
+  z-index: 5;
   overflow: visible;
   background: transparent;
   border: 3px solid rgba(27, 22, 19, 0.45);
