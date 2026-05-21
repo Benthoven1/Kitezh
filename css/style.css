@@ -276,7 +276,8 @@ body.night-mode .letter-sig {
 
 body.night-mode .letter-body p,
 body.night-mode .letter-close p {
-  color: rgba(255, 255, 255, 0.80);
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
 }
 
 body.night-mode .letter-body em {
@@ -288,7 +289,7 @@ body.night-mode .letter-quote {
 }
 
 body.night-mode .letter-quote p {
-  color: rgba(255, 255, 255, 0.70);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 body.night-mode .letter-title {
@@ -421,12 +422,12 @@ body.night-mode #patronage-section {
 }
 
 .pr-outer-text {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(44px, 7.5vw, 120px);
-  font-weight: 300;
-  font-style: italic;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.80);
+  font-family: "DM Sans", sans-serif;
+  font-size: clamp(26px, 3.8vw, 56px);
+  font-weight: 400;
+  font-style: normal;
+  letter-spacing: 0.01em;
+  color: rgba(255, 255, 255, 0.85);
   text-align: center;
   margin: 0;
   padding: 0 40px;
