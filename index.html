@@ -20,6 +20,9 @@
       <a href="#" id="brand-link"><span class="bl bl-1">M</span><span class="bl bl-2">U</span><span class="bl bl-3">L</span><span class="bl bl-4">V</span><span class="bl bl-5">i</span><span class="bl bl-6">u</span><span class="bl bl-7">M</span></a>
     </div>
     <ul class="nav-links">
+      <li class="nav-item">
+        <button id="home-link" class="nav-trigger">Home</button>
+      </li>
       <li class="nav-item has-dropdown">
         <button class="nav-trigger" aria-haspopup="true" aria-expanded="false">Offerings</button>
         <ul class="dropdown">
@@ -221,106 +224,6 @@
       </article>
     </section>
 
-    <!-- ============================================================
-         GREETING CARD — appears after the letter; click to open and
-         reveal the contact form.
-         =========================================================== -->
-    <section id="card-section">
-      <div class="card-scene" id="card-scene">
-        <div class="card-wrap" id="card-wrap">
-
-          <!-- Front cover — two faces (front: "Thinking of you.", back: "Dear Benjamin") -->
-          <div class="card-cover" id="card-cover"
-               role="button" tabindex="0"
-               aria-label="Open greeting card" aria-expanded="false">
-            <!-- Front face -->
-            <div class="card-face">
-              <figure class="card-rose-fig">
-                <img src="rose-flower.jpg" alt="" class="card-rose-img" aria-hidden="true" />
-              </figure>
-              <p class="card-greeting">Thinking of you.</p>
-              <p class="card-open-hint" aria-hidden="true">open &nbsp;&rarr;</p>
-            </div>
-            <!-- Back face — revealed when cover flips open -->
-            <div class="card-face card-face--back" aria-hidden="true">
-              <button class="card-close-btn" id="card-close-btn" aria-label="Close card">&#8592;</button>
-              <p class="ci-salutation">Dear Benjamin,</p>
-              <div class="ci-field ci-field--fill">
-                <label class="ci-label" for="ci-message">Message</label>
-                <textarea class="ci-input ci-textarea" id="ci-message"
-                          placeholder="Write a note&hellip;"></textarea>
-              </div>
-            </div>
-          </div>
-
-          <!-- Inside — right page only (left page / back face is on the cover) -->
-          <div class="card-inside" id="card-inside" aria-hidden="true" style="pointer-events:none">
-            <button class="card-close-btn card-close-btn--mobile" aria-label="Close card">&#8592;</button>
-            <!-- Set data-endpoint to your Formspree URL, e.g. https://formspree.io/f/your-id
-                 Omit or leave empty to use the mailto fallback. -->
-            <form id="card-form" class="card-pages" novalidate data-endpoint="">
-
-              <!-- Left page: salutation + message (hidden on desktop; shown on mobile) -->
-              <div class="card-page card-page--left">
-                <p class="ci-salutation">Dear Benjamin,</p>
-                <div class="ci-field ci-field--fill">
-                  <label class="ci-label" for="ci-message-mobile">Message</label>
-                  <textarea class="ci-input ci-textarea" id="ci-message-mobile"
-                            name="message"
-                            placeholder="Write a note&hellip;"></textarea>
-                </div>
-              </div>
-
-              <!-- Centre binding (hidden on desktop; shown on mobile) -->
-              <div class="card-page-divider" aria-hidden="true"></div>
-
-              <!-- Right page: contact fields + submit -->
-              <div class="card-page card-page--right">
-                <div class="ci-field">
-                  <label class="ci-label" for="ci-name">Name</label>
-                  <input class="ci-input" id="ci-name" name="name"
-                         type="text" autocomplete="name" required
-                         placeholder="Your name" />
-                </div>
-                <div class="ci-field">
-                  <label class="ci-label" for="ci-email">Email</label>
-                  <input class="ci-input" id="ci-email" name="email"
-                         type="email" autocomplete="email" required
-                         placeholder="your@email.com" />
-                </div>
-                <div class="ci-field">
-                  <label class="ci-label" for="ci-interest">I&rsquo;m interested in&hellip;</label>
-                  <select class="ci-input ci-select" id="ci-interest" name="interest" required>
-                    <option value="" disabled selected>Select</option>
-                    <option value="Becoming a patron">Becoming a patron</option>
-                    <option value="Board of Advisors">Joining the Board of Advisors</option>
-                    <option value="Artist inquiry">Artist or composer inquiry</option>
-                    <option value="Press">Press &amp; media</option>
-                    <option value="General inquiry">General inquiry</option>
-                  </select>
-                </div>
-                <div class="ci-actions">
-                  <button type="submit" class="ci-submit">
-                    Send a Note
-                    <span class="ci-arrow" aria-hidden="true">&rarr;</span>
-                  </button>
-                </div>
-              </div>
-
-            </form>
-
-            <!-- Success overlay — replaces both pages on submission; JS sets display:flex -->
-            <div class="ci-success" id="ci-success">
-              <div class="ci-success-icon">&#10022;</div>
-              <p class="ci-success-title">Thank you.</p>
-              <p class="ci-success-msg">We&rsquo;ll be in touch soon.</p>
-            </div>
-          </div>
-
-        </div><!-- .card-wrap -->
-      </div><!-- .card-scene -->
-    </section>
-
     <!-- ===========================================================
          IFO MODE: shown when the IFO planet is clicked. The Three.js
          canvas displays a Circle of Fifths animation around the IFO
@@ -436,7 +339,6 @@
     { "imports": { "three": "https://unpkg.com/three@0.161.0/build/three.module.js" } }
   </script>
   <script type="module" src="js/main.js"></script>
-  <script type="module" src="js/card.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>

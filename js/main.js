@@ -405,6 +405,12 @@ canvas.addEventListener("click", () => {
     if (state.hoverPlanet) {
       if (state.hoverPlanet.def.id === "ifo") goToIFO();
     } else if (state.hoverStar) goTo2D();
+  } else if (state.mode === "2d") {
+    if (state.hoverStar) {
+      fadeInLoadingScreen(() => snapTo3D());
+    } else if (state.hoverPlanet && state.hoverPlanet.def.id === "ifo") {
+      fadeInLoadingScreen(() => jumpToIFO());
+    }
   } else if ((state.mode === "ifo" || state.mode === "ifo-transitioning") && state.hoverPlanet) {
     returnFromIFO();
   }
@@ -815,6 +821,14 @@ brandLink.addEventListener("click", (e) => {
   window.location.reload();
 });
 
+const homeLink = document.getElementById("home-link");
+if (homeLink) {
+  homeLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.location.reload();
+  });
+}
+
 // Fade to white before navigating to any sub-page from index.html.
 // Uses the existing #loading-screen overlay so the WebGL canvas is covered
 // cleanly (avoids GPU-compositing issues with body opacity on canvas elements).
@@ -911,7 +925,8 @@ function projectToCanvas(pos) {
 
 function updateHover() {
   const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
-  if (!pointerInside || (state.mode !== "3d" && !inCoFMode)) {
+  const in2DMode  = state.mode === "2d";
+  if (!pointerInside || (state.mode !== "3d" && !inCoFMode && !in2DMode)) {
     state.hoverStar = false;
     state.hoverPlanet = null;
     canvas.style.cursor = "default";
@@ -927,6 +942,8 @@ function updateHover() {
     const hitPlanet   = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
     if (inCoFMode) {
       state.hoverPlanet = hitPlanet && hitPlanet.def.id === "ifo" ? hitPlanet : null;
+    } else if (in2DMode) {
+      state.hoverPlanet = hitPlanet && hitPlanet.def.id === "ifo" ? hitPlanet : null;
     } else {
       state.hoverPlanet = hitPlanet && !hitPlanet.def.comingSoon ? hitPlanet : null;
     }
@@ -939,6 +956,28 @@ function updateHover() {
         state.hoverPlanet.planet.getWorldPosition(worldPos);
         const p = projectToCanvas(worldPos);
         label.textContent = state.hoverPlanet.def.name;
+        label.style.left = p.x + "px";
+        label.style.top  = p.y + "px";
+        label.classList.add("visible");
+      } else {
+        label.classList.remove("visible");
+      }
+    } else if (in2DMode) {
+      if (state.hoverPlanet) {
+        state.labelPlanet = state.hoverPlanet;
+        state.labelStar   = false;
+        state.hoverPlanet.planet.getWorldPosition(worldPos);
+        const p = projectToCanvas(worldPos);
+        label.textContent = state.hoverPlanet.def.name;
+        label.style.left = p.x + "px";
+        label.style.top  = p.y + "px";
+        label.classList.add("visible");
+      } else if (state.hoverStar) {
+        state.labelPlanet = null;
+        state.labelStar   = true;
+        star.getWorldPosition(worldPos);
+        const p = projectToCanvas(worldPos);
+        label.textContent = "Return to 3D";
         label.style.left = p.x + "px";
         label.style.top  = p.y + "px";
         label.classList.add("visible");
@@ -974,7 +1013,8 @@ function updateHover() {
 
 function trackLabel() {
   const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
-  if (state.mode !== "3d" && !inCoFMode) return;
+  const in2DMode  = state.mode === "2d";
+  if (state.mode !== "3d" && !inCoFMode && !in2DMode) return;
   if (state.labelPlanet) {
     state.labelPlanet.planet.getWorldPosition(worldPos);
     const p = projectToCanvas(worldPos);
@@ -1093,7 +1133,7 @@ function animate() {
   // Star: shrinks as expansion progresses, then drifts to a flower centre once tiny
   const pulse      = 1 + Math.sin(performance.now() * 0.0011) * 0.01;
   const starShrink = lerp(1, 0.04, p1e);
-  const starTarget = (state.hoverStar && state.mode === "3d" ? 1.1 : pulse) * starShrink;
+  const starTarget = (state.hoverStar && (state.mode === "3d" || state.mode === "2d") ? 1.1 : pulse) * starShrink;
   star.scale.lerp(tmpVec.set(starTarget, starTarget, starTarget), 1 - Math.pow(0.0005, dt));
 
   // Center star stays at rose origin (0,0,0) — it becomes the heart of the rose
@@ -1106,7 +1146,7 @@ function animate() {
   star.material.roughness = lerp(0.38, 0.2, p1e);
 
   orbits.forEach((o) => {
-    const target = state.hoverPlanet === o && state.mode === "3d" ? 1.18 : 1;
+    const target = state.hoverPlanet === o && (state.mode === "3d" || state.mode === "2d") ? 1.18 : 1;
     o.planet.scale.lerp(tmpVec.set(target, target, target), 1 - Math.pow(0.001, dt));
   });
 
