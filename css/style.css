@@ -357,21 +357,22 @@ body.night-mode .footer-copy p {
 body.expansion-active #mission-section { display: flex; }
 
 .mission-kicker {
-  font-family: "DM Sans", sans-serif;
-  font-size: 12px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 15px;
   font-weight: 400;
-  letter-spacing: 0.42em;
+  font-style: italic;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
-  margin: 0 0 28px;
+  color: rgba(255, 255, 255, 0.58);
+  margin: 0 0 10px;
   line-height: 1;
 }
 
 .mission-heading {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Cormorant Garamond", serif;
   font-weight: 300;
-  font-size: clamp(36px, 5.5vw, 72px);
-  line-height: 1.15;
+  font-size: clamp(26px, 3.8vw, 50px);
+  line-height: 1.25;
   color: #ffffff;
   margin: 0;
 }
