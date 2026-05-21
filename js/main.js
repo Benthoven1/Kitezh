@@ -722,6 +722,7 @@ function goTo3D() {
   state.lsRevealP    = 1;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
+  resetPatronage();
   bgColor.copy(PAPER_COLOR);
 }
 
@@ -751,6 +752,7 @@ function jumpToIFO() {
   state.lsRevealP    = 1;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
+  resetPatronage();
   bgColor.copy(PAPER_COLOR);
   canvasWrap.style.height = window.innerHeight + "px";
 
@@ -793,6 +795,7 @@ function snapTo3D() {
   state.lsRevealP    = 1;
   missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
   missionSection.setAttribute("aria-hidden", "true");
+  resetPatronage();
   bgColor.copy(PAPER_COLOR);
 }
 
@@ -1254,6 +1257,28 @@ function updateExpansionScroll() {
 }
 
 
+// Patronage scroll reveal
+const patronageSection = document.getElementById("patronage-section");
+const prBoxEls = ["pr-outer","pr-f1","pr-f2","pr-f3","pr-f4"].map(id => document.getElementById(id));
+
+function updatePatronageScroll() {
+  if (!body.classList.contains("expansion-active")) return;
+  const rect     = patronageSection.getBoundingClientRect();
+  const scrolled = -rect.top;
+  const scrollable = patronageSection.offsetHeight - lsVH;
+  if (scrollable <= 0) return;
+  const p = Math.max(0, Math.min(1, scrolled / scrollable));
+  prBoxEls[0].classList.toggle("pr-visible", scrolled >= 0);
+  prBoxEls[1].classList.toggle("pr-visible", p >= 0.20);
+  prBoxEls[2].classList.toggle("pr-visible", p >= 0.40);
+  prBoxEls[3].classList.toggle("pr-visible", p >= 0.60);
+  prBoxEls[4].classList.toggle("pr-visible", p >= 0.80);
+}
+
+function resetPatronage() {
+  prBoxEls.forEach(el => el.classList.remove("pr-visible"));
+}
+
 // Mission section: animate characters in when it first scrolls into view.
 const missionObserver = new IntersectionObserver((entries) => {
   if (entries[0].isIntersecting && !state.missionFired && body.classList.contains("expansion-active")) {
@@ -1269,10 +1294,12 @@ missionObserver.observe(missionSection);
 
 window.addEventListener("scroll", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
+  updatePatronageScroll();
 }, { passive: true });
 
 window.addEventListener("resize", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
+  updatePatronageScroll();
 });
 
 animate();
