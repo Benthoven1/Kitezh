@@ -972,15 +972,6 @@ function updateHover() {
         label.style.left = p.x + "px";
         label.style.top  = p.y + "px";
         label.classList.add("visible");
-      } else if (state.hoverStar) {
-        state.labelPlanet = null;
-        state.labelStar   = true;
-        star.getWorldPosition(worldPos);
-        const p = projectToCanvas(worldPos);
-        label.textContent = "Return to 3D";
-        label.style.left = p.x + "px";
-        label.style.top  = p.y + "px";
-        label.classList.add("visible");
       } else {
         label.classList.remove("visible");
       }
