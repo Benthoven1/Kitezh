@@ -377,6 +377,90 @@ body.expansion-active #mission-section { display: flex; }
   margin: 0;
 }
 
+/* ---------- Patronage scroll reveal ---------- */
+#patronage-section {
+  display: none;
+  height: 500vh;
+  position: relative;
+}
+
+body.expansion-active #patronage-section { display: block; }
+
+body.night-mode #patronage-section {
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.pr-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pr-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.pr-box.pr-visible { opacity: 1; }
+
+/* Outer text rectangle — no image, just border + label */
+.pr-outer {
+  width: 84vw;
+  height: 82vh;
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  z-index: 0;
+}
+
+.pr-outer-text {
+  position: absolute;
+  bottom: 20px;
+  left: 0; right: 0;
+  text-align: center;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(14px, 1.8vw, 26px);
+  font-weight: 300;
+  font-style: italic;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.60);
+  margin: 0;
+  padding: 0 24px;
+}
+
+/* Image frames — concentric, each smaller than the last */
+.pr-frame {
+  background-size: cover;
+  background-position: center;
+  overflow: hidden;
+}
+
+.pr-f1 { width: 80vw; height: 71vh; background-image: url('../Musical.png');        z-index: 1; }
+.pr-f2 { width: 76vw; height: 68vh; background-image: url('../Pictorial.png');      z-index: 2; }
+.pr-f3 { width: 72vw; height: 65vh; background-image: url('../image (13).png');     z-index: 3; }
+.pr-f4 { width: 70vw; height: 63.5vh; background-image: url('../Horticulture.png'); z-index: 4; }
+
+.pr-label {
+  position: absolute;
+  top: 16px;
+  left: 22px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(11px, 1.3vw, 17px);
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+
 .mc {
   display: inline-block;
   opacity: 0;
