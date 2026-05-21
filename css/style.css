@@ -380,7 +380,7 @@ body.night-mode .footer-copy p {
 /* ---------- Patronage scroll reveal ---------- */
 #patronage-section {
   display: none;
-  height: 500vh;
+  height: 1000vh;
   position: relative;
 }
 
@@ -422,7 +422,7 @@ body.night-mode #patronage-section {
 
 .pr-outer-text {
   font-family: "Cormorant Garamond", serif;
-  font-size: clamp(30px, 4.5vw, 64px);
+  font-size: clamp(44px, 7.5vw, 120px);
   font-weight: 300;
   font-style: italic;
   letter-spacing: 0.06em;
