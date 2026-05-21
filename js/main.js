@@ -1261,22 +1261,78 @@ function updateExpansionScroll() {
 const patronageSection = document.getElementById("patronage-section");
 const prBoxEls = ["pr-outer","pr-f1","pr-f2","pr-f3","pr-f4"].map(id => document.getElementById(id));
 
+const PR_SIZES = [
+  { w: 0.80, h: 0.71 },
+  { w: 0.76, h: 0.68 },
+  { w: 0.72, h: 0.65 },
+  { w: 0.70, h: 0.635 },
+  { w: 0.68, h: 0.62  },
+];
+const PR_THRESHOLDS = [0.00, 0.20, 0.40, 0.60, 0.80];
+const PR_ANIM_DUR   = 1200;
+
+const prState = prBoxEls.map(() => ({ status: "idle", raf: null, t0: null }));
+
+function _prEaseRise(t) { return 1 - Math.pow(1 - t, 3); }
+function _prEaseSlit(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+
+function stopPrAnim(idx) {
+  if (prState[idx].raf) { cancelAnimationFrame(prState[idx].raf); prState[idx].raf = null; }
+}
+
+function startPrAnim(idx) {
+  if (prState[idx].status !== "idle") return;
+  prState[idx].status = "animating";
+  prState[idx].t0 = null;
+  function tick(ts) {
+    if (!prState[idx].t0) prState[idx].t0 = ts;
+    const t = Math.min(1, (ts - prState[idx].t0) / PR_ANIM_DUR);
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const targetW = vw * PR_SIZES[idx].w;
+    const targetH = vh * PR_SIZES[idx].h;
+    const wP = _prEaseRise(Math.min(1, t / 0.15));
+    const hP = _prEaseSlit(Math.max(0, Math.min(1, (t - 0.08) / 0.92)));
+    prBoxEls[idx].style.width  = (targetW * wP) + "px";
+    prBoxEls[idx].style.height = Math.max(2, targetH * hP) + "px";
+    if (t < 1) {
+      prState[idx].raf = requestAnimationFrame(tick);
+    } else {
+      prBoxEls[idx].style.width  = (targetW) + "px";
+      prBoxEls[idx].style.height = (targetH) + "px";
+      prState[idx].status = "done";
+      prState[idx].raf = null;
+    }
+  }
+  prState[idx].raf = requestAnimationFrame(tick);
+}
+
+function resetPrFrame(idx) {
+  stopPrAnim(idx);
+  prState[idx].status = "idle";
+  prState[idx].t0 = null;
+  prBoxEls[idx].style.width  = "0";
+  prBoxEls[idx].style.height = "0";
+}
+
 function updatePatronageScroll() {
   if (!body.classList.contains("expansion-active")) return;
-  const rect     = patronageSection.getBoundingClientRect();
+  const rect = patronageSection.getBoundingClientRect();
   const scrolled = -rect.top;
   const scrollable = patronageSection.offsetHeight - lsVH;
   if (scrollable <= 0) return;
   const p = Math.max(0, Math.min(1, scrolled / scrollable));
-  prBoxEls[0].classList.toggle("pr-visible", scrolled >= 0);
-  prBoxEls[1].classList.toggle("pr-visible", p >= 0.20);
-  prBoxEls[2].classList.toggle("pr-visible", p >= 0.40);
-  prBoxEls[3].classList.toggle("pr-visible", p >= 0.60);
-  prBoxEls[4].classList.toggle("pr-visible", p >= 0.80);
+  prBoxEls.forEach((_, idx) => {
+    const active = idx === 0 ? scrolled >= 0 : p >= PR_THRESHOLDS[idx];
+    if (active && prState[idx].status === "idle") {
+      startPrAnim(idx);
+    } else if (!active && prState[idx].status !== "idle") {
+      resetPrFrame(idx);
+    }
+  });
 }
 
 function resetPatronage() {
-  prBoxEls.forEach(el => el.classList.remove("pr-visible"));
+  prBoxEls.forEach((_, idx) => resetPrFrame(idx));
 }
 
 // Mission section: animate characters in when it first scrolls into view.
