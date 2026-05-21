@@ -1262,11 +1262,11 @@ const patronageSection = document.getElementById("patronage-section");
 const prBoxEls = ["pr-outer","pr-f1","pr-f2","pr-f3","pr-f4"].map(id => document.getElementById(id));
 
 const PR_SIZES = [
-  { w: 0.80, h: 0.71 },
-  { w: 0.76, h: 0.68 },
-  { w: 0.72, h: 0.65 },
-  { w: 0.70, h: 0.635 },
-  { w: 0.68, h: 0.62  },
+  { w: 0.80, h: 0.71 },  // outer text (border trace)
+  { w: 0.80, h: 0.71 },  // Music (same as outer)
+  { w: 0.76, h: 0.68 },  // Art
+  { w: 0.72, h: 0.65 },  // Architecture
+  { w: 0.70, h: 0.635 }, // Horticulture
 ];
 const PR_THRESHOLDS = [0.00, 0.20, 0.40, 0.60, 0.80];
 const PR_ANIM_DUR   = 1200;
@@ -1281,7 +1281,7 @@ function stopPrAnim(idx) {
 }
 
 function startPrAnim(idx) {
-  if (prState[idx].status !== "idle") return;
+  stopPrAnim(idx);
   prState[idx].status = "animating";
   prState[idx].t0 = null;
   function tick(ts) {
@@ -1306,6 +1306,34 @@ function startPrAnim(idx) {
   prState[idx].raf = requestAnimationFrame(tick);
 }
 
+function closePrAnim(idx) {
+  const el = prBoxEls[idx];
+  const startW = parseFloat(el.style.width)  || 0;
+  const startH = parseFloat(el.style.height) || 0;
+  if (startW <= 0 && startH <= 0) { prState[idx].status = "idle"; return; }
+  stopPrAnim(idx);
+  prState[idx].status = "closing";
+  prState[idx].t0 = null;
+  const CLOSE_DUR = 700;
+  function tick(ts) {
+    if (!prState[idx].t0) prState[idx].t0 = ts;
+    const t = Math.min(1, (ts - prState[idx].t0) / CLOSE_DUR);
+    const hP = 1 - _prEaseSlit(Math.min(1, t / 0.65));
+    const wP = 1 - _prEaseRise(Math.max(0, Math.min(1, (t - 0.60) / 0.40)));
+    el.style.height = Math.max(0, startH * hP) + "px";
+    el.style.width  = Math.max(0, startW * wP) + "px";
+    if (t < 1) {
+      prState[idx].raf = requestAnimationFrame(tick);
+    } else {
+      el.style.width  = "0";
+      el.style.height = "0";
+      prState[idx].status = "idle";
+      prState[idx].raf = null;
+    }
+  }
+  prState[idx].raf = requestAnimationFrame(tick);
+}
+
 function resetPrFrame(idx) {
   stopPrAnim(idx);
   prState[idx].status = "idle";
@@ -1323,10 +1351,19 @@ function updatePatronageScroll() {
   const p = Math.max(0, Math.min(1, scrolled / scrollable));
   prBoxEls.forEach((_, idx) => {
     const active = idx === 0 ? scrolled >= 0 : p >= PR_THRESHOLDS[idx];
-    if (active && prState[idx].status === "idle") {
-      startPrAnim(idx);
-    } else if (!active && prState[idx].status !== "idle") {
-      resetPrFrame(idx);
+    const st = prState[idx].status;
+    if (active) {
+      if (st === "idle") startPrAnim(idx);
+      else if (st === "closing") {
+        // user scrolled back down before close finished — snap to full and mark done
+        stopPrAnim(idx);
+        const vw = window.innerWidth, vh = window.innerHeight;
+        prBoxEls[idx].style.width  = (vw * PR_SIZES[idx].w) + "px";
+        prBoxEls[idx].style.height = (vh * PR_SIZES[idx].h) + "px";
+        prState[idx].status = "done";
+      }
+    } else {
+      if (st === "done" || st === "animating") closePrAnim(idx);
     }
   });
 }
