@@ -407,6 +407,12 @@ canvas.addEventListener("click", () => {
     } else if (state.hoverStar) goTo2D();
   } else if ((state.mode === "ifo" || state.mode === "ifo-transitioning") && state.hoverPlanet) {
     returnFromIFO();
+  } else if (state.mode === "2d") {
+    if (state.hoverStar) {
+      fadeInLoadingScreen(() => snapTo3D());
+    } else if (state.hoverPlanet && state.hoverPlanet.def.id === "ifo") {
+      fadeInLoadingScreen(() => jumpToIFO());
+    }
   }
 });
 
@@ -815,6 +821,14 @@ brandLink.addEventListener("click", (e) => {
   window.location.reload();
 });
 
+const homeNavBtn = document.getElementById("home-nav-btn");
+if (homeNavBtn) {
+  homeNavBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    window.location.reload();
+  });
+}
+
 // Fade to white before navigating to any sub-page from index.html.
 // Uses the existing #loading-screen overlay so the WebGL canvas is covered
 // cleanly (avoids GPU-compositing issues with body opacity on canvas elements).
@@ -911,7 +925,8 @@ function projectToCanvas(pos) {
 
 function updateHover() {
   const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
-  if (!pointerInside || (state.mode !== "3d" && !inCoFMode)) {
+  const in2DMode  = state.mode === "2d";
+  if (!pointerInside || (state.mode !== "3d" && !inCoFMode && !in2DMode)) {
     state.hoverStar = false;
     state.hoverPlanet = null;
     canvas.style.cursor = "default";
@@ -923,11 +938,17 @@ function updateHover() {
 
   if (hits.length > 0) {
     const obj = hits[0].object;
-    state.hoverStar   = obj.userData.type === "star" && !inCoFMode;
-    const hitPlanet   = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
+    const hitPlanet = obj.userData.type === "planet" ? orbits.find((o) => o.planet === obj) : null;
+
     if (inCoFMode) {
+      state.hoverStar   = false;
+      state.hoverPlanet = hitPlanet && hitPlanet.def.id === "ifo" ? hitPlanet : null;
+    } else if (in2DMode) {
+      // Only the center star (→ return to 3D) and innermost IFO planet (→ IFO) are interactive
+      state.hoverStar   = obj.userData.type === "star";
       state.hoverPlanet = hitPlanet && hitPlanet.def.id === "ifo" ? hitPlanet : null;
     } else {
+      state.hoverStar   = obj.userData.type === "star";
       state.hoverPlanet = hitPlanet && !hitPlanet.def.comingSoon ? hitPlanet : null;
     }
     canvas.style.cursor = (state.hoverPlanet || state.hoverStar) ? "pointer" : "default";
@@ -944,6 +965,30 @@ function updateHover() {
         label.classList.add("visible");
       } else {
         label.classList.remove("visible");
+      }
+    } else if (in2DMode) {
+      if (state.hoverStar) {
+        state.labelPlanet = null;
+        state.labelStar   = true;
+        star.getWorldPosition(worldPos);
+        const p = projectToCanvas(worldPos);
+        label.textContent = "Return Home";
+        label.style.left = p.x + "px";
+        label.style.top  = p.y + "px";
+        label.classList.add("visible");
+      } else if (state.hoverPlanet) {
+        state.labelPlanet = state.hoverPlanet;
+        state.labelStar   = false;
+        state.hoverPlanet.planet.getWorldPosition(worldPos);
+        const p = projectToCanvas(worldPos);
+        label.textContent = state.hoverPlanet.def.name;
+        label.style.left = p.x + "px";
+        label.style.top  = p.y + "px";
+        label.classList.add("visible");
+      } else {
+        label.classList.remove("visible");
+        state.labelPlanet = null;
+        state.labelStar   = false;
       }
     } else if (hitPlanet) {
       state.labelPlanet = hitPlanet;
@@ -968,13 +1013,19 @@ function updateHover() {
     state.hoverStar   = false;
     state.hoverPlanet = null;
     canvas.style.cursor = "default";
-    // Label stays — pinned to last hovered sphere
+    if (in2DMode) {
+      label.classList.remove("visible");
+      state.labelPlanet = null;
+      state.labelStar   = false;
+    }
+    // Label stays in 3D/IFO mode — pinned to last hovered sphere
   }
 }
 
 function trackLabel() {
   const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
-  if (state.mode !== "3d" && !inCoFMode) return;
+  const in2DMode  = state.mode === "2d";
+  if (state.mode !== "3d" && !inCoFMode && !in2DMode) return;
   if (state.labelPlanet) {
     state.labelPlanet.planet.getWorldPosition(worldPos);
     const p = projectToCanvas(worldPos);
