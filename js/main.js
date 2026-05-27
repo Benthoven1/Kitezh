@@ -915,7 +915,25 @@ document.addEventListener("click", () => {
     el.classList.remove("open");
     el.querySelector(".nav-trigger").setAttribute("aria-expanded", "false");
   });
+  // Close mobile menu when clicking outside the navbar
+  if (navbar && navbar.classList.contains("menu-open")) {
+    const bg = navbar.querySelector(".nav-burger");
+    navbar.classList.remove("menu-open");
+    if (bg) { bg.setAttribute("aria-expanded", "false"); bg.setAttribute("aria-label", "Open menu"); }
+  }
 });
+
+// Mobile burger toggle
+{ const burger = navbar?.querySelector(".nav-burger");
+  if (burger) {
+    burger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = navbar.classList.toggle("menu-open");
+      burger.setAttribute("aria-expanded", String(open));
+      burger.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    });
+  }
+}
 
 
 function lerp(a, b, t) { return a + (b - a) * t; }
