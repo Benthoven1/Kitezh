@@ -73,7 +73,7 @@ button {
   opacity: 0;
   transform: translateY(-8px) translateZ(0);
   pointer-events: none;
-  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease), background-color 0.6s ease;
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
   will-change: opacity, transform;
 }
 
@@ -1460,14 +1460,10 @@ html.ls-instant-cover #loading-screen {
   background: var(--paper);
   z-index: 41;
   pointer-events: none;
-  transition: background-color 0.6s ease;
 }
 body.night-mode #nav-cap { background: #060412; }
 
-/* ---------- Night-mode navbar ---------- */
-body.night-mode .navbar {
-  background: rgba(6, 4, 18, 0.88);
-}
+/* ---------- Night-mode navbar (background driven by JS; text colours via CSS class) ---------- */
 body.night-mode .nav-trigger { color: rgba(255, 255, 255, 0.82); }
 body.night-mode .nav-trigger:hover,
 body.night-mode .nav-item.open .nav-trigger { color: #ffffff; }
@@ -1494,15 +1490,16 @@ body.night-mode .dropdown a:hover { color: #ffffff; background: rgba(255, 255, 2
 .card-open-hint     { letter-spacing: 0.04em; }
 
 /* ---------- Accessibility font-size bumps ---------- */
-.nav-trigger          { font-size: 15px; }
-.dropdown a           { font-size: 16px; }
-.planet-label         { font-size: 13px; }
-.cosmos-hint          { font-size: 14px; }
+.nav-trigger          { font-size: 17px; }
+.dropdown a           { font-size: 18px; }
+.planet-label         { font-size: 16px; }
+.cosmos-hint          { font-size: 15px; }
 .mission-kicker       { font-size: 17px; }
 .letter-body p        { font-size: 21px; }
 .letter-quote p       { font-size: 19px; }
-.footer-col-title     { font-size: 13px; }
-.footer-copy          { font-size: 14px; }
+.footer-links a       { font-size: 16px; }
+.footer-col-title     { font-size: 15px; }
+.footer-copy          { font-size: 15px; }
 .eyebrow              { font-size: 14px; }
 .page-shell .back     { font-size: 14px; }
 .static-nav .back-home { font-size: 14px; }
