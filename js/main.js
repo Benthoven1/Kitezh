@@ -63,6 +63,7 @@ const ORBITS = [
 const canvas            = document.getElementById("cosmos");
 const label             = document.getElementById("planet-label");
 const navbar            = document.getElementById("navbar");
+const navCap            = document.getElementById("nav-cap");
 const brandLink         = document.getElementById("brand-link");
 const body              = document.body;
 const expansionWrapper  = document.getElementById("expansion-wrapper");
@@ -1228,6 +1229,13 @@ function animate() {
   skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
   skyStarMat.uniforms.uOpacity.value = p1e;
 
+  // Keep navbar and nav-cap background in exact sync with the canvas lerp
+  { const _r = (a, b) => Math.round(a + (b - a) * p1e);
+    if (navbar) navbar.style.backgroundColor =
+      `rgba(${_r(255,6)},${_r(255,4)},${_r(255,18)},${(0.86+0.02*p1e).toFixed(3)})`;
+    if (navCap) navCap.style.backgroundColor =
+      `rgb(${_r(236,6)},${_r(234,4)},${_r(229,18)})`; }
+
   updateHover();
   trackLabel();
   resize();
@@ -1249,7 +1257,8 @@ function updateExpansionScroll() {
   // Phase 2 (60–100 %): transition held, dark starfield maintained
   state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.4));
 
-  if (state.expansionP1 > 0) {
+  // Wait until background is halfway dark before flipping night-mode text colours
+  if (state.expansionP1 >= 0.5) {
     body.classList.add("night-mode");
   } else {
     body.classList.remove("night-mode");
