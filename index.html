@@ -51,6 +51,11 @@
       <div id="canvas-wrap">
         <canvas id="cosmos"></canvas>
         <div id="planet-label" class="planet-label" aria-live="polite"></div>
+        <div id="cosmos-title" class="cosmos-title">
+          <p class="ct-kicker">The Mulvium Foundation</p>
+          <h1 class="ct-word" aria-label="Mulvium"><span aria-hidden="true" style="--i:0">M</span><span aria-hidden="true" style="--i:1">U</span><span aria-hidden="true" style="--i:2">L</span><span aria-hidden="true" style="--i:3">V</span><span aria-hidden="true" style="--i:4">I</span><span aria-hidden="true" style="--i:5">U</span><span aria-hidden="true" style="--i:6">M</span></h1>
+          <p class="ct-sub">A modern renaissance of arts patronage</p>
+        </div>
         <div id="cosmos-hint" class="cosmos-hint">
           <p>Click a sphere to explore our offerings and our mission.</p>
         </div>
@@ -70,15 +75,19 @@
           <p class="pr-outer-text"><span>Our Mission:</span><br><span>Reimagine Patronage Across</span></p>
         </div>
         <div class="pr-frame pr-f1 pr-box" id="pr-f1">
+          <div class="pr-img" aria-hidden="true"></div>
           <p class="pr-label">Music</p>
         </div>
         <div class="pr-frame pr-f2 pr-box" id="pr-f2">
+          <div class="pr-img" aria-hidden="true"></div>
           <p class="pr-label">Art</p>
         </div>
         <div class="pr-frame pr-f3 pr-box" id="pr-f3">
+          <div class="pr-img" aria-hidden="true"></div>
           <p class="pr-label">Architecture</p>
         </div>
         <div class="pr-frame pr-f4 pr-box" id="pr-f4">
+          <div class="pr-img" aria-hidden="true"></div>
           <p class="pr-label">Horticulture</p>
         </div>
       </div>
@@ -88,6 +97,7 @@
     <section id="letter-section">
       <article class="letter-article">
         <header class="letter-header">
+          <p class="letter-kicker">A letter from the Founder</p>
           <p class="letter-to">To those who stop and smell the roses,</p>
         </header>
 
@@ -260,6 +270,7 @@
       <!-- Circle of Fifths animation runs in the Three.js canvas above; no HTML diagram here -->
       <article class="ifo-prose">
         <header class="ifo-prose-header">
+          <p class="ifo-eyebrow">An Offering of Mulvium</p>
           <h2 class="ifo-prose-title">International Festival Orchestra</h2>
         </header>
 
@@ -365,6 +376,7 @@
   <script type="importmap">
     { "imports": { "three": "https://unpkg.com/three@0.161.0/build/three.module.js" } }
   </script>
+  <script src="js/cursor.js" defer></script>
   <script type="module" src="js/main.js"></script>
   <script>
     document.getElementById('year').textContent = new Date().getFullYear();

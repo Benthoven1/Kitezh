@@ -169,6 +169,57 @@ const skyStars = new THREE.Points(skyStarGeo, skyStarMat);
 // ── Sky group — everything in here rotates together as the user scrolls ───────
 scene.add(skyStars);
 
+// ── Shooting stars — brief streaks across the night sky (expansion view) ──────
+// Thin additive-blended planes lying on the XZ plane so the overhead 2D camera
+// sees them as meteors crossing the star-field.
+const meteorTex = (() => {
+  const c = document.createElement("canvas");
+  c.width = 256; c.height = 16;
+  const g = c.getContext("2d");
+  const grad = g.createLinearGradient(0, 0, 256, 0);
+  grad.addColorStop(0.0,  "rgba(255,255,255,0)");
+  grad.addColorStop(0.72, "rgba(255,255,255,0.55)");
+  grad.addColorStop(0.96, "rgba(255,255,255,0.95)");
+  grad.addColorStop(1.0,  "rgba(255,255,255,0)");
+  g.fillStyle = grad;
+  g.fillRect(0, 0, 256, 16);
+  return new THREE.CanvasTexture(c);
+})();
+
+const meteors = [];
+for (let i = 0; i < 3; i++) {
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.4, 0.07),
+    new THREE.MeshBasicMaterial({
+      map: meteorTex, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false,
+    })
+  );
+  mesh.visible = false;
+  scene.add(mesh);
+  meteors.push({ mesh, t: 1, dur: 1, dirX: 0, dirZ: 0, speed: 0 });
+}
+let meteorTimer = 2.0;
+
+function spawnMeteor() {
+  const m = meteors.find((mm) => mm.t >= 1);
+  if (!m) return;
+  const phi = Math.random() * Math.PI * 2;
+  // Plane rotated flat (x: -π/2) with roll phi travels along (cosφ, 0, -sinφ)
+  m.dirX  = Math.cos(phi);
+  m.dirZ  = -Math.sin(phi);
+  m.dur   = 0.8 + Math.random() * 0.7;
+  m.speed = 9 + Math.random() * 6;
+  m.t     = 0;
+  // Start half a flight back so the streak crosses a random visible point
+  const px = (Math.random() - 0.5) * 13;
+  const pz = (Math.random() - 0.5) * 13;
+  const back = m.speed * m.dur * 0.5;
+  m.mesh.position.set(px - m.dirX * back, 0.6, pz - m.dirZ * back);
+  m.mesh.rotation.set(-Math.PI / 2, 0, phi);
+  m.mesh.visible = true;
+}
+
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -363,6 +414,16 @@ let lsVH = window.innerHeight;
 let cachedCanvasRect = canvas.getBoundingClientRect();
 let cachedScrollTotal = 0;
 
+// Reduced-motion preference — gates camera parallax and shooting stars
+const motionOK = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// Pointer-driven camera parallax — normalized viewport coords, lerped each frame
+const camDrift = { x: 0, y: 0, tx: 0, ty: 0 };
+window.addEventListener("pointermove", (e) => {
+  camDrift.tx = (e.clientX / lsVW) * 2 - 1;
+  camDrift.ty = (e.clientY / lsVH) * 2 - 1;
+}, { passive: true });
+
 let lastW = 0, lastH = 0;
 function resize() {
   lsVW = window.innerWidth;
@@ -510,6 +571,8 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
   function lsCleanup() {
     state.lsRevealP = 1;
+    // First reveal complete — play the hero title entrance over the cosmos
+    body.classList.add("cosmos-intro");
     [lsF1, lsF2, lsF3, lsF4, lsBorder].forEach(f => {
       f.style.width = "0"; f.style.height = "0";
       f.style.transform = "translate(-50%, -50%)";
@@ -1279,6 +1342,18 @@ function animate() {
   // Camera: blend 3D→2D then blend toward CAM_IFO
   lerpVec(CAM_3D, CAM_2D, eased, baseCamPos);
   lerpVec(baseCamPos, CAM_IFO, easedIFO, camera.position);
+
+  // Pointer parallax — gentle camera drift for depth. Strongest in 3D,
+  // subtle in IFO, fully off in the overhead 2D/expansion view so the
+  // scroll-driven framing stays exact.
+  if (motionOK) {
+    const k = 1 - Math.pow(0.02, dt);
+    camDrift.x += (camDrift.tx - camDrift.x) * k;
+    camDrift.y += (camDrift.ty - camDrift.y) * k;
+    const amp = 0.5 * (1 - eased) * (1 - easedIFO) + 0.16 * easedIFO;
+    camera.position.x += camDrift.x * amp;
+    camera.position.y += -camDrift.y * amp * 0.55;
+  }
   camera.lookAt(LOOK_AT);
 
   // Zoom: smoothly lerp FOV toward target (only in 3D mode)
@@ -1291,6 +1366,25 @@ function animate() {
   bgColor.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p1e);
   skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
   skyStarMat.uniforms.uOpacity.value = p1e;
+
+  // Shooting stars — spawn occasionally once the night sky is mostly in
+  if (motionOK && p1e > 0.55) {
+    meteorTimer -= dt;
+    if (meteorTimer <= 0) {
+      spawnMeteor();
+      meteorTimer = 3.5 + Math.random() * 6;
+    }
+  }
+  meteors.forEach((m) => {
+    if (m.t >= 1) {
+      if (m.mesh.visible) { m.mesh.visible = false; m.mesh.material.opacity = 0; }
+      return;
+    }
+    m.t += dt / m.dur;
+    m.mesh.position.x += m.dirX * m.speed * dt;
+    m.mesh.position.z += m.dirZ * m.speed * dt;
+    m.mesh.material.opacity = Math.sin(Math.PI * Math.min(1, m.t)) * 0.85 * p1e;
+  });
 
   // Keep navbar and nav-cap background in exact sync with the canvas lerp
   { const _r = (a, b) => Math.round(a + (b - a) * p1e);
@@ -1354,6 +1448,7 @@ function stopPrAnim(idx) {
 
 function startPrAnim(idx) {
   stopPrAnim(idx);
+  prBoxEls[idx].classList.add("pr-active");
   prState[idx].status = "animating";
   prState[idx].t0 = null;
   function tick(ts) {
@@ -1384,6 +1479,7 @@ function closePrAnim(idx) {
   const startH = parseFloat(el.style.height) || 0;
   if (startW <= 0 && startH <= 0) { prState[idx].status = "idle"; return; }
   stopPrAnim(idx);
+  prBoxEls[idx].classList.remove("pr-active");
   prState[idx].status = "closing";
   prState[idx].t0 = null;
   const CLOSE_DUR = 700;
@@ -1408,6 +1504,7 @@ function closePrAnim(idx) {
 
 function resetPrFrame(idx) {
   stopPrAnim(idx);
+  prBoxEls[idx].classList.remove("pr-active");
   prState[idx].status = "idle";
   prState[idx].t0 = null;
   prBoxEls[idx].style.width  = "0";
@@ -1429,6 +1526,7 @@ function updatePatronageScroll() {
       else if (st === "closing") {
         // user scrolled back down before close finished — snap to full and mark done
         stopPrAnim(idx);
+        prBoxEls[idx].classList.add("pr-active");
         const vw = window.innerWidth, vh = window.innerHeight;
         prBoxEls[idx].style.width  = (vw * PR_SIZES[idx].w) + "px";
         prBoxEls[idx].style.height = (vh * PR_SIZES[idx].h) + "px";
@@ -1456,6 +1554,38 @@ const missionObserver = new IntersectionObserver((entries) => {
   }
 }, { threshold: 0.1 });
 missionObserver.observe(missionSection);
+
+// ── Scroll reveal — letter, IFO prose, and footer rise in as they enter view ──
+{
+  const rvSelectors = [
+    "#letter-section .letter-header",
+    "#letter-section .letter-body > *",
+    "#letter-section .letter-close",
+    ".ifo-prose-header",
+    ".ifo-prose-body > p",
+    ".ifo-prose-footnote",
+    "#site-footer .footer-brand",
+    "#site-footer .footer-col",
+    "#site-footer .footer-copy",
+  ];
+  const rvEls = document.querySelectorAll(rvSelectors.join(", "));
+  rvEls.forEach((el) => el.classList.add("rv"));
+  document.querySelectorAll("#site-footer .footer-col").forEach((el, i) => {
+    el.style.setProperty("--rv-delay", `${0.12 + i * 0.12}s`);
+  });
+  const rvObserver = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      // In cosmos mode the page content sits behind the fixed canvas at the
+      // top of the document — ignore those phantom intersections so reveals
+      // still play when the content is genuinely scrolled into view later.
+      if (en.isIntersecting && !body.classList.contains("cosmos-only")) {
+        en.target.classList.add("rv-in");
+        rvObserver.unobserve(en.target);
+      }
+    });
+  }, { threshold: 0.06, rootMargin: "0px 0px -6% 0px" });
+  rvEls.forEach((el) => rvObserver.observe(el));
+}
 
 window.addEventListener("scroll", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
