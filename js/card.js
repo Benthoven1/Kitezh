@@ -108,6 +108,9 @@ function closeCard() {
 // ── Event listeners ───────────────────────────────────────────────────────────
 cardCover.addEventListener('click', openCard);
 cardCover.addEventListener('keydown', e => {
+  // Only when the cover itself is focused — the message textarea lives on the
+  // cover's back face, and its spaces/enters must not be swallowed here
+  if (e.target !== cardCover) return;
   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openCard(); }
 });
 
@@ -140,9 +143,11 @@ cardForm.addEventListener('submit', async e => {
   btn.innerHTML = '<span>Sending&hellip;</span>';
 
   const payload = Object.fromEntries(new FormData(cardForm));
-  // On desktop the message textarea lives on the cover's back face (outside the form element)
-  const msgEl = document.getElementById('ci-message');
-  if (msgEl?.value) payload.message = msgEl.value;
+  // The message textarea lives outside the form element: on the cover's back
+  // face (desktop) or the inside-left page (mobile) — read whichever has text
+  const msg = document.getElementById('ci-message')?.value
+           || document.getElementById('ci-message-m')?.value || '';
+  if (msg) payload.message = msg;
   const endpoint = cardForm.dataset.endpoint?.trim();
 
   if (endpoint) {
@@ -169,6 +174,8 @@ cardForm.addEventListener('submit', async e => {
 function showSuccess() {
   cardForm.style.display = 'none';
   ciSuccess.style.display = 'flex';
+  // Let the mesh network celebrate (see contact-mesh.js)
+  document.dispatchEvent(new CustomEvent('mulvium:card-sent'));
 }
 
 function resetBtn(btn, html) {

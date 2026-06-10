@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../../css/style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cormorant+SC:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,900;1,300;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Italiana&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
 </head>
-<body style="opacity:0">
+<body style="opacity:0" class="contact-page">
   <div id="nav-cap" aria-hidden="true"></div>
   <nav class="navbar visible" aria-hidden="false">
     <div class="nav-brand">
@@ -37,24 +37,101 @@
       </li>
     </ul>
   </nav>
-  <main class="page-shell">
-    <p class="eyebrow">About</p>
-    <h1>Contact Us</h1>
-    <p>
-      If you want to power the frontier and not the simulacrum, let&rsquo;s talk.
-    </p>
-    <p>
-      More to come.
-    </p>
+
+  <!-- Living mesh network — the five cosmos spheres as nodes; new satellites
+       join the constellation as the visitor completes each field -->
+  <canvas id="mesh-bg" aria-hidden="true"></canvas>
+
+  <main class="contact-shell">
+    <header class="contact-head">
+      <p class="contact-eyebrow">About</p>
+      <h1 class="contact-title">Write to Mulvium</h1>
+      <p class="contact-sub">Every note adds a thread to the constellation.</p>
+    </header>
+
+    <section id="card-section">
+      <div class="card-scene" id="card-scene">
+        <div class="card-wrap" id="card-wrap">
+          <div class="card-inside" id="card-inside" aria-hidden="true" style="pointer-events:none">
+            <button class="card-close-btn card-close-btn--mobile" type="button" aria-label="Close card">&times;</button>
+            <div class="card-pages">
+              <div class="card-page card-page--left">
+                <p class="ci-salutation">Dear Mulvium,</p>
+                <div class="ci-field ci-field--fill">
+                  <label class="ci-label" for="ci-message-m">Your message</label>
+                  <textarea class="ci-input ci-textarea" id="ci-message-m" placeholder="Tell us how you find beauty&hellip;"></textarea>
+                </div>
+              </div>
+              <div class="card-page-divider" aria-hidden="true"></div>
+              <div class="card-page card-page--right">
+                <form id="card-form" class="card-form" novalidate>
+                  <div class="ci-field">
+                    <label class="ci-label" for="ci-name">Your name</label>
+                    <input class="ci-input" id="ci-name" name="name" type="text" autocomplete="name" />
+                  </div>
+                  <div class="ci-field">
+                    <label class="ci-label" for="ci-email">Email</label>
+                    <input class="ci-input" id="ci-email" name="email" type="email" autocomplete="email" />
+                  </div>
+                  <div class="ci-field">
+                    <label class="ci-label" for="ci-interest">I am writing about</label>
+                    <select class="ci-input ci-select" id="ci-interest" name="interest">
+                      <option value="" selected disabled hidden></option>
+                      <option>Patronage &amp; Giving</option>
+                      <option>International Festival Orchestra</option>
+                      <option>Partnership</option>
+                      <option>Press</option>
+                      <option>Something else</option>
+                    </select>
+                  </div>
+                  <div class="ci-actions">
+                    <button class="ci-submit" type="submit"><span>Seal &amp; Send</span><span class="ci-arrow">&rarr;</span></button>
+                  </div>
+                </form>
+                <div class="ci-success" id="ci-success" role="status">
+                  <div class="ci-success-icon">&#10022;</div>
+                  <p class="ci-success-title">Sent with love</p>
+                  <p class="ci-success-msg">Your note has joined the constellation. We&rsquo;ll write back soon.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-cover" id="card-cover" role="button" tabindex="0" aria-expanded="false" aria-label="Open the card">
+            <div class="card-face card-face--front">
+              <figure class="card-rose-fig">
+                <img class="card-rose-img" src="../../rose-flower.jpg" alt="" />
+              </figure>
+              <h2 class="card-greeting">A Note to Mulvium</h2>
+              <p class="card-open-hint">Click to open</p>
+            </div>
+            <div class="card-face card-face--back">
+              <button class="card-close-btn" id="card-close-btn" type="button" aria-label="Close card">&times;</button>
+              <p class="ci-salutation">Dear Mulvium,</p>
+              <div class="ci-field ci-field--fill">
+                <label class="ci-label" for="ci-message">Your message</label>
+                <textarea class="ci-input ci-textarea" id="ci-message" placeholder="Tell us how you find beauty&hellip;"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+
   <footer id="site-footer">
     <div class="footer-copy">
       <p>&copy; <span id="year"></span> Mulvium Foundation. All rights reserved.</p>
     </div>
   </footer>
+
+  <script type="importmap">
+    { "imports": { "three": "https://unpkg.com/three@0.161.0/build/three.module.js" } }
+  </script>
+  <script type="module" src="../../js/contact-mesh.js"></script>
   <script src="../../js/cursor.js" defer></script>
   <script src="../../js/nav.js"></script>
   <script src="../../js/page-transition.js"></script>
+  <script src="../../js/card.js" defer></script>
   <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
