@@ -148,10 +148,11 @@ button {
 
 .nav-trigger {
   font-size: 13px;
+  font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: none;
   text-decoration: none;
-  color: var(--ink-soft);
+  color: var(--ink);
   padding: 12px 10px;
   min-height: 44px;
   position: relative;
@@ -159,7 +160,7 @@ button {
   touch-action: manipulation;
   cursor: pointer;
 }
-a.nav-trigger:visited { text-decoration: none; color: var(--ink-soft); }
+a.nav-trigger:visited { text-decoration: none; color: var(--ink); }
 
 /* ---------- Mobile hamburger button (hidden on desktop) ---------- */
 .nav-burger {
@@ -189,14 +190,14 @@ a.nav-trigger:visited { text-decoration: none; color: var(--ink-soft); }
   position: absolute;
   left: 4px; right: 4px; bottom: 4px;
   height: 1px;
-  background: var(--purple);
+  background: var(--clay);
   transform: scaleX(0);
   transform-origin: left center;
   transition: transform 0.3s var(--ease);
 }
 
 .nav-trigger:hover,
-.nav-item.open .nav-trigger { color: var(--ink); }
+.nav-item.open .nav-trigger { color: var(--clay); }
 
 .nav-trigger:hover::after,
 .nav-item.open .nav-trigger::after { transform: scaleX(1); }
@@ -232,14 +233,14 @@ a.nav-trigger:visited { text-decoration: none; color: var(--ink-soft); }
   padding: 0 26px;
   min-height: 48px;
   font-size: 14px;
-  letter-spacing: 0.04em;
+  font-weight: 400;
+  letter-spacing: 0.03em;
   text-decoration: none;
-  color: var(--ink-soft);
-  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+  transition: color 0.22s var(--ease);
   touch-action: manipulation;
 }
 
-.dropdown a:hover { color: var(--clay-deep); background: var(--paper-warm); }
+.dropdown a:hover { color: var(--clay); }
 
 /* ---------- Stage / canvas ---------- */
 main#stage { position: relative; width: 100%; }
@@ -1495,16 +1496,17 @@ html.ls-instant-cover #loading-screen {
 body.night-mode #nav-cap { background: #060412; }
 
 /* ---------- Night-mode navbar (background driven by JS; text colours via CSS class) ---------- */
-body.night-mode .nav-trigger { color: rgba(255, 255, 255, 0.82); }
+body.night-mode .nav-trigger { color: rgba(255, 255, 255, 0.88); }
 body.night-mode .nav-trigger:hover,
 body.night-mode .nav-item.open .nav-trigger { color: #ffffff; }
+body.night-mode .nav-trigger::after { background: rgba(255, 255, 255, 0.55); }
 body.night-mode .nav-brand a { color: rgba(255, 255, 255, 0.92); }
 body.night-mode .dropdown {
   background: rgba(8, 6, 20, 0.97);
   border-color: rgba(255, 255, 255, 0.10);
 }
-body.night-mode .dropdown a { color: rgba(255, 255, 255, 0.78); }
-body.night-mode .dropdown a:hover { color: #ffffff; background: rgba(255, 255, 255, 0.06); }
+body.night-mode .dropdown a { color: rgba(255, 255, 255, 0.55); }
+body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
 
 /* ---------- Letter-spacing reductions for formerly-uppercase elements ---------- */
 .nav-trigger        { letter-spacing: 0.03em; }
@@ -1522,7 +1524,7 @@ body.night-mode .dropdown a:hover { color: #ffffff; background: rgba(255, 255, 2
 
 /* ---------- Accessibility font-size bumps ---------- */
 .nav-trigger          { font-size: 17px; }
-.dropdown a           { font-size: 18px; }
+.dropdown a           { font-size: 15px; }
 .planet-label         { font-size: 16px; }
 .cosmos-hint          { font-size: 15px; }
 .mission-kicker       { font-size: 17px; }
@@ -1585,36 +1587,56 @@ body.night-mode .dropdown a:hover { color: #ffffff; background: rgba(255, 255, 2
     text-align: left;
     padding: 13px 20px;
     font-size: 15px;
-    letter-spacing: 0.02em;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    color: var(--ink);
     min-height: 48px;
   }
+  body.night-mode .nav-trigger { color: rgba(255, 255, 255, 0.88); }
+  body.night-mode .nav-trigger:hover,
+  body.night-mode .nav-item.open .nav-trigger { color: #ffffff; }
   /* Suppress the underline indicator in the menu panel */
   .nav-trigger::after { display: none; }
 
-  /* Dropdowns expand inline within the panel */
+  /* Dropdowns expand inline within the panel — animated via max-height */
   .dropdown {
     position: static !important;
-    opacity: 1 !important;
     transform: none !important;
-    pointer-events: auto !important;
-    transition: none;
     box-shadow: none;
     border: none;
     border-radius: 0;
     min-width: 0;
-    background: transparent;
-    padding: 0 0 4px;
-    display: none;
+    background: transparent !important;
+    padding: 0;
+    display: flex !important;
+    flex-direction: column;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: max-height 0.30s ease, opacity 0.22s ease;
   }
-  body.night-mode .dropdown { background: transparent; }
-  .nav-item.open .dropdown { display: block; }
+  .nav-item.open .dropdown {
+    max-height: 320px;
+    opacity: 1;
+    pointer-events: auto;
+  }
 
   .dropdown a {
     font-size: 14px;
-    padding: 0 20px 0 36px;
+    font-weight: 400;
+    color: var(--ink-soft);
+    padding: 10px 20px 10px 32px;
     min-height: 40px;
-    background: transparent;
+    border-left: 2px solid rgba(0, 0, 0, 0.08);
+    margin-left: 20px;
   }
+  body.night-mode .dropdown a {
+    color: rgba(255, 255, 255, 0.55);
+    border-left-color: rgba(255, 255, 255, 0.12);
+  }
+  .dropdown a:hover { color: var(--clay); }
+  body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
 
   /* Pull back the big desktop bumps to sensible mobile sizes */
   .nav-trigger        { font-size: 15px; }
