@@ -61,16 +61,6 @@ const ORBITS = [
 ];
 
 const canvas            = document.getElementById("cosmos");
-const label             = document.getElementById("planet-label");
-const plName            = document.getElementById("pl-name");
-const plStatus          = document.getElementById("pl-status");
-
-// Sphere annotation — name plus a quiet status line ("Explore", "Coming Soon")
-function setLabel(name, status) {
-  if (plName.textContent !== name) plName.textContent = name;
-  const s = status || "";
-  if (plStatus.textContent !== s) plStatus.textContent = s;
-}
 const navbar            = document.getElementById("navbar");
 const navCap            = document.getElementById("nav-cap");
 const brandLink         = document.getElementById("brand-link");
@@ -225,6 +215,76 @@ function spawnMeteor() {
   m.mesh.position.set(px - m.dirX * back, 0.6, pz - m.dirZ * back);
   m.mesh.rotation.set(-Math.PI / 2, 0, phi);
   m.mesh.visible = true;
+}
+
+// ── Sphere annotation sprite — lives IN the 3D scene with depth testing, so
+// rings and other spheres in front of it genuinely occlude the label, exactly
+// like any other object. Drawn to a canvas texture: name in small caps, an
+// italic status line, and a hairline leader with a dot pointing at the sphere.
+const labelTexCache = new Map();
+// flip=true draws the leader on top (label hangs BELOW the sphere — used for
+// the star so the label clears the hero halo at the top of the screen)
+function labelTexture(name, status, night, flip) {
+  const key = name + "|" + (status || "") + "|" + (night ? 1 : 0) + "|" + (flip ? 1 : 0);
+  if (labelTexCache.has(key)) return labelTexCache.get(key);
+  const c = document.createElement("canvas");
+  c.width = 1024; c.height = 512;
+  const g = c.getContext("2d");
+  const ink  = night ? "rgba(255,255,255,0.95)" : "#1b1613";
+  const soft = night ? "rgba(255,255,255,0.65)" : "rgba(59,51,47,0.85)";
+  g.textAlign = "center";
+
+  function drawText(nameY, statusY) {
+    g.fillStyle = ink;
+    g.font = "74px 'Cormorant SC', serif";
+    if ("letterSpacing" in g) g.letterSpacing = "10px";
+    g.fillText(name, 512, nameY);
+    if (status) {
+      g.font = "italic 50px 'Cormorant Garamond', serif";
+      if ("letterSpacing" in g) g.letterSpacing = "3px";
+      g.fillStyle = soft;
+      g.fillText(status, 512, statusY);
+    }
+  }
+  function drawLeader(dotY, lineFrom, lineTo) {
+    g.strokeStyle = ink;
+    g.globalAlpha = 0.5;
+    g.lineWidth = 3;
+    g.beginPath(); g.moveTo(512, lineFrom); g.lineTo(512, lineTo); g.stroke();
+    g.fillStyle = ink;
+    g.globalAlpha = 0.6;
+    g.beginPath(); g.arc(512, dotY, 8, 0, Math.PI * 2); g.fill();
+    g.globalAlpha = 1;
+  }
+
+  if (flip) {
+    drawLeader(118, 140, 226);
+    drawText(330, status ? 404 : 0);
+  } else {
+    drawText(170, 246);
+    const y = status ? 282 : 246;
+    drawLeader(y + 112, y + 14, y + 92);
+  }
+
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  labelTexCache.set(key, tex);
+  return tex;
+}
+
+const labelSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+  transparent: true, opacity: 0, depthTest: true, depthWrite: false,
+}));
+labelSprite.scale.set(3.1, 1.55, 1);
+labelSprite.visible = false;
+scene.add(labelSprite);
+let labelVisTarget = 0;
+let labelFlip = false;
+
+function setLabel(name, status, flip) {
+  labelFlip = !!flip;
+  labelSprite.material.map = labelTexture(name, status, body.classList.contains("night-mode"), labelFlip);
+  labelSprite.material.needsUpdate = true;
 }
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
@@ -754,7 +814,7 @@ function showLoadingScreen(onReady, duration, startOpaque) {
 
 function goToIFO() {
   if (state.mode !== "3d") return;
-  label.classList.remove("visible");
+  labelVisTarget = 0;
   state.labelPlanet = null;
   state.labelStar = false;
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
@@ -843,7 +903,7 @@ function goTo2D() {
   navbar.setAttribute("aria-hidden", "false");
   body.classList.remove("cosmos-only");
   body.classList.add("mode-2d");
-  label.classList.remove("visible");
+  labelVisTarget = 0;
   state.labelPlanet = null;
   state.labelStar = false;
 }
@@ -882,7 +942,7 @@ function jumpToIFO() {
   body.classList.remove("cosmos-only", "mode-2d", "expansion-active", "night-mode");
   body.classList.add("mode-ifo");
   ifoModeEl.setAttribute("aria-hidden", "false");
-  label.classList.remove("visible");
+  labelVisTarget = 0;
   state.labelPlanet = null;
   state.labelStar   = false;
 
@@ -926,7 +986,7 @@ function snapTo3D() {
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
   navbar.classList.remove("visible");
   navbar.setAttribute("aria-hidden", "true");
-  label.classList.remove("visible");
+  labelVisTarget = 0;
   state.labelPlanet  = null;
   state.labelStar    = false;
   state.expansionP1  = 0;
@@ -1085,11 +1145,6 @@ const tmpVec   = new THREE.Vector3();
 const worldPos = new THREE.Vector3();
 const baseCamPos = new THREE.Vector3();
 
-function projectToCanvas(pos) {
-  tmpVec.copy(pos).project(camera);
-  return { x: (tmpVec.x * 0.5 + 0.5) * cachedCanvasRect.width, y: (-tmpVec.y * 0.5 + 0.5) * cachedCanvasRect.height };
-}
-
 function updateHover() {
   const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
   const in2DMode  = state.mode === "2d";
@@ -1116,50 +1171,27 @@ function updateHover() {
     }
     canvas.style.cursor = (state.hoverPlanet || state.hoverStar) ? "pointer" : "default";
 
-    if (inCoFMode) {
+    if (inCoFMode || in2DMode) {
       if (state.hoverPlanet) {
         state.labelPlanet = state.hoverPlanet;
         state.labelStar   = false;
-        state.hoverPlanet.planet.getWorldPosition(worldPos);
-        const p = projectToCanvas(worldPos);
         setLabel(state.hoverPlanet.def.name, "Explore");
-        label.style.left = p.x + "px";
-        label.style.top  = p.y + "px";
-        label.classList.add("visible");
+        labelVisTarget = 1;
       } else {
-        label.classList.remove("visible");
-      }
-    } else if (in2DMode) {
-      if (state.hoverPlanet) {
-        state.labelPlanet = state.hoverPlanet;
-        state.labelStar   = false;
-        state.hoverPlanet.planet.getWorldPosition(worldPos);
-        const p = projectToCanvas(worldPos);
-        setLabel(state.hoverPlanet.def.name, "Explore");
-        label.style.left = p.x + "px";
-        label.style.top  = p.y + "px";
-        label.classList.add("visible");
-      } else {
-        label.classList.remove("visible");
+        labelVisTarget = 0;
       }
     } else if (hitPlanet) {
       state.labelPlanet = hitPlanet;
       state.labelStar   = false;
+      // High planets get their label below them, clear of the hero halo
       hitPlanet.planet.getWorldPosition(worldPos);
-      const p = projectToCanvas(worldPos);
-      setLabel(hitPlanet.def.name, hitPlanet.def.comingSoon ? "Coming Soon" : "Explore");
-      label.style.left = p.x + "px";
-      label.style.top  = p.y + "px";
-      label.classList.add("visible");
+      setLabel(hitPlanet.def.name, hitPlanet.def.comingSoon ? "Coming Soon" : "Explore", worldPos.y > 0.9);
+      labelVisTarget = 1;
     } else if (state.hoverStar) {
       state.labelPlanet = null;
       state.labelStar   = true;
-      star.getWorldPosition(worldPos);
-      const p = projectToCanvas(worldPos);
-      setLabel("Enter Mulvium");
-      label.style.left = p.x + "px";
-      label.style.top  = p.y + "px";
-      label.classList.add("visible");
+      setLabel("Enter Mulvium", "", true);
+      labelVisTarget = 1;
     }
   } else {
     state.hoverStar   = false;
@@ -1169,20 +1201,28 @@ function updateHover() {
   }
 }
 
-function trackLabel() {
+// Tracks the annotation sprite to its sphere and eases its opacity. Runs in
+// animate(); the sprite's depthTest handles occlusion by rings and spheres.
+function trackLabel(dt) {
   const inCoFMode = state.mode === "ifo" || state.mode === "ifo-transitioning";
-  const in2DMode  = state.mode === "2d";
-  if (state.mode !== "3d" && !inCoFMode && !in2DMode) return;
+  let target = labelVisTarget;
+  if (inCoFMode || lsActive) target = 0;
+  const cur = labelSprite.material.opacity;
+  const nxt = cur + (target - cur) * (1 - Math.pow(0.0005, dt));
+  labelSprite.material.opacity = nxt;
+  labelSprite.visible = nxt > 0.02;
+  if (!labelSprite.visible) return;
+  let anchorObj = null, r = 0.42;
   if (state.labelPlanet) {
-    state.labelPlanet.planet.getWorldPosition(worldPos);
-    const p = projectToCanvas(worldPos);
-    label.style.left = p.x + "px";
-    label.style.top  = p.y + "px";
+    anchorObj = state.labelPlanet.planet;
+    r = state.labelPlanet.def.planetSize;
   } else if (state.labelStar) {
-    star.getWorldPosition(worldPos);
-    const p = projectToCanvas(worldPos);
-    label.style.left = p.x + "px";
-    label.style.top  = p.y + "px";
+    anchorObj = star;
+    r = STAR_RADIUS * star.scale.x;
+  }
+  if (anchorObj) {
+    anchorObj.getWorldPosition(worldPos);
+    labelSprite.position.set(worldPos.x, worldPos.y + (labelFlip ? -(r + 1.0) : r + 1.0), worldPos.z);
   }
 }
 
@@ -1451,7 +1491,7 @@ function animate() {
   }
 
   updateHover();
-  trackLabel();
+  trackLabel(dt);
   resize();
 
   // Skip GPU render while the loading screen fully covers the canvas (hole not open yet).
@@ -1569,6 +1609,7 @@ function resetGooey() {
 // mid-transition by slow scrolling, so there is nothing to glitch.
 const prFrameP = PR_SIZES.map(() => 0);          // animated open progress per frame
 const PR_SNAP  = 0.9;                            // seconds for a frame to snap open/closed
+let prSizedW = 0, prSizedH = 0;                  // viewport the frames were last sized for
 const prGoo    = { from: PR_WORDS[0], to: PR_WORDS[0], f: 1 };
 const PR_GOO_SNAP = 0.85;                        // seconds for a label morph
 
@@ -1586,6 +1627,8 @@ function updatePatronage(dt) {
   const P = clamp01(-rect.top / scrollable);
   prP = P;
   const vw = window.innerWidth, vh = window.innerHeight;
+  const resized = vw !== prSizedW || vh !== prSizedH;
+  prSizedW = vw; prSizedH = vh;
 
   let wordIdx = -1;
   for (let i = 0; i < prBoxEls.length; i++) {
@@ -1593,16 +1636,22 @@ function updatePatronage(dt) {
     if (open) wordIdx = i;
     // Snap toward the target on a fixed clock (reduced motion: instant)
     const dir = open ? 1 : -1;
-    prFrameP[i] = motionOK ? clamp01(prFrameP[i] + dir * dt / PR_SNAP) : (open ? 1 : 0);
-    const t = prFrameP[i];
-    // Slit character: width snaps first, height reveals with an expo tail
-    const wP = prEaseRise(Math.min(1, t / 0.15));
-    const hP = prEaseSlit(Math.max(0, Math.min(1, (t - 0.08) / 0.92)));
-    // Slow scroll-driven dolly-in after opening — continuous and glitch-free
-    const grow = 1 + 0.05 * clamp01((P - PR_STARTS[i]) / Math.max(1e-4, 1 - PR_STARTS[i]));
+    const t = motionOK ? clamp01(prFrameP[i] + dir * dt / PR_SNAP) : (open ? 1 : 0);
+    if (!resized && t === prFrameP[i]) continue; // settled — no style writes, no layout work
+    prFrameP[i] = t;
     const el = prBoxEls[i];
-    el.style.width  = (vw * PR_SIZES[i].w * wP * grow) + "px";
-    el.style.height = (t > 0 ? Math.max(2, vh * PR_SIZES[i].h * hP * grow) : 0) + "px";
+    if (i === 0) {
+      // First frame: no slit/dot reveal — it simply fades in at full size
+      el.style.width   = (vw * PR_SIZES[i].w) + "px";
+      el.style.height  = (vh * PR_SIZES[i].h) + "px";
+      el.style.opacity = String(easeInOut(t));
+    } else {
+      // Slit character: width snaps first, height reveals with an expo tail
+      const wP = prEaseRise(Math.min(1, t / 0.15));
+      const hP = prEaseSlit(Math.max(0, Math.min(1, (t - 0.08) / 0.92)));
+      el.style.width  = (vw * PR_SIZES[i].w * wP) + "px";
+      el.style.height = (t > 0 ? Math.max(2, vh * PR_SIZES[i].h * hP) : 0) + "px";
+    }
     el.classList.toggle("pr-active", t > 0.01);
   }
 
@@ -1636,6 +1685,7 @@ function resetPatronage() {
   prBoxEls.forEach((el, i) => {
     el.style.width  = "0";
     el.style.height = "0";
+    el.style.opacity = "";
     el.classList.remove("pr-active");
     prFrameP[i] = 0;
   });
@@ -1657,15 +1707,10 @@ function resetPatronage() {
     ".ifo-prose-header",
     ".ifo-prose-body > p",
     ".ifo-prose-footnote",
-    "#site-footer .footer-brand",
-    "#site-footer .footer-col",
     "#site-footer .footer-copy",
   ];
   const rvEls = document.querySelectorAll(rvSelectors.join(", "));
   rvEls.forEach((el) => el.classList.add("rv"));
-  document.querySelectorAll("#site-footer .footer-col").forEach((el, i) => {
-    el.style.setProperty("--rv-delay", `${0.12 + i * 0.12}s`);
-  });
   const rvObserver = new IntersectionObserver((entries) => {
     entries.forEach((en) => {
       // In cosmos mode the page content sits behind the fixed canvas at the

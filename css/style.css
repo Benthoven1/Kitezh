@@ -361,15 +361,6 @@ body.night-mode #site-footer {
   z-index: 1;
 }
 
-body.night-mode .footer-wordmark {
-  color: rgba(200, 180, 255, 0.95);
-}
-
-body.night-mode .footer-links a,
-body.night-mode .footer-col-title {
-  color: rgba(225, 215, 255, 0.95);
-}
-
 body.night-mode .footer-copy p {
   color: rgba(205, 190, 255, 0.82);
 }
@@ -491,32 +482,18 @@ body.night-mode #patronage-section {
 .pr-f3 { z-index: 3; }
 .pr-f4 { z-index: 4; }
 
-/* Oversized inner image layer — drifts slowly (Ken Burns) while the JS-sized
-   frame stays fixed, giving each window a living, cinematic depth. */
+/* Inner image layer — static (no drift) for stable, lag-free rendering */
 .pr-img {
   position: absolute;
-  inset: -5%;
+  inset: 0;
   background-size: cover;
   background-position: center;
-  will-change: transform;
-  transform: scale(1.04);
 }
 
 .pr-f1 .pr-img { background-image: url('../Musical.png'); }
 .pr-f2 .pr-img { background-image: url('../Pictorial.png'); }
 .pr-f3 .pr-img { background-image: url('../image (13).png'); }
 .pr-f4 .pr-img { background-image: url('../Horticulture.png'); }
-
-.pr-box.pr-active .pr-img { animation: prDrift 22s ease-in-out infinite alternate; }
-.pr-box.pr-active.pr-f1 .pr-img { animation-duration: 26s; }
-.pr-box.pr-active.pr-f2 .pr-img { animation-duration: 21s; animation-direction: alternate-reverse; }
-.pr-box.pr-active.pr-f3 .pr-img { animation-duration: 24s; }
-.pr-box.pr-active.pr-f4 .pr-img { animation-duration: 19s; animation-direction: alternate-reverse; }
-
-@keyframes prDrift {
-  from { transform: scale(1.04) translate(-0.7%, 0.5%); }
-  to   { transform: scale(1.13) translate(0.7%, -0.5%); }
-}
 
 /* Soft scrim — keeps the label legible against any photograph */
 .pr-frame::after {
@@ -544,84 +521,6 @@ canvas#cosmos {
 /* In cosmos mode no scrolling is wanted — disable pan so iOS doesn't
    hide the address bar and jump the viewport height */
 body.cosmos-only canvas#cosmos { touch-action: none; }
-
-/* Sphere annotation — museum-diagram style: name, quiet status line, and a
-   hairline leader that draws down toward the sphere */
-.planet-label {
-  position: absolute;
-  transform: translate(-50%, calc(-100% - 8px));
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.3s var(--ease);
-  white-space: nowrap;
-  will-change: opacity;
-}
-
-.planet-label.visible { opacity: 1; }
-
-.pl-name {
-  font-family: "Cormorant SC", serif;
-  font-size: 17px;
-  letter-spacing: 0.14em;
-  color: var(--ink);
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.45s var(--ease) 0.05s, transform 0.45s var(--ease) 0.05s;
-}
-
-.pl-status {
-  font-family: "Cormorant Garamond", serif;
-  font-style: italic;
-  font-size: 13px;
-  letter-spacing: 0.06em;
-  color: var(--ink-soft);
-  margin-top: 1px;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity 0.45s var(--ease) 0.13s, transform 0.45s var(--ease) 0.13s;
-}
-
-.pl-status:empty { display: none; }
-
-.pl-line {
-  width: 1px;
-  height: 22px;
-  margin-top: 8px;
-  background: linear-gradient(to bottom, var(--ink), transparent);
-  opacity: 0.5;
-  transform: scaleY(0);
-  transform-origin: top;
-  transition: transform 0.45s var(--ease);
-}
-
-.pl-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--ink);
-  opacity: 0.55;
-  margin-top: 2px;
-  transform: scale(0);
-  transition: transform 0.35s var(--ease) 0.16s;
-}
-
-.planet-label.visible .pl-name,
-.planet-label.visible .pl-status { opacity: 1; transform: translateY(0); }
-.planet-label.visible .pl-line   { transform: scaleY(1); }
-.planet-label.visible .pl-dot    { transform: scale(1); }
-
-body.night-mode .pl-name   { color: rgba(255, 255, 255, 0.95); }
-body.night-mode .pl-status { color: rgba(255, 255, 255, 0.65); }
-body.night-mode .pl-line   { background: linear-gradient(to bottom, #ffffff, transparent); }
-body.night-mode .pl-dot    { background: #ffffff; }
-
-body.mode-ifo .planet-label,
-body.mode-ifo.ifo-transitioning .planet-label {
-  opacity: 0 !important;
-}
 
 .cosmos-hint {
   position: absolute;
@@ -1164,64 +1063,9 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   border-top: 1px solid var(--hairline);
 }
 
-.footer-inner {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: clamp(32px, 6vw, 80px);
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 64px clamp(24px, 5vw, 64px) 48px;
-}
-
-.footer-brand { flex-shrink: 0; }
-
-.footer-wordmark {
-  display: inline-flex;
-  align-items: baseline;
-  font-size: 32px;
-  letter-spacing: 0;
-  color: var(--ink);
-}
-
-.footer-nav {
-  display: flex;
-  gap: clamp(32px, 5vw, 80px);
-}
-
-.footer-col { min-width: 180px; }
-
-.footer-col-title {
-  font-size: 11px;
-  letter-spacing: 0.3em;
-  text-transform: none;
-  color: var(--clay-deep);
-  margin: 0 0 20px;
-}
-
-.footer-links {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.footer-links a {
-  font-size: 14px;
-  letter-spacing: 0.04em;
-  color: var(--ink-soft);
-  text-decoration: none;
-  transition: color 0.2s var(--ease);
-}
-
-.footer-links a:hover { color: var(--clay-deep); }
-
 .footer-copy {
   text-align: center;
-  padding: 20px clamp(24px, 5vw, 64px) 32px;
-  border-top: 1px solid var(--hairline);
+  padding: 28px clamp(24px, 5vw, 64px) 32px;
   font-size: 12px;
   letter-spacing: 0.14em;
   text-transform: none;
@@ -1317,8 +1161,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .nav-links { gap: 14px; }
   .nav-trigger { font-size: 11px; letter-spacing: 0.10em; }
   .dropdown { min-width: 220px; }
-  .footer-inner { flex-direction: column; }
-  .footer-nav { flex-wrap: wrap; gap: 32px; }
   #letter-section { padding: 72px clamp(20px, 7vw, 80px); }
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
 }
@@ -1357,9 +1199,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .nav-brand a { font-size: 21px; }
   .nav-trigger { font-size: 10px; letter-spacing: 0.08em; padding: 10px 8px; }
   .dropdown { min-width: 200px; }
-  .footer-nav { flex-direction: column; gap: 28px; }
-  .footer-col { min-width: 0; }
-  .footer-inner { padding-top: 40px; padding-bottom: 28px; }
 
   #letter-section { padding: 56px clamp(18px, 5.5vw, 36px); }
   .letter-header { margin-bottom: 32px; }
@@ -1578,7 +1417,6 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
 /* ---------- Letter-spacing reductions for formerly-uppercase elements ---------- */
 .nav-trigger        { letter-spacing: 0.03em; }
 .cosmos-hint        { letter-spacing: 0.04em; }
-.footer-col-title   { letter-spacing: 0.06em; }
 .footer-copy        { letter-spacing: 0.03em; }
 .eyebrow            { letter-spacing: 0.06em; }
 .page-shell .back   { letter-spacing: 0.04em; }
@@ -1593,8 +1431,6 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
 .cosmos-hint          { font-size: 15px; }
 .letter-body p        { font-size: 21px; }
 .letter-quote p       { font-size: 19px; }
-.footer-links a       { font-size: 16px; }
-.footer-col-title     { font-size: 15px; }
 .footer-copy          { font-size: 15px; }
 .eyebrow              { font-size: 14px; }
 .page-shell .back     { font-size: 14px; }
@@ -1705,8 +1541,6 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
   .nav-trigger        { font-size: 15px; }
   .letter-body p      { font-size: 17px; }
   .letter-quote p     { font-size: 15px; }
-  .footer-links a     { font-size: 14px; }
-  .footer-col-title   { font-size: 13px; }
   .footer-copy        { font-size: 13px; }
   .cosmos-hint        { font-size: 12px; }
 }
@@ -1984,6 +1818,5 @@ body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffff
 @media (prefers-reduced-motion: reduce) {
   .rv { opacity: 1; transform: none; transition: none; }
   .letter-sig-img { clip-path: none; transition: none; }
-  .pr-box .pr-img { animation: none !important; transform: none; }
   .page-shell > * { animation: none; }
 }
