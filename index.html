@@ -68,27 +68,43 @@
       <h2 class="mission-heading"><span class="mc">R</span><span class="mc">e</span><span class="mc">i</span><span class="mc">m</span><span class="mc">a</span><span class="mc">g</span><span class="mc">i</span><span class="mc">n</span><span class="mc">e</span><span class="mc">&nbsp;</span><span class="mc">P</span><span class="mc">a</span><span class="mc">t</span><span class="mc">r</span><span class="mc">o</span><span class="mc">n</span><span class="mc">a</span><span class="mc">g</span><span class="mc">e</span><span class="mc">&nbsp;</span><span class="mc">A</span><span class="mc">c</span><span class="mc">r</span><span class="mc">o</span><span class="mc">s</span><span class="mc">s</span><span class="mc">&nbsp;</span><span class="mc">M</span><span class="mc">u</span><span class="mc">s</span><span class="mc">i</span><span class="mc">c</span><span class="mc">,</span><span class="mc">&nbsp;</span><span class="mc">A</span><span class="mc">r</span><span class="mc">t</span><span class="mc">,</span><span class="mc">&nbsp;</span><span class="mc">A</span><span class="mc">r</span><span class="mc">c</span><span class="mc">h</span><span class="mc">i</span><span class="mc">t</span><span class="mc">e</span><span class="mc">c</span><span class="mc">t</span><span class="mc">u</span><span class="mc">r</span><span class="mc">e</span><span class="mc">,</span><span class="mc">&nbsp;</span><span class="mc">a</span><span class="mc">n</span><span class="mc">d</span><span class="mc">&nbsp;</span><span class="mc">H</span><span class="mc">o</span><span class="mc">r</span><span class="mc">t</span><span class="mc">i</span><span class="mc">c</span><span class="mc">u</span><span class="mc">l</span><span class="mc">t</span><span class="mc">u</span><span class="mc">r</span><span class="mc">e</span></h2>
     </section>
 
-    <!-- Patronage scroll reveal — sticky concentric frames in night mode -->
+    <!-- Patronage scroll reveal — sticky concentric frames in night mode.
+         One gooey-morph text layer sits above the frames: as each frame
+         opens, the label dissolves and reforms into the next word via an
+         SVG alpha-threshold filter (gooey text morphing). -->
     <section id="patronage-section">
+      <p class="hidden-text">Our mission: reimagine arts patronage across music, art, architecture, and horticulture.</p>
       <div class="pr-sticky">
-        <div class="pr-outer pr-box" id="pr-outer">
-          <p class="pr-outer-text"><span>Our Mission:</span><br><span>Reimagine Patronage Across</span></p>
-        </div>
+        <svg class="pr-gooey-defs" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="threshold">
+              <feColorMatrix
+                in="SourceGraphic"
+                type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0 0 0 255 -140" />
+            </filter>
+          </defs>
+        </svg>
+        <div class="pr-outer pr-box" id="pr-outer"></div>
         <div class="pr-frame pr-f1 pr-box" id="pr-f1">
           <div class="pr-img" aria-hidden="true"></div>
-          <p class="pr-label">Music</p>
         </div>
         <div class="pr-frame pr-f2 pr-box" id="pr-f2">
           <div class="pr-img" aria-hidden="true"></div>
-          <p class="pr-label">Art</p>
         </div>
         <div class="pr-frame pr-f3 pr-box" id="pr-f3">
           <div class="pr-img" aria-hidden="true"></div>
-          <p class="pr-label">Architecture</p>
         </div>
         <div class="pr-frame pr-f4 pr-box" id="pr-f4">
           <div class="pr-img" aria-hidden="true"></div>
-          <p class="pr-label">Horticulture</p>
+        </div>
+        <div class="pr-gooey-shade" id="pr-gooey-shade" aria-hidden="true"></div>
+        <div class="pr-gooey" id="pr-gooey" aria-hidden="true">
+          <span class="pr-gooey-text" id="pr-gooey-1"></span>
+          <span class="pr-gooey-text" id="pr-gooey-2"></span>
         </div>
       </div>
     </section>

@@ -457,25 +457,65 @@ body.night-mode #patronage-section {
   box-sizing: border-box;
 }
 
-.pr-outer-text {
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(26px, 3.8vw, 56px);
-  font-weight: 400;
-  font-style: normal;
-  letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.85);
-  text-align: center;
-  margin: 0;
-  padding: 0 40px;
-  line-height: 1.35;
-  opacity: 0;
-  transform: translateY(14px);
-  transition: opacity 1s var(--ease) 0.25s, transform 1s var(--ease) 0.25s;
+/* ---------- Gooey text morphing — labels dissolve and reform between frames.
+   The SVG #threshold feColorMatrix turns the blurred crossfade of the two
+   overlapping spans into a liquid merge (alpha values are pushed to extremes,
+   so the blur halos fuse before the next word sharpens). ---------- */
+.pr-gooey-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
 }
 
-.pr-box.pr-active .pr-outer-text {
-  opacity: 1;
-  transform: translateY(0);
+/* Soft shade behind the label — sits outside the threshold filter so it can
+   be semi-transparent (anything inside the filter gets alpha-thresholded).
+   Keeps white words legible over bright photographs like the Eroica score. */
+.pr-gooey-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(ellipse 46% 24% at 50% calc(50% + (var(--nav-h) + 12px) / 2),
+    rgba(0, 0, 0, 0.38),
+    rgba(0, 0, 0, 0) 72%);
+  opacity: 0;
+  transition: opacity 0.9s var(--ease);
+}
+
+.pr-gooey-shade.on { opacity: 1; }
+
+.pr-gooey {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  filter: url(#threshold);
+}
+
+.pr-gooey-text {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + (var(--nav-h) + 12px) / 2); /* matches .pr-box frame centre */
+  transform: translate(-50%, -50%);
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
+  font-size: clamp(44px, 7.5vw, 120px);
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.96);
+  margin: 0;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  will-change: filter, opacity;
+  user-select: none;
+}
+
+/* Long phrases ("Reimagine Arts Patronage") render at editorial scale */
+.pr-gooey-text.pr-gooey-long {
+  font-weight: 400;
+  font-size: clamp(24px, 3.6vw, 56px);
+  letter-spacing: 0.06em;
 }
 
 /* Image frames — concentric, each smaller than the last */
@@ -525,36 +565,6 @@ body.night-mode #patronage-section {
   background: radial-gradient(ellipse 110% 110% at 50% 50%,
     rgba(0, 0, 0, 0) 42%,
     rgba(0, 0, 0, 0.30) 100%);
-}
-
-.pr-label {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 2;
-  transform: translate(-50%, -50%);
-  font-family: "Cormorant Garamond", serif;
-  font-size: clamp(44px, 7.5vw, 120px);
-  font-weight: 600;
-  font-style: normal;
-  letter-spacing: 0.30em;
-  color: rgba(255, 255, 255, 0.92);
-  margin: 0;
-  text-align: center;
-  white-space: nowrap;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
-  opacity: 0;
-  filter: blur(8px);
-  transition:
-    opacity 1.2s var(--ease) 0.3s,
-    letter-spacing 1.6s var(--ease) 0.3s,
-    filter 1.2s var(--ease) 0.3s;
-}
-
-.pr-box.pr-active .pr-label {
-  opacity: 1;
-  letter-spacing: 0.04em;
-  filter: blur(0);
 }
 
 .mc {
@@ -1932,6 +1942,5 @@ body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffff
   .ct-word span { opacity: 1 !important; animation: none !important; }
   .letter-sig-img { clip-path: none; transition: none; }
   .pr-box .pr-img { animation: none !important; transform: none; }
-  .pr-label, .pr-outer-text { transition: none; filter: none; }
   .page-shell > * { animation: none; }
 }

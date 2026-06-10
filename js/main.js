@@ -1511,6 +1511,68 @@ function resetPrFrame(idx) {
   prBoxEls[idx].style.height = "0";
 }
 
+// ── Gooey text morphing — ported from the GooeyText React component.
+// Two overlapping spans crossfade under an SVG alpha-threshold filter
+// (#threshold in index.html): blur = min(8/fraction − 8, 100) px and
+// opacity = fraction^0.4 on each side, which the threshold matrix turns
+// into a liquid merge. Here the morphs are scroll-triggered: each frame
+// threshold dissolves the previous label into the next.
+const gooeyA = document.getElementById("pr-gooey-1");
+const gooeyB = document.getElementById("pr-gooey-2");
+const gooeyShade = document.getElementById("pr-gooey-shade");
+const PR_WORDS = ["Reimagine Arts Patronage", "Music", "Art", "Architecture", "Horticulture"];
+const GOOEY_MORPH_MS = 900;
+let gooeyCurrent = "";
+let gooeyRaf = null;
+
+function gooeySetText(el, word) {
+  el.textContent = word;
+  el.classList.toggle("pr-gooey-long", word.length > 14);
+}
+
+function gooeyMorphTo(word) {
+  if (word === gooeyCurrent) return;
+  if (gooeyRaf) { cancelAnimationFrame(gooeyRaf); gooeyRaf = null; }
+  gooeySetText(gooeyA, gooeyCurrent);
+  gooeySetText(gooeyB, word);
+  gooeyCurrent = word;
+
+  if (!motionOK) {
+    gooeyA.style.filter = ""; gooeyA.style.opacity = "0%";
+    gooeyB.style.filter = ""; gooeyB.style.opacity = "100%";
+    return;
+  }
+
+  let t0 = null;
+  function tick(ts) {
+    if (t0 === null) t0 = ts;
+    const f = Math.min(1, (ts - t0) / GOOEY_MORPH_MS);
+    const fIn  = Math.max(f, 1e-4);       // incoming word sharpens
+    const fOut = Math.max(1 - f, 1e-4);   // outgoing word dissolves
+    gooeyB.style.filter  = `blur(${Math.min(8 / fIn - 8, 100)}px)`;
+    gooeyB.style.opacity = `${Math.pow(fIn, 0.4) * 100}%`;
+    gooeyA.style.filter  = `blur(${Math.min(8 / fOut - 8, 100)}px)`;
+    gooeyA.style.opacity = `${Math.pow(fOut, 0.4) * 100}%`;
+    if (f < 1) {
+      gooeyRaf = requestAnimationFrame(tick);
+    } else {
+      gooeyA.style.filter = ""; gooeyA.style.opacity = "0%";
+      gooeyB.style.filter = ""; gooeyB.style.opacity = "100%";
+      gooeyRaf = null;
+    }
+  }
+  gooeyRaf = requestAnimationFrame(tick);
+}
+
+function resetGooey() {
+  if (gooeyRaf) { cancelAnimationFrame(gooeyRaf); gooeyRaf = null; }
+  gooeyCurrent = "";
+  gooeyA.textContent = ""; gooeyB.textContent = "";
+  gooeyA.style.filter = ""; gooeyA.style.opacity = "0%";
+  gooeyB.style.filter = ""; gooeyB.style.opacity = "0%";
+  gooeyShade.classList.remove("on");
+}
+
 function updatePatronageScroll() {
   if (!body.classList.contains("expansion-active")) return;
   const rect = patronageSection.getBoundingClientRect();
@@ -1518,8 +1580,10 @@ function updatePatronageScroll() {
   const scrollable = patronageSection.offsetHeight - lsVH;
   if (scrollable <= 0) return;
   const p = Math.max(0, Math.min(1, scrolled / scrollable));
+  let activeIdx = -1;
   prBoxEls.forEach((_, idx) => {
     const active = idx === 0 ? scrolled >= 0 : p >= PR_THRESHOLDS[idx];
+    if (active) activeIdx = idx;
     const st = prState[idx].status;
     if (active) {
       if (st === "idle") startPrAnim(idx);
@@ -1536,10 +1600,16 @@ function updatePatronageScroll() {
       if (st === "done" || st === "animating") closePrAnim(idx);
     }
   });
+  // Morph the gooey label toward the deepest active frame's word;
+  // an empty string dissolves the label away above the section.
+  gooeyMorphTo(activeIdx >= 0 ? PR_WORDS[activeIdx] : "");
+  // Shade only behind single-word labels over photographs (not the phrase)
+  gooeyShade.classList.toggle("on", activeIdx >= 1);
 }
 
 function resetPatronage() {
   prBoxEls.forEach((_, idx) => resetPrFrame(idx));
+  resetGooey();
 }
 
 // Mission section: animate characters in when it first scrolls into view.
