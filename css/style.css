@@ -266,6 +266,9 @@ body.cosmos-only #canvas-wrap {
   width: 100%;
   height: 100vh;
   height: 100svh;
+  /* Above page content — .rv reveal transforms create stacking contexts on
+     letter/footer elements that would otherwise paint over the fixed canvas */
+  z-index: 3;
 }
 
 /* Once the Three.js 3D→2D transition completes, fix the canvas so it
@@ -465,35 +468,93 @@ body.night-mode #patronage-section {
   margin: 0;
   padding: 0 40px;
   line-height: 1.35;
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 1s var(--ease) 0.25s, transform 1s var(--ease) 0.25s;
+}
+
+.pr-box.pr-active .pr-outer-text {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* Image frames — concentric, each smaller than the last */
 .pr-frame {
-  background-size: cover;
-  background-position: center;
   overflow: hidden;
 }
 
-.pr-f1 { background-image: url('../Musical.png');        z-index: 1; }
-.pr-f2 { background-image: url('../Pictorial.png');      z-index: 2; }
-.pr-f3 { background-image: url('../image (13).png');     z-index: 3; }
-.pr-f4 { background-image: url('../Horticulture.png');   z-index: 4; }
+.pr-f1 { z-index: 1; }
+.pr-f2 { z-index: 2; }
+.pr-f3 { z-index: 3; }
+.pr-f4 { z-index: 4; }
+
+/* Oversized inner image layer — drifts slowly (Ken Burns) while the JS-sized
+   frame stays fixed, giving each window a living, cinematic depth. */
+.pr-img {
+  position: absolute;
+  inset: -5%;
+  background-size: cover;
+  background-position: center;
+  will-change: transform;
+  transform: scale(1.04);
+}
+
+.pr-f1 .pr-img { background-image: url('../Musical.png'); }
+.pr-f2 .pr-img { background-image: url('../Pictorial.png'); }
+.pr-f3 .pr-img { background-image: url('../image (13).png'); }
+.pr-f4 .pr-img { background-image: url('../Horticulture.png'); }
+
+.pr-box.pr-active .pr-img { animation: prDrift 22s ease-in-out infinite alternate; }
+.pr-box.pr-active.pr-f1 .pr-img { animation-duration: 26s; }
+.pr-box.pr-active.pr-f2 .pr-img { animation-duration: 21s; animation-direction: alternate-reverse; }
+.pr-box.pr-active.pr-f3 .pr-img { animation-duration: 24s; }
+.pr-box.pr-active.pr-f4 .pr-img { animation-duration: 19s; animation-direction: alternate-reverse; }
+
+@keyframes prDrift {
+  from { transform: scale(1.04) translate(-0.7%, 0.5%); }
+  to   { transform: scale(1.13) translate(0.7%, -0.5%); }
+}
+
+/* Soft scrim — keeps the label legible against any photograph */
+.pr-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 110% 110% at 50% 50%,
+    rgba(0, 0, 0, 0) 42%,
+    rgba(0, 0, 0, 0.30) 100%);
+}
 
 .pr-label {
   position: absolute;
   top: 50%;
   left: 50%;
+  z-index: 2;
   transform: translate(-50%, -50%);
   font-family: "Cormorant Garamond", serif;
   font-size: clamp(44px, 7.5vw, 120px);
   font-weight: 600;
   font-style: normal;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.30em;
   color: rgba(255, 255, 255, 0.92);
   margin: 0;
   text-align: center;
   white-space: nowrap;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 1.2s var(--ease) 0.3s,
+    letter-spacing 1.6s var(--ease) 0.3s,
+    filter 1.2s var(--ease) 0.3s;
+}
+
+.pr-box.pr-active .pr-label {
+  opacity: 1;
+  letter-spacing: 0.04em;
+  filter: blur(0);
 }
 
 .mc {
@@ -574,7 +635,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 /* ---------- Letter Section ---------- */
 #letter-section {
   background: var(--paper);
-  padding: 100px clamp(24px, 8vw, 160px);
+  padding: clamp(110px, 16vh, 190px) clamp(24px, 8vw, 160px) 140px;
 }
 
 .letter-article {
@@ -1653,4 +1714,224 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
   .nav-trigger      { font-size: 14px; }
   .letter-body p    { font-size: 15px; }
   .letter-quote p   { font-size: 14px; }
+}
+
+/* =====================================================================
+   ELEVATION PASS — hero identity, scroll storytelling, custom cursor,
+   cinematic vignette, and sub-page choreography.
+   ===================================================================== */
+
+/* ---------- Cosmos hero title — the identity moment over the 3D landing ---------- */
+.cosmos-title {
+  position: absolute;
+  top: clamp(64px, 12vh, 150px);
+  left: 0;
+  right: 0;
+  text-align: center;
+  pointer-events: none;
+  z-index: 2;
+  padding: 0 20px;
+  transition: opacity 0.6s var(--ease);
+}
+
+body.mode-2d .cosmos-title,
+body.mode-ifo .cosmos-title,
+body.expansion-active .cosmos-title { opacity: 0; }
+
+.ct-kicker {
+  font-family: "Cormorant SC", serif;
+  font-size: clamp(12px, 1.4vw, 16px);
+  letter-spacing: 0.34em;
+  color: var(--ink-soft);
+  margin: 0 0 12px;
+  opacity: 0;
+}
+
+.ct-word {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 300;
+  font-size: clamp(34px, 7vw, 92px);
+  letter-spacing: 0.28em;
+  text-indent: 0.28em; /* recentres tracked text */
+  line-height: 1.05;
+  color: var(--ink);
+  margin: 0;
+}
+
+.ct-word span {
+  display: inline-block;
+  opacity: 0;
+}
+
+.ct-sub {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: clamp(15px, 1.8vw, 21px);
+  color: var(--ink-soft);
+  margin: 14px 0 0;
+  opacity: 0;
+}
+
+body.cosmos-intro .ct-kicker { animation: ctFade 1.4s var(--ease) 0.15s both; }
+body.cosmos-intro .ct-word span {
+  animation: ctChar 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(0.35s + var(--i) * 0.07s);
+}
+body.cosmos-intro .ct-sub { animation: ctFade 1.4s var(--ease) 1.15s both; }
+
+@keyframes ctChar {
+  from { opacity: 0; transform: translateY(0.5em); filter: blur(10px); }
+  to   { opacity: 1; transform: translateY(0);     filter: blur(0); }
+}
+
+@keyframes ctFade {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Scroll reveal — content rises in as it enters the viewport ---------- */
+.rv {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 1s var(--ease) var(--rv-delay, 0s),
+    transform 1s var(--ease) var(--rv-delay, 0s);
+  will-change: opacity, transform;
+}
+
+.rv.rv-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- Letter storytelling — kicker, drop cap, signature wipe ---------- */
+.letter-kicker {
+  font-family: "Cormorant SC", serif;
+  font-size: 14px;
+  letter-spacing: 0.28em;
+  color: var(--clay-deep);
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.letter-kicker::after {
+  content: '';
+  flex: 1;
+  max-width: 64px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+body.night-mode .letter-kicker { color: rgba(255, 255, 255, 0.6); }
+
+.letter-body > p:first-of-type::first-letter {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
+  font-size: 3.55em;
+  line-height: 0.78;
+  float: left;
+  padding: 7px 14px 0 0;
+  color: var(--ink);
+}
+
+body.night-mode .letter-body > p:first-of-type::first-letter { color: #ffffff; }
+
+/* Signature draws in from left, like ink being written */
+.letter-sig-img {
+  clip-path: inset(-8% 102% -8% -2%);
+  transition: clip-path 1.8s cubic-bezier(0.5, 0.05, 0.2, 1) 0.35s;
+}
+
+.letter-close.rv-in .letter-sig-img {
+  clip-path: inset(-8% -2% -8% -2%);
+}
+
+/* ---------- IFO prose eyebrow ---------- */
+.ifo-eyebrow {
+  font-family: "Cormorant SC", serif;
+  font-size: 14px;
+  letter-spacing: 0.26em;
+  color: var(--clay-deep);
+  margin: 0 0 14px;
+}
+
+/* ---------- Cinematic vignette in night mode ---------- */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.4s ease;
+  background: radial-gradient(ellipse 125% 105% at 50% 50%,
+    transparent 58%,
+    rgba(0, 0, 8, 0.5) 100%);
+}
+
+body.night-mode::after { opacity: 1; }
+
+/* ---------- Custom cursor (desktop pointer devices only) ---------- */
+@media (hover: hover) and (pointer: fine) {
+  html.cursor-on,
+  html.cursor-on * { cursor: none !important; }
+
+  .cur-dot,
+  .cur-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1000;
+    border-radius: 50%;
+    mix-blend-mode: difference;
+    transition: opacity 0.25s ease;
+  }
+
+  .cur-dot {
+    width: 7px;
+    height: 7px;
+    background: #ffffff;
+  }
+
+  .cur-ring {
+    width: 38px;
+    height: 38px;
+    border: 1.4px solid rgba(255, 255, 255, 0.85);
+  }
+
+  html.cur-hidden .cur-dot,
+  html.cur-hidden .cur-ring { opacity: 0; }
+}
+
+/* ---------- Sub-page entrance choreography ---------- */
+.page-shell > * { animation: pageRise 0.9s var(--ease) both; }
+.page-shell > *:nth-child(1) { animation-delay: 0.05s; }
+.page-shell > *:nth-child(2) { animation-delay: 0.16s; }
+.page-shell > *:nth-child(3) { animation-delay: 0.27s; }
+.page-shell > *:nth-child(4) { animation-delay: 0.38s; }
+.page-shell > *:nth-child(5) { animation-delay: 0.49s; }
+.page-shell > *:nth-child(n+6) { animation-delay: 0.6s; }
+
+@keyframes pageRise {
+  from { opacity: 0; transform: translateY(26px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------- Text selection ---------- */
+::selection { background: rgba(184, 119, 88, 0.28); }
+body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffffff; }
+
+/* ---------- Reduced motion — settle everything instantly ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .rv { opacity: 1; transform: none; transition: none; }
+  .ct-kicker, .ct-sub,
+  .ct-word span { opacity: 1 !important; animation: none !important; }
+  .letter-sig-img { clip-path: none; transition: none; }
+  .pr-box .pr-img { animation: none !important; transform: none; }
+  .pr-label, .pr-outer-text { transition: none; filter: none; }
+  .page-shell > * { animation: none; }
 }
