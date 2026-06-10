@@ -1,4 +1,5 @@
-// cursor.js — custom cursor: a precise dot with a trailing ring.
+// cursor.js — custom cursor: a slowly turning four-pointed star (the same
+// ✦ glyph as the letter ornaments) inside a fine trailing ring.
 // Desktop pointer devices only; disabled for touch and reduced-motion users.
 // Uses mix-blend-mode: difference (see style.css) so it stays visible on both
 // the paper and night-sky backgrounds.
@@ -9,20 +10,21 @@
   var root = document.documentElement;
   root.classList.add("cursor-on", "cur-hidden");
 
-  var dot = document.createElement("div");
+  var star = document.createElement("div");
   var ring = document.createElement("div");
-  dot.className = "cur-dot";
+  star.className = "cur-star";
   ring.className = "cur-ring";
-  dot.setAttribute("aria-hidden", "true");
+  star.setAttribute("aria-hidden", "true");
   ring.setAttribute("aria-hidden", "true");
-  document.body.appendChild(dot);
+  document.body.appendChild(star);
   document.body.appendChild(ring);
 
   var x = window.innerWidth / 2, y = window.innerHeight / 2;
   var rx = x, ry = y;
-  var scale = 1, targetScale = 1;
+  var ringScale = 1, starScale = 1;
   var down = false;
   var hoverEl = null;
+  var hoverOn = false;
   var seen = false;
 
   var INTERACTIVE = "a, button, input, textarea, select, label, [role='button'], summary";
@@ -49,12 +51,20 @@
   }
 
   function frame() {
-    rx += (x - rx) * 0.16;
-    ry += (y - ry) * 0.16;
-    targetScale = down ? 0.72 : (isInteractive() ? 1.65 : 1);
-    scale += (targetScale - scale) * 0.18;
-    dot.style.transform = "translate3d(" + (x - 3.5) + "px," + (y - 3.5) + "px,0)";
-    ring.style.transform = "translate3d(" + (rx - 19) + "px," + (ry - 19) + "px,0) scale(" + scale.toFixed(3) + ")";
+    rx += (x - rx) * 0.14;
+    ry += (y - ry) * 0.14;
+
+    var hov = isInteractive();
+    if (hov !== hoverOn) { hoverOn = hov; root.classList.toggle("cur-hover", hov); }
+
+    // Star answers quickly; the ring breathes in behind it
+    var starTarget = down ? 0.7 : (hov ? 1.5 : 1);
+    var ringTarget = down ? 0.78 : (hov ? 1.85 : 1);
+    starScale += (starTarget - starScale) * 0.2;
+    ringScale += (ringTarget - ringScale) * 0.14;
+
+    star.style.transform = "translate3d(" + (x - 7) + "px," + (y - 7) + "px,0) scale(" + starScale.toFixed(3) + ")";
+    ring.style.transform = "translate3d(" + (rx - 17) + "px," + (ry - 17) + "px,0) scale(" + ringScale.toFixed(3) + ")";
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);

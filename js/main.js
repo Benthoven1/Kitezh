@@ -729,6 +729,7 @@ function goToIFO() {
   // collapse during IFO scroll doesn't cause a sudden resize.
   canvasWrap.style.height = window.innerHeight + "px";
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  resetCinematicScroll();
   state.ifoTarget = 1;
   state.mode = "ifo-transitioning";
 }
@@ -738,6 +739,7 @@ function returnFromIFO() {
   state.ifoTarget = 0;
   state.mode = "ifo-transitioning";
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  resetCinematicScroll();
   canvasWrap.style.height = "";   // release the pinned height
   body.classList.add("cosmos-only");
   requestAnimationFrame(() => {
@@ -812,6 +814,7 @@ function goTo3D() {
   if (state.mode !== "2d") return;
   targetFov = FOV_DEFAULT;
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  resetCinematicScroll();
   state.mode = "transitioning";
   state.target = 0;
   body.classList.add("cosmos-only");
@@ -859,6 +862,7 @@ function jumpToIFO() {
   canvasWrap.style.height = window.innerHeight + "px";
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  resetCinematicScroll();
 }
 
 // Instantly snaps all state to the 3D opening view from any mode.
@@ -884,6 +888,7 @@ function snapTo3D() {
   state.mode      = "3d";
 
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  resetCinematicScroll();
   body.classList.add("cosmos-only");
   body.classList.remove("mode-2d", "expansion-active", "night-mode");
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
@@ -1668,9 +1673,18 @@ window.addEventListener("resize", () => {
 });
 
 // Cinematic scroll — intercept wheel events and apply smooth inertia
+// resetCinematicScroll is called by mode transitions (jumpToIFO, snapTo3D, …)
+// after their programmatic window.scrollTo: it cancels any in-flight inertia
+// so a stale scrollTarget can't drag the page back away from the top.
+let resetCinematicScroll = () => {};
 {
   let scrollTarget = 0;
   let scrollRafId  = null;
+
+  resetCinematicScroll = () => {
+    if (scrollRafId) { cancelAnimationFrame(scrollRafId); scrollRafId = null; }
+    scrollTarget = window.scrollY;
+  };
 
   function cinematicStep() {
     const cur  = window.scrollY;
