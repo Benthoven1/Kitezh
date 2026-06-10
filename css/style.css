@@ -298,7 +298,6 @@ body { transition: background-color 0.6s ease; }
 
 body.night-mode { background: #060412; }
 
-body.night-mode #mission-section,
 body.night-mode #letter-section {
   background: transparent;
   position: relative;
@@ -373,45 +372,6 @@ body.night-mode .footer-col-title {
 
 body.night-mode .footer-copy p {
   color: rgba(205, 190, 255, 0.82);
-}
-
-/* ---------- Mission text section (scrolls naturally after expansion space) ---------- */
-/* Hidden until the user enters the expansion sequence via "Enter Mulvium" */
-#mission-section {
-  position: relative;
-  z-index: 1;
-  background: transparent;
-  text-align: center;
-  padding: clamp(6px, 1.5vh, 18px) clamp(20px, 4vw, 60px) clamp(40px, 6vh, 80px);
-  min-height: 20vh;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-
-/* mission section hidden during expansion */
-
-.mission-kicker {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 15px;
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: 0.18em;
-  text-transform: none;
-  color: rgba(255, 255, 255, 0.58);
-  margin: 0 0 10px;
-  line-height: 1;
-}
-
-.mission-heading {
-  font-family: "Cormorant Garamond", serif;
-  font-weight: 300;
-  font-size: clamp(26px, 3.8vw, 50px);
-  line-height: 1.25;
-  color: #ffffff;
-  margin: 0;
 }
 
 /* ---------- Patronage scroll reveal ---------- */
@@ -567,21 +527,6 @@ body.night-mode #patronage-section {
     rgba(0, 0, 0, 0.30) 100%);
 }
 
-.mc {
-  display: inline-block;
-  opacity: 0;
-  will-change: opacity, transform, filter;
-}
-
-@keyframes mcIn {
-  from { opacity: 0; transform: translateY(100%); filter: blur(10px); }
-  to   { opacity: 1; transform: translateY(0);    filter: blur(0px);  }
-}
-
-.mc.mc-in {
-  animation: mcIn 0.65s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
-
 canvas#cosmos {
   position: absolute;
   inset: 0;
@@ -597,25 +542,78 @@ canvas#cosmos {
    hide the address bar and jump the viewport height */
 body.cosmos-only canvas#cosmos { touch-action: none; }
 
+/* Sphere annotation — museum-diagram style: name, quiet status line, and a
+   hairline leader that draws down toward the sphere */
 .planet-label {
   position: absolute;
-  transform: translate(-50%, -140%);
-  padding: 7px 14px;
-  background: var(--paper);
-  border: 1px solid var(--hairline);
-  color: var(--ink);
-  font-size: 11px;
-  letter-spacing: 0.22em;
-  text-transform: none;
+  transform: translate(-50%, calc(-100% - 8px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.2s var(--ease);
+  transition: opacity 0.3s var(--ease);
   white-space: nowrap;
-  box-shadow: 0 10px 24px rgba(27, 22, 19, 0.06);
   will-change: opacity;
 }
 
 .planet-label.visible { opacity: 1; }
+
+.pl-name {
+  font-family: "Cormorant SC", serif;
+  font-size: 17px;
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.45s var(--ease) 0.05s, transform 0.45s var(--ease) 0.05s;
+}
+
+.pl-status {
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  margin-top: 1px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.45s var(--ease) 0.13s, transform 0.45s var(--ease) 0.13s;
+}
+
+.pl-status:empty { display: none; }
+
+.pl-line {
+  width: 1px;
+  height: 22px;
+  margin-top: 8px;
+  background: linear-gradient(to bottom, var(--ink), transparent);
+  opacity: 0.5;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.45s var(--ease);
+}
+
+.pl-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0.55;
+  margin-top: 2px;
+  transform: scale(0);
+  transition: transform 0.35s var(--ease) 0.16s;
+}
+
+.planet-label.visible .pl-name,
+.planet-label.visible .pl-status { opacity: 1; transform: translateY(0); }
+.planet-label.visible .pl-line   { transform: scaleY(1); }
+.planet-label.visible .pl-dot    { transform: scale(1); }
+
+body.night-mode .pl-name   { color: rgba(255, 255, 255, 0.95); }
+body.night-mode .pl-status { color: rgba(255, 255, 255, 0.65); }
+body.night-mode .pl-line   { background: linear-gradient(to bottom, #ffffff, transparent); }
+body.night-mode .pl-dot    { background: #ffffff; }
 
 body.mode-ifo .planet-label,
 body.mode-ifo.ifo-transitioning .planet-label {
@@ -1385,11 +1383,6 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .letter-close { margin-top: 32px; padding-top: 22px; }
   .ifo-prose { padding-bottom: 64px; }
   .ifo-prose-header { margin-top: 28px; margin-bottom: 24px; }
-  #mission-section {
-    padding-top: clamp(4px, 1vh, 12px);
-    padding-bottom: clamp(20px, 3vh, 40px);
-    min-height: 12vh;
-  }
   .footer-copy { font-size: 10px; letter-spacing: 0.10em; }
 }
 
@@ -1581,8 +1574,6 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
 
 /* ---------- Letter-spacing reductions for formerly-uppercase elements ---------- */
 .nav-trigger        { letter-spacing: 0.03em; }
-.mission-kicker     { letter-spacing: 0.08em; }
-.planet-label       { letter-spacing: 0.04em; }
 .cosmos-hint        { letter-spacing: 0.04em; }
 .footer-col-title   { letter-spacing: 0.06em; }
 .footer-copy        { letter-spacing: 0.03em; }
@@ -1596,9 +1587,7 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
 /* ---------- Accessibility font-size bumps ---------- */
 .nav-trigger          { font-size: 17px; }
 .dropdown a           { font-size: 15px; }
-.planet-label         { font-size: 16px; }
 .cosmos-hint          { font-size: 15px; }
-.mission-kicker       { font-size: 17px; }
 .letter-body p        { font-size: 21px; }
 .letter-quote p       { font-size: 19px; }
 .footer-links a       { font-size: 16px; }
@@ -1716,7 +1705,6 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
   .footer-links a     { font-size: 14px; }
   .footer-col-title   { font-size: 13px; }
   .footer-copy        { font-size: 13px; }
-  .planet-label       { font-size: 13px; }
   .cosmos-hint        { font-size: 12px; }
 }
 
@@ -1731,73 +1719,118 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
    cinematic vignette, and sub-page choreography.
    ===================================================================== */
 
-/* ---------- Cosmos hero title — the identity moment over the 3D landing ---------- */
-.cosmos-title {
+/* ---------- Hero — gooey text breathing between brand and tagline ---------- */
+.hero-wrap {
   position: absolute;
-  top: clamp(64px, 12vh, 150px);
   left: 0;
   right: 0;
-  text-align: center;
+  top: clamp(52px, 11vh, 130px);
+  height: clamp(96px, 15vh, 160px);
   pointer-events: none;
   z-index: 2;
-  padding: 0 20px;
-  transition: opacity 0.6s var(--ease);
+  opacity: 0; /* driven by JS with the camera transition */
 }
 
-body.mode-2d .cosmos-title,
-body.mode-ifo .cosmos-title,
-body.expansion-active .cosmos-title { opacity: 0; }
-
-.ct-kicker {
-  font-family: "Cormorant SC", serif;
-  font-size: clamp(12px, 1.4vw, 16px);
-  letter-spacing: 0.34em;
-  color: var(--ink-soft);
-  margin: 0 0 12px;
-  opacity: 0;
+/* Soft paper fog behind the text so orbit lines never fight the words */
+.hero-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(94vw, 1020px);
+  height: 320%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse 50% 50% at 50% 50%,
+    rgba(236, 234, 229, 0.96) 0%,
+    rgba(236, 234, 229, 0.62) 46%,
+    rgba(236, 234, 229, 0) 74%);
 }
 
-.ct-word {
-  font-family: "Cormorant Garamond", serif;
-  font-weight: 300;
-  font-size: clamp(34px, 7vw, 92px);
-  letter-spacing: 0.28em;
-  text-indent: 0.28em; /* recentres tracked text */
-  line-height: 1.05;
-  color: var(--ink);
+.hero-gooey {
+  position: absolute;
+  inset: 0;
   margin: 0;
+  filter: url(#threshold);
 }
 
-.ct-word span {
-  display: inline-block;
-  opacity: 0;
-}
-
-.ct-sub {
+.hero-gooey-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   font-family: "Cormorant Garamond", serif;
+  font-weight: 400;
   font-style: italic;
-  font-size: clamp(15px, 1.8vw, 21px);
-  color: var(--ink-soft);
-  margin: 14px 0 0;
+  font-size: clamp(20px, 2.6vw, 38px);
+  letter-spacing: 0.14em;
+  color: var(--ink);
+  white-space: nowrap;
   opacity: 0;
+  will-change: filter, opacity;
+  user-select: none;
 }
 
-body.cosmos-intro .ct-kicker { animation: ctFade 1.4s var(--ease) 0.15s both; }
-body.cosmos-intro .ct-word span {
-  animation: ctChar 1.1s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  animation-delay: calc(0.35s + var(--i) * 0.07s);
-}
-body.cosmos-intro .ct-sub { animation: ctFade 1.4s var(--ease) 1.15s both; }
-
-@keyframes ctChar {
-  from { opacity: 0; transform: translateY(0.5em); filter: blur(10px); }
-  to   { opacity: 1; transform: translateY(0);     filter: blur(0); }
+.hero-gooey-text.hero-brand {
+  font-style: normal;
+  font-weight: 300;
+  font-size: clamp(38px, 6.5vw, 84px);
+  letter-spacing: 0.3em;
+  text-indent: 0.3em; /* recentres tracked text */
+  text-transform: uppercase;
 }
 
-@keyframes ctFade {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* ---------- Mission phrase — centred over the cosmos in 2D/expansion ---------- */
+.main-phrase {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
 }
+
+.mp-kicker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + (var(--nav-h) + 12px) / 2 - clamp(58px, 9vh, 96px));
+  text-align: center;
+  font-family: "Cormorant SC", serif;
+  font-size: clamp(13px, 1.4vw, 16px);
+  letter-spacing: 0.3em;
+  color: var(--ink-soft);
+  margin: 0;
+  opacity: 0;
+  transition: color 0.6s ease;
+}
+
+body.night-mode .mp-kicker { color: rgba(255, 255, 255, 0.6); }
+
+.mp-goo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + (var(--nav-h) + 12px) / 2); /* matches .pr-gooey-text centre */
+  transform: translateY(-50%);
+  text-align: center;
+  margin: 0;
+  filter: url(#threshold);
+}
+
+/* Metrics identical to .pr-gooey-text.pr-gooey-long so the patronage layer
+   can take over the phrase with an invisible swap */
+.mp-text {
+  display: inline-block;
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-size: clamp(24px, 3.6vw, 56px);
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  white-space: nowrap;
+  opacity: 0;
+  will-change: filter, opacity;
+  user-select: none;
+  transition: color 0.6s ease;
+}
+
+body.night-mode .mp-text { color: rgba(255, 255, 255, 0.96); }
 
 /* ---------- Scroll reveal — content rises in as it enters the viewport ---------- */
 .rv {
@@ -1957,8 +1990,6 @@ body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffff
 /* ---------- Reduced motion — settle everything instantly ---------- */
 @media (prefers-reduced-motion: reduce) {
   .rv { opacity: 1; transform: none; transition: none; }
-  .ct-kicker, .ct-sub,
-  .ct-word span { opacity: 1 !important; animation: none !important; }
   .letter-sig-img { clip-path: none; transition: none; }
   .pr-box .pr-img { animation: none !important; transform: none; }
   .page-shell > * { animation: none; }

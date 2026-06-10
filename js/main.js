@@ -62,14 +62,21 @@ const ORBITS = [
 
 const canvas            = document.getElementById("cosmos");
 const label             = document.getElementById("planet-label");
+const plName            = document.getElementById("pl-name");
+const plStatus          = document.getElementById("pl-status");
+
+// Sphere annotation — name plus a quiet status line ("Explore", "Coming Soon")
+function setLabel(name, status) {
+  if (plName.textContent !== name) plName.textContent = name;
+  const s = status || "";
+  if (plStatus.textContent !== s) plStatus.textContent = s;
+}
 const navbar            = document.getElementById("navbar");
 const navCap            = document.getElementById("nav-cap");
 const brandLink         = document.getElementById("brand-link");
 const body              = document.body;
 const expansionWrapper  = document.getElementById("expansion-wrapper");
 const canvasWrap        = document.getElementById("canvas-wrap");
-const missionSection    = document.getElementById("mission-section");
-const missionChars      = Array.from(missionSection.querySelectorAll(".mc"));
 window.scrollTo(0, 0);
 body.classList.add("cosmos-only");
 
@@ -405,7 +412,6 @@ const state = {
   clock: new THREE.Clock(),
   expansionP1: 0,
   expansionP2: 0,
-  missionFired: false,
   lsRevealP: 1,
 };
 
@@ -423,6 +429,40 @@ window.addEventListener("pointermove", (e) => {
   camDrift.tx = (e.clientX / lsVW) * 2 - 1;
   camDrift.ty = (e.clientY / lsVH) * 2 - 1;
 }, { passive: true });
+
+// ── Hero gooey text + mission phrase handoff ──────────────────────────────────
+// The hero breathes between the brand and the tagline (time-based gooey cycle,
+// same math as the patronage labels). When the user enters the cosmos the hero
+// dissolves with the camera transition (state.t) while "Reimagine Arts
+// Patronage" materializes at the centre — the exact spot where the patronage
+// frames will later trace around it and morph it onward.
+const heroWrap  = document.getElementById("hero-wrap");
+const heroG1    = document.getElementById("hero-g1");
+const heroG2    = document.getElementById("hero-g2");
+const mpText    = document.getElementById("mp-text");
+const mpKicker  = document.getElementById("mp-kicker");
+
+const HERO_TEXTS = ["Mulvium", "Reimagine Arts Patronage"];
+const HERO_MORPH = 1.15;  // seconds
+const HERO_COOL  = 3.4;   // seconds settled between morphs
+const heroState  = { idx: 0, morph: 0, cool: 1.6 };
+
+function heroSetText(el, word) {
+  if (el.textContent !== word) {
+    el.textContent = word;
+    el.classList.toggle("hero-brand", word === "Mulvium");
+  }
+}
+heroSetText(heroG1, HERO_TEXTS[0]);
+heroSetText(heroG2, HERO_TEXTS[1]);
+
+// Gooey visibility at fraction f (0 hidden → 1 settled); blur only when motion allowed
+function applyGoo(el, f) {
+  if (f <= 0.001) { el.style.opacity = "0"; el.style.filter = ""; return; }
+  if (f >= 0.999) { el.style.opacity = "1"; el.style.filter = ""; return; }
+  el.style.opacity = String(Math.pow(f, 0.4));
+  el.style.filter  = motionOK ? `blur(${Math.min(6 / f - 6, 60)}px)` : "";
+}
 
 let lastW = 0, lastH = 0;
 function resize() {
@@ -822,10 +862,7 @@ function goTo3D() {
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
   state.expansionP1 = 0;
   state.expansionP2 = 0;
-  state.missionFired = false;
   state.lsRevealP    = 1;
-  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-  missionSection.setAttribute("aria-hidden", "true");
   resetPatronage();
   bgColor.copy(PAPER_COLOR);
 }
@@ -853,10 +890,7 @@ function jumpToIFO() {
 
   state.expansionP1  = 0;
   state.expansionP2  = 0;
-  state.missionFired = false;
   state.lsRevealP    = 1;
-  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-  missionSection.setAttribute("aria-hidden", "true");
   resetPatronage();
   bgColor.copy(PAPER_COLOR);
   canvasWrap.style.height = window.innerHeight + "px";
@@ -899,10 +933,7 @@ function snapTo3D() {
   state.labelStar    = false;
   state.expansionP1  = 0;
   state.expansionP2  = 0;
-  state.missionFired = false;
   state.lsRevealP    = 1;
-  missionChars.forEach((el) => { el.classList.remove("mc-in"); el.style.animationDelay = ""; });
-  missionSection.setAttribute("aria-hidden", "true");
   resetPatronage();
   bgColor.copy(PAPER_COLOR);
 }
@@ -1093,7 +1124,7 @@ function updateHover() {
         state.labelStar   = false;
         state.hoverPlanet.planet.getWorldPosition(worldPos);
         const p = projectToCanvas(worldPos);
-        label.textContent = state.hoverPlanet.def.name;
+        setLabel(state.hoverPlanet.def.name, "Explore");
         label.style.left = p.x + "px";
         label.style.top  = p.y + "px";
         label.classList.add("visible");
@@ -1106,7 +1137,7 @@ function updateHover() {
         state.labelStar   = false;
         state.hoverPlanet.planet.getWorldPosition(worldPos);
         const p = projectToCanvas(worldPos);
-        label.textContent = state.hoverPlanet.def.name;
+        setLabel(state.hoverPlanet.def.name, "Explore");
         label.style.left = p.x + "px";
         label.style.top  = p.y + "px";
         label.classList.add("visible");
@@ -1118,7 +1149,7 @@ function updateHover() {
       state.labelStar   = false;
       hitPlanet.planet.getWorldPosition(worldPos);
       const p = projectToCanvas(worldPos);
-      label.textContent = hitPlanet.def.comingSoon ? "Coming Soon" : hitPlanet.def.name;
+      setLabel(hitPlanet.def.name, hitPlanet.def.comingSoon ? "Coming Soon" : "Explore");
       label.style.left = p.x + "px";
       label.style.top  = p.y + "px";
       label.classList.add("visible");
@@ -1127,7 +1158,7 @@ function updateHover() {
       state.labelStar   = true;
       star.getWorldPosition(worldPos);
       const p = projectToCanvas(worldPos);
-      label.textContent = "Enter Mulvium";
+      setLabel("Enter Mulvium", "Begin the journey");
       label.style.left = p.x + "px";
       label.style.top  = p.y + "px";
       label.classList.add("visible");
@@ -1398,6 +1429,38 @@ function animate() {
     if (navCap) navCap.style.backgroundColor =
       `rgb(${_r(236,6)},${_r(234,4)},${_r(229,18)})`; }
 
+  // ── Hero ↔ mission phrase choreography ─────────────────────────────────────
+  // heroVis: full in 3D, dissolves over the first half of the 3D→2D camera
+  // transition. mainVis: materializes over the second half, then yields to the
+  // patronage gooey layer once the first frame owns the phrase.
+  {
+    const introOn = body.classList.contains("cosmos-intro") ? 1 : 0;
+    const heroVis = Math.max(0, 1 - state.t * 2) * (1 - easedIFO) * introOn;
+
+    if (motionOK && heroVis > 0.999 && state.mode === "3d") {
+      if (heroState.cool > 0) {
+        heroState.cool -= dt;
+      } else {
+        heroState.morph += dt;
+        if (heroState.morph >= HERO_MORPH) {
+          heroState.morph = 0;
+          heroState.cool  = HERO_COOL;
+          heroState.idx   = (heroState.idx + 1) % HERO_TEXTS.length;
+          heroSetText(heroG1, HERO_TEXTS[heroState.idx]);
+          heroSetText(heroG2, HERO_TEXTS[(heroState.idx + 1) % HERO_TEXTS.length]);
+        }
+      }
+    }
+    const cycleF = heroState.cool > 0 ? 0 : Math.min(1, heroState.morph / HERO_MORPH);
+    applyGoo(heroG1, (1 - cycleF) * heroVis);
+    applyGoo(heroG2, cycleF * heroVis);
+    heroWrap.style.opacity = String(Math.pow(heroVis, 0.5));
+
+    const mainVis = Math.max(0, state.t * 2 - 1) * (1 - easedIFO) * (prPhraseOwned ? 0 : 1);
+    applyGoo(mpText, mainVis);
+    mpKicker.style.opacity = (Math.pow(Math.max(0, mainVis), 0.6) * (1 - clamp01(prP / 0.08))).toFixed(3);
+  }
+
   updateHover();
   trackLabel();
   resize();
@@ -1448,6 +1511,12 @@ const PR_STARTS = [0.00, 0.19, 0.38, 0.57, 0.76]; // where each frame's window b
 const PR_OPEN   = 0.14;   // timeline fraction over which a frame opens
 const PR_LEAD   = 0.60;   // viewport-heights of head start before the sticky pins,
                           // so the first frame is already forming as it rises in
+
+// Handoff state read by the animate() loop: while the centred mission phrase
+// (#main-phrase) is on screen, the patronage gooey layer stays empty; once the
+// first frame starts morphing the phrase into "Music", ownership flips.
+let prP = 0;
+let prPhraseOwned = false;
 
 function clamp01(v) { return Math.max(0, Math.min(1, v)); }
 function prEaseOut(t) { return 1 - Math.pow(1 - t, 3); }
@@ -1533,14 +1602,19 @@ function updatePatronageScroll() {
     if (q > 0) wordIdx = i;
   }
 
-  // Label morph scrubbed over the first 55% of the active frame's window —
-  // tight enough that the dissolved midpoint passes in a brief beat of scroll
-  if (wordIdx < 0) {
-    gooeyApply("", PR_WORDS[0], 0);
+  // Handoff: the centred #main-phrase carries "Reimagine Arts Patronage" while
+  // the first border frame traces itself around it (wordIdx 0). The patronage
+  // layer only takes over at the first word morph — both render the phrase at
+  // identical position and metrics, so the swap is invisible.
+  prP = P;
+  prPhraseOwned = wordIdx >= 1;
+  if (wordIdx < 1) {
+    gooeyApply("", PR_WORDS[0], 0); // keep this layer empty
   } else {
-    const fromWord = wordIdx === 0 ? "" : PR_WORDS[wordIdx - 1];
+    // Morph scrubbed over the first 55% of the active frame's window —
+    // tight enough that the dissolved midpoint passes in a brief beat of scroll
     const f = clamp01((P - PR_STARTS[wordIdx]) / (PR_OPEN * 0.55));
-    gooeyApply(fromWord, PR_WORDS[wordIdx], f);
+    gooeyApply(PR_WORDS[wordIdx - 1], PR_WORDS[wordIdx], f);
   }
   // Shade only behind single-word labels over photographs (not the phrase)
   gooeyShade.classList.toggle("on", wordIdx >= 1);
@@ -1552,21 +1626,10 @@ function resetPatronage() {
     el.style.height = "0";
     el.classList.remove("pr-active");
   });
+  prP = 0;
+  prPhraseOwned = false;
   resetGooey();
 }
-
-// Mission section: animate characters in when it first scrolls into view.
-const missionObserver = new IntersectionObserver((entries) => {
-  if (entries[0].isIntersecting && !state.missionFired && body.classList.contains("expansion-active")) {
-    state.missionFired = true;
-    missionSection.setAttribute("aria-hidden", "false");
-    missionChars.forEach((el, i) => {
-      el.style.animationDelay = `${i * 0.033}s`;
-      el.classList.add("mc-in");
-    });
-  }
-}, { threshold: 0.1 });
-missionObserver.observe(missionSection);
 
 // ── Scroll reveal — letter, IFO prose, and footer rise in as they enter view ──
 {
