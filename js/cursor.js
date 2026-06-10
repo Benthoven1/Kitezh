@@ -20,7 +20,6 @@
   document.body.appendChild(ring);
 
   var x = window.innerWidth / 2, y = window.innerHeight / 2;
-  var rx = x, ry = y;
   var ringScale = 1, starScale = 1;
   var down = false;
   var hoverEl = null;
@@ -33,7 +32,7 @@
     if (e.pointerType && e.pointerType !== "mouse") return;
     x = e.clientX; y = e.clientY;
     hoverEl = e.target;
-    if (!seen) { seen = true; rx = x; ry = y; }
+    if (!seen) { seen = true; }
     root.classList.remove("cur-hidden");
   }, { passive: true });
 
@@ -51,20 +50,17 @@
   }
 
   function frame() {
-    rx += (x - rx) * 0.14;
-    ry += (y - ry) * 0.14;
-
     var hov = isInteractive();
     if (hov !== hoverOn) { hoverOn = hov; root.classList.toggle("cur-hover", hov); }
 
-    // Star answers quickly; the ring breathes in behind it
+    // Ring and star move as one; only their scales ease
     var starTarget = down ? 0.7 : (hov ? 1.5 : 1);
     var ringTarget = down ? 0.78 : (hov ? 1.85 : 1);
     starScale += (starTarget - starScale) * 0.2;
     ringScale += (ringTarget - ringScale) * 0.14;
 
     star.style.transform = "translate3d(" + (x - 7) + "px," + (y - 7) + "px,0) scale(" + starScale.toFixed(3) + ")";
-    ring.style.transform = "translate3d(" + (rx - 17) + "px," + (ry - 17) + "px,0) scale(" + ringScale.toFixed(3) + ")";
+    ring.style.transform = "translate3d(" + (x - 17) + "px," + (y - 17) + "px,0) scale(" + ringScale.toFixed(3) + ")";
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
