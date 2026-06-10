@@ -281,8 +281,12 @@ scene.add(labelSprite);
 let labelVisTarget = 0;
 let labelFlip = false;
 
-function setLabel(name, status, flip) {
+function setLabel(name, status, flip, front) {
   labelFlip = !!flip;
+  // front=true (the star's call-to-action) renders over the rings; sphere
+  // annotations keep depth testing so the scene occludes them naturally.
+  labelSprite.material.depthTest = !front;
+  labelSprite.renderOrder = front ? 10 : 0;
   labelSprite.material.map = labelTexture(name, status, body.classList.contains("night-mode"), labelFlip);
   labelSprite.material.needsUpdate = true;
 }
@@ -1190,7 +1194,7 @@ function updateHover() {
     } else if (state.hoverStar) {
       state.labelPlanet = null;
       state.labelStar   = true;
-      setLabel("Enter Mulvium", "", true);
+      setLabel("Enter Mulvium", "", true, true);
       labelVisTarget = 1;
     }
   } else {

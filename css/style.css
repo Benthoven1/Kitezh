@@ -181,9 +181,22 @@ a.nav-trigger:visited { text-decoration: none; color: var(--ink); }
   width: 22px;
   height: 1.5px;
   background: currentColor;
+  transition: transform 0.32s var(--ease), margin 0.32s var(--ease);
 }
 .nav-burger span:first-child { margin-left:  5px; }
 .nav-burger span:last-child  { margin-left: -5px; }
+
+/* Open state — the two bars meet and cross into an X */
+.navbar.menu-open .nav-burger span:first-child {
+  margin-left: 0;
+  transform: translateY(4.25px) rotate(45deg);
+}
+.navbar.menu-open .nav-burger span:last-child {
+  margin-left: 0;
+  transform: translateY(-4.25px) rotate(-45deg);
+}
+
+body.night-mode .nav-burger { color: rgba(255, 255, 255, 0.92); }
 
 .nav-trigger::after {
   content: "";
@@ -1453,6 +1466,7 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
   .nav-links {
     display: flex;
     flex-direction: column;
+    align-items: stretch; /* override desktop center — rows span full width */
     gap: 0;
     position: absolute;
     top: calc(100% + 8px);
@@ -1480,22 +1494,54 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
     pointer-events: auto;
   }
 
-  /* Full-width tappable items */
+  .nav-links { padding: 6px 0 10px; }
+
+  /* Hairline separators between top-level groups */
+  .nav-item + .nav-item { border-top: 1px solid rgba(27, 22, 19, 0.07); }
+  body.night-mode .nav-item + .nav-item { border-top-color: rgba(255, 255, 255, 0.09); }
+
+  /* Full-width tappable items — label left, group indicator right */
   .nav-trigger {
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     text-align: left;
-    padding: 13px 20px;
-    font-size: 15px;
+    padding: 14px 22px;
+    font-size: 16px;
     font-weight: 500;
     letter-spacing: 0.03em;
     color: var(--ink);
-    min-height: 48px;
+    min-height: 50px;
   }
   body.night-mode .nav-trigger { color: rgba(255, 255, 255, 0.88); }
   body.night-mode .nav-trigger:hover,
   body.night-mode .nav-item.open .nav-trigger { color: #ffffff; }
-  /* Suppress the underline indicator in the menu panel */
+
+  /* Suppress the desktop underline indicator in the menu panel */
   .nav-trigger::after { display: none; }
+
+  /* Group indicator — a fine "+" that turns into "×" when the group opens */
+  .nav-item.has-dropdown > .nav-trigger::after {
+    content: '+';
+    display: block;
+    position: static;
+    width: auto;
+    height: auto;
+    background: none;
+    font-family: "Cormorant Garamond", serif;
+    font-size: 24px;
+    font-weight: 300;
+    line-height: 1;
+    opacity: 0.5;
+    transform: rotate(0deg);
+    transform-origin: center;
+    transition: transform 0.3s var(--ease), opacity 0.3s ease;
+  }
+  .nav-item.open > .nav-trigger::after {
+    transform: rotate(45deg);
+    opacity: 0.85;
+  }
 
   /* Dropdowns expand inline within the panel — animated via max-height */
   .dropdown {
@@ -1506,7 +1552,7 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
     border-radius: 0;
     min-width: 0;
     background: transparent !important;
-    padding: 0;
+    padding: 0 0 8px;
     display: flex !important;
     flex-direction: column;
     max-height: 0;
@@ -1521,21 +1567,30 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
     pointer-events: auto;
   }
 
+  /* Nested items — uniform indent with a small dash marker */
   .dropdown a {
-    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
     font-weight: 400;
     color: var(--ink-soft);
-    padding: 10px 20px 10px 32px;
-    min-height: 40px;
-    border-left: 2px solid rgba(0, 0, 0, 0.08);
-    margin-left: 20px;
+    padding: 10px 22px 10px 34px;
+    min-height: 44px;
+    border: none;
+    margin: 0;
   }
-  body.night-mode .dropdown a {
-    color: rgba(255, 255, 255, 0.55);
-    border-left-color: rgba(255, 255, 255, 0.12);
+  .dropdown a::before {
+    content: '';
+    width: 14px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.4;
+    flex-shrink: 0;
   }
+  body.night-mode .dropdown a { color: rgba(255, 255, 255, 0.6); }
   .dropdown a:hover { color: var(--clay); }
-  body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
+  body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.95); }
 
   /* Pull back the big desktop bumps to sensible mobile sizes */
   .nav-trigger        { font-size: 15px; }
