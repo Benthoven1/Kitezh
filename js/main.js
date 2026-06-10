@@ -1428,150 +1428,78 @@ function updateExpansionScroll() {
 }
 
 
-// Patronage scroll reveal
+// ── Patronage scroll scrub ────────────────────────────────────────────────────
+// Fully scroll-driven: every pixel of scroll continuously maps to frame growth
+// and label morphing, in both directions. No thresholds, no fire-and-forget
+// animations — the sequence is a single timeline the user scrubs by scrolling,
+// so there is always visible response and never a dead zone between frames.
 const patronageSection = document.getElementById("patronage-section");
 const prBoxEls = ["pr-outer","pr-f1","pr-f2","pr-f3","pr-f4"].map(id => document.getElementById(id));
 
 const PR_SIZES = [
-  { w: 0.80, h: 0.71 },  // outer text (border trace)
+  { w: 0.80, h: 0.71 },  // outer border trace
   { w: 0.80, h: 0.71 },  // Music (same as outer)
   { w: 0.76, h: 0.68 },  // Art
   { w: 0.72, h: 0.65 },  // Architecture
   { w: 0.70, h: 0.635 }, // Horticulture
 ];
-const PR_THRESHOLDS = [0.00, 0.20, 0.40, 0.60, 0.80];
-const PR_ANIM_DUR   = 1200;
+const PR_WORDS  = ["Reimagine Arts Patronage", "Music", "Art", "Architecture", "Horticulture"];
+const PR_STARTS = [0.00, 0.19, 0.38, 0.57, 0.76]; // where each frame's window begins on the timeline
+const PR_OPEN   = 0.14;   // timeline fraction over which a frame opens
+const PR_LEAD   = 0.60;   // viewport-heights of head start before the sticky pins,
+                          // so the first frame is already forming as it rises in
 
-const prState = prBoxEls.map(() => ({ status: "idle", raf: null, t0: null }));
-
-function _prEaseRise(t) { return 1 - Math.pow(1 - t, 3); }
-function _prEaseSlit(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t); }
-
-function stopPrAnim(idx) {
-  if (prState[idx].raf) { cancelAnimationFrame(prState[idx].raf); prState[idx].raf = null; }
-}
-
-function startPrAnim(idx) {
-  stopPrAnim(idx);
-  prBoxEls[idx].classList.add("pr-active");
-  prState[idx].status = "animating";
-  prState[idx].t0 = null;
-  function tick(ts) {
-    if (!prState[idx].t0) prState[idx].t0 = ts;
-    const t = Math.min(1, (ts - prState[idx].t0) / PR_ANIM_DUR);
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const targetW = vw * PR_SIZES[idx].w;
-    const targetH = vh * PR_SIZES[idx].h;
-    const wP = _prEaseRise(Math.min(1, t / 0.15));
-    const hP = _prEaseSlit(Math.max(0, Math.min(1, (t - 0.08) / 0.92)));
-    prBoxEls[idx].style.width  = (targetW * wP) + "px";
-    prBoxEls[idx].style.height = Math.max(2, targetH * hP) + "px";
-    if (t < 1) {
-      prState[idx].raf = requestAnimationFrame(tick);
-    } else {
-      prBoxEls[idx].style.width  = (targetW) + "px";
-      prBoxEls[idx].style.height = (targetH) + "px";
-      prState[idx].status = "done";
-      prState[idx].raf = null;
-    }
-  }
-  prState[idx].raf = requestAnimationFrame(tick);
-}
-
-function closePrAnim(idx) {
-  const el = prBoxEls[idx];
-  const startW = parseFloat(el.style.width)  || 0;
-  const startH = parseFloat(el.style.height) || 0;
-  if (startW <= 0 && startH <= 0) { prState[idx].status = "idle"; return; }
-  stopPrAnim(idx);
-  prBoxEls[idx].classList.remove("pr-active");
-  prState[idx].status = "closing";
-  prState[idx].t0 = null;
-  const CLOSE_DUR = 700;
-  function tick(ts) {
-    if (!prState[idx].t0) prState[idx].t0 = ts;
-    const t = Math.min(1, (ts - prState[idx].t0) / CLOSE_DUR);
-    const hP = 1 - _prEaseSlit(Math.min(1, t / 0.65));
-    const wP = 1 - _prEaseRise(Math.max(0, Math.min(1, (t - 0.60) / 0.40)));
-    el.style.height = Math.max(0, startH * hP) + "px";
-    el.style.width  = Math.max(0, startW * wP) + "px";
-    if (t < 1) {
-      prState[idx].raf = requestAnimationFrame(tick);
-    } else {
-      el.style.width  = "0";
-      el.style.height = "0";
-      prState[idx].status = "idle";
-      prState[idx].raf = null;
-    }
-  }
-  prState[idx].raf = requestAnimationFrame(tick);
-}
-
-function resetPrFrame(idx) {
-  stopPrAnim(idx);
-  prBoxEls[idx].classList.remove("pr-active");
-  prState[idx].status = "idle";
-  prState[idx].t0 = null;
-  prBoxEls[idx].style.width  = "0";
-  prBoxEls[idx].style.height = "0";
-}
+function clamp01(v) { return Math.max(0, Math.min(1, v)); }
+function prEaseOut(t) { return 1 - Math.pow(1 - t, 3); }
 
 // ── Gooey text morphing — ported from the GooeyText React component.
 // Two overlapping spans crossfade under an SVG alpha-threshold filter
 // (#threshold in index.html): blur = min(8/fraction − 8, 100) px and
 // opacity = fraction^0.4 on each side, which the threshold matrix turns
-// into a liquid merge. Here the morphs are scroll-triggered: each frame
-// threshold dissolves the previous label into the next.
+// into a liquid merge. The morph fraction is scrubbed directly by scroll.
 const gooeyA = document.getElementById("pr-gooey-1");
 const gooeyB = document.getElementById("pr-gooey-2");
 const gooeyShade = document.getElementById("pr-gooey-shade");
-const PR_WORDS = ["Reimagine Arts Patronage", "Music", "Art", "Architecture", "Horticulture"];
-const GOOEY_MORPH_MS = 900;
-let gooeyCurrent = "";
-let gooeyRaf = null;
 
 function gooeySetText(el, word) {
-  el.textContent = word;
-  el.classList.toggle("pr-gooey-long", word.length > 14);
+  if (el.textContent !== word) {
+    el.textContent = word;
+    el.classList.toggle("pr-gooey-long", word.length > 14);
+  }
 }
 
-function gooeyMorphTo(word) {
-  if (word === gooeyCurrent) return;
-  if (gooeyRaf) { cancelAnimationFrame(gooeyRaf); gooeyRaf = null; }
-  gooeySetText(gooeyA, gooeyCurrent);
-  gooeySetText(gooeyB, word);
-  gooeyCurrent = word;
+// Renders the morph at fraction f: 0 = fromWord settled, 1 = toWord settled.
+function gooeyApply(fromWord, toWord, f) {
+  gooeySetText(gooeyA, fromWord);
+  gooeySetText(gooeyB, toWord);
 
   if (!motionOK) {
-    gooeyA.style.filter = ""; gooeyA.style.opacity = "0%";
-    gooeyB.style.filter = ""; gooeyB.style.opacity = "100%";
+    const showTo = f >= 0.5;
+    gooeyA.style.filter = ""; gooeyA.style.opacity = showTo ? "0%" : "100%";
+    gooeyB.style.filter = ""; gooeyB.style.opacity = showTo ? "100%" : "0%";
     return;
   }
 
-  let t0 = null;
-  function tick(ts) {
-    if (t0 === null) t0 = ts;
-    const f = Math.min(1, (ts - t0) / GOOEY_MORPH_MS);
+  if (f <= 0) {
+    gooeyA.style.filter = ""; gooeyA.style.opacity = "100%";
+    gooeyB.style.filter = ""; gooeyB.style.opacity = "0%";
+  } else if (f >= 1) {
+    gooeyA.style.filter = ""; gooeyA.style.opacity = "0%";
+    gooeyB.style.filter = ""; gooeyB.style.opacity = "100%";
+  } else {
+    // Blur constant 6 (component default is 8): Cormorant's thin serif
+    // strokes fall below the alpha threshold sooner than the demo's bold
+    // sans, so a slightly gentler blur keeps the goo visible mid-scrub.
     const fIn  = Math.max(f, 1e-4);       // incoming word sharpens
     const fOut = Math.max(1 - f, 1e-4);   // outgoing word dissolves
-    gooeyB.style.filter  = `blur(${Math.min(8 / fIn - 8, 100)}px)`;
+    gooeyB.style.filter  = `blur(${Math.min(6 / fIn - 6, 100)}px)`;
     gooeyB.style.opacity = `${Math.pow(fIn, 0.4) * 100}%`;
-    gooeyA.style.filter  = `blur(${Math.min(8 / fOut - 8, 100)}px)`;
+    gooeyA.style.filter  = `blur(${Math.min(6 / fOut - 6, 100)}px)`;
     gooeyA.style.opacity = `${Math.pow(fOut, 0.4) * 100}%`;
-    if (f < 1) {
-      gooeyRaf = requestAnimationFrame(tick);
-    } else {
-      gooeyA.style.filter = ""; gooeyA.style.opacity = "0%";
-      gooeyB.style.filter = ""; gooeyB.style.opacity = "100%";
-      gooeyRaf = null;
-    }
   }
-  gooeyRaf = requestAnimationFrame(tick);
 }
 
 function resetGooey() {
-  if (gooeyRaf) { cancelAnimationFrame(gooeyRaf); gooeyRaf = null; }
-  gooeyCurrent = "";
   gooeyA.textContent = ""; gooeyB.textContent = "";
   gooeyA.style.filter = ""; gooeyA.style.opacity = "0%";
   gooeyB.style.filter = ""; gooeyB.style.opacity = "0%";
@@ -1581,39 +1509,49 @@ function resetGooey() {
 function updatePatronageScroll() {
   if (!body.classList.contains("expansion-active")) return;
   const rect = patronageSection.getBoundingClientRect();
-  const scrolled = -rect.top;
-  const scrollable = patronageSection.offsetHeight - lsVH;
+  const lead = lsVH * PR_LEAD;
+  const scrolled   = -rect.top + lead;
+  const scrollable = patronageSection.offsetHeight - lsVH + lead;
   if (scrollable <= 0) return;
-  const p = Math.max(0, Math.min(1, scrolled / scrollable));
-  let activeIdx = -1;
-  prBoxEls.forEach((_, idx) => {
-    const active = idx === 0 ? scrolled >= 0 : p >= PR_THRESHOLDS[idx];
-    if (active) activeIdx = idx;
-    const st = prState[idx].status;
-    if (active) {
-      if (st === "idle") startPrAnim(idx);
-      else if (st === "closing") {
-        // user scrolled back down before close finished — snap to full and mark done
-        stopPrAnim(idx);
-        prBoxEls[idx].classList.add("pr-active");
-        const vw = window.innerWidth, vh = window.innerHeight;
-        prBoxEls[idx].style.width  = (vw * PR_SIZES[idx].w) + "px";
-        prBoxEls[idx].style.height = (vh * PR_SIZES[idx].h) + "px";
-        prState[idx].status = "done";
-      }
-    } else {
-      if (st === "done" || st === "animating") closePrAnim(idx);
-    }
-  });
-  // Morph the gooey label toward the deepest active frame's word;
-  // an empty string dissolves the label away above the section.
-  gooeyMorphTo(activeIdx >= 0 ? PR_WORDS[activeIdx] : "");
+  const P = clamp01(scrolled / scrollable);
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  let wordIdx = -1;
+  for (let i = 0; i < prBoxEls.length; i++) {
+    const q = clamp01((P - PR_STARTS[i]) / PR_OPEN);
+    // Slit character: width leads (done by 30% of the window), height follows
+    const wP = prEaseOut(clamp01(q / 0.30));
+    const hP = prEaseOut(q);
+    // After opening, each frame keeps growing ~5% until the sequence ends.
+    // Earlier frames lead, so the whole stack breathes forward like a slow
+    // dolly-in and the border reveals a sliver of each photograph beneath.
+    const grow = 1 + 0.05 * clamp01((P - (PR_STARTS[i] + PR_OPEN)) / Math.max(1e-4, 1 - PR_STARTS[i] - PR_OPEN));
+    const el = prBoxEls[i];
+    el.style.width  = (vw * PR_SIZES[i].w * wP * grow) + "px";
+    el.style.height = (q > 0 ? Math.max(2, vh * PR_SIZES[i].h * hP * grow) : 0) + "px";
+    el.classList.toggle("pr-active", q > 0.01);
+    if (q > 0) wordIdx = i;
+  }
+
+  // Label morph scrubbed over the first 55% of the active frame's window —
+  // tight enough that the dissolved midpoint passes in a brief beat of scroll
+  if (wordIdx < 0) {
+    gooeyApply("", PR_WORDS[0], 0);
+  } else {
+    const fromWord = wordIdx === 0 ? "" : PR_WORDS[wordIdx - 1];
+    const f = clamp01((P - PR_STARTS[wordIdx]) / (PR_OPEN * 0.55));
+    gooeyApply(fromWord, PR_WORDS[wordIdx], f);
+  }
   // Shade only behind single-word labels over photographs (not the phrase)
-  gooeyShade.classList.toggle("on", activeIdx >= 1);
+  gooeyShade.classList.toggle("on", wordIdx >= 1);
 }
 
 function resetPatronage() {
-  prBoxEls.forEach((_, idx) => resetPrFrame(idx));
+  prBoxEls.forEach((el) => {
+    el.style.width  = "0";
+    el.style.height = "0";
+    el.classList.remove("pr-active");
+  });
   resetGooey();
 }
 
