@@ -16,6 +16,22 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Cormorant+SC:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,900;1,300;1,400&family=Great+Vibes&family=Inter:wght@300;400;500;600&family=Italiana&family=Pinyon+Script&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
 </head>
 <body>
+  <!-- Gooey threshold filter — referenced by the hero, mission phrase, and
+       patronage labels. Lives at body level so it works even while sections
+       that use it are display:none. -->
+  <svg class="pr-gooey-defs" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="threshold">
+        <feColorMatrix
+          in="SourceGraphic"
+          type="matrix"
+          values="1 0 0 0 0
+                  0 1 0 0 0
+                  0 0 1 0 0
+                  0 0 0 255 -140" />
+      </filter>
+    </defs>
+  </svg>
   <div id="nav-cap" aria-hidden="true"></div>
   <nav id="navbar" class="navbar hidden" aria-hidden="true">
     <div class="nav-brand">
@@ -50,11 +66,26 @@
     <div id="expansion-wrapper">
       <div id="canvas-wrap">
         <canvas id="cosmos"></canvas>
-        <div id="planet-label" class="planet-label" aria-live="polite"></div>
-        <div id="cosmos-title" class="cosmos-title">
-          <p class="ct-kicker">The Mulvium Foundation</p>
-          <h1 class="ct-word" aria-label="Mulvium"><span aria-hidden="true" style="--i:0">M</span><span aria-hidden="true" style="--i:1">U</span><span aria-hidden="true" style="--i:2">L</span><span aria-hidden="true" style="--i:3">V</span><span aria-hidden="true" style="--i:4">I</span><span aria-hidden="true" style="--i:5">U</span><span aria-hidden="true" style="--i:6">M</span></h1>
-          <p class="ct-sub">A modern renaissance of arts patronage</p>
+        <div id="planet-label" class="planet-label" aria-live="polite">
+          <span class="pl-name" id="pl-name"></span>
+          <span class="pl-status" id="pl-status"></span>
+          <span class="pl-line" aria-hidden="true"></span>
+          <span class="pl-dot" aria-hidden="true"></span>
+        </div>
+        <!-- Hero — one gooey text that breathes between the brand and the
+             tagline, floating in a soft paper halo above the cosmos -->
+        <div class="hero-wrap" id="hero-wrap">
+          <div class="hero-halo" aria-hidden="true"></div>
+          <h1 class="hero-gooey" aria-label="Mulvium — Reimagine Arts Patronage">
+            <span id="hero-g1" class="hero-gooey-text" aria-hidden="true"></span>
+            <span id="hero-g2" class="hero-gooey-text" aria-hidden="true"></span>
+          </h1>
+        </div>
+        <!-- Mission phrase — materializes at centre as the cosmos flattens
+             overhead; the patronage frames later trace around this exact text -->
+        <div id="main-phrase" class="main-phrase" aria-hidden="true">
+          <p class="mp-kicker" id="mp-kicker">Our Mission</p>
+          <p class="mp-goo"><span class="mp-text" id="mp-text">Reimagine Arts Patronage</span></p>
         </div>
         <div id="cosmos-hint" class="cosmos-hint">
           <p>Click a sphere to explore our offerings and our mission.</p>
@@ -63,11 +94,6 @@
       <div id="expansion-space"></div>
     </div>
 
-    <section id="mission-section" aria-hidden="true">
-      <p class="mission-kicker"><span class="mc">O</span><span class="mc">u</span><span class="mc">r</span><span class="mc">&nbsp;</span><span class="mc">M</span><span class="mc">i</span><span class="mc">s</span><span class="mc">s</span><span class="mc">i</span><span class="mc">o</span><span class="mc">n</span></p>
-      <h2 class="mission-heading"><span class="mc">R</span><span class="mc">e</span><span class="mc">i</span><span class="mc">m</span><span class="mc">a</span><span class="mc">g</span><span class="mc">i</span><span class="mc">n</span><span class="mc">e</span><span class="mc">&nbsp;</span><span class="mc">P</span><span class="mc">a</span><span class="mc">t</span><span class="mc">r</span><span class="mc">o</span><span class="mc">n</span><span class="mc">a</span><span class="mc">g</span><span class="mc">e</span><span class="mc">&nbsp;</span><span class="mc">A</span><span class="mc">c</span><span class="mc">r</span><span class="mc">o</span><span class="mc">s</span><span class="mc">s</span><span class="mc">&nbsp;</span><span class="mc">M</span><span class="mc">u</span><span class="mc">s</span><span class="mc">i</span><span class="mc">c</span><span class="mc">,</span><span class="mc">&nbsp;</span><span class="mc">A</span><span class="mc">r</span><span class="mc">t</span><span class="mc">,</span><span class="mc">&nbsp;</span><span class="mc">A</span><span class="mc">r</span><span class="mc">c</span><span class="mc">h</span><span class="mc">i</span><span class="mc">t</span><span class="mc">e</span><span class="mc">c</span><span class="mc">t</span><span class="mc">u</span><span class="mc">r</span><span class="mc">e</span><span class="mc">,</span><span class="mc">&nbsp;</span><span class="mc">a</span><span class="mc">n</span><span class="mc">d</span><span class="mc">&nbsp;</span><span class="mc">H</span><span class="mc">o</span><span class="mc">r</span><span class="mc">t</span><span class="mc">i</span><span class="mc">c</span><span class="mc">u</span><span class="mc">l</span><span class="mc">t</span><span class="mc">u</span><span class="mc">r</span><span class="mc">e</span></h2>
-    </section>
-
     <!-- Patronage scroll reveal — sticky concentric frames in night mode.
          One gooey-morph text layer sits above the frames: as each frame
          opens, the label dissolves and reforms into the next word via an
@@ -75,19 +101,6 @@
     <section id="patronage-section">
       <p class="hidden-text">Our mission: reimagine arts patronage across music, art, architecture, and horticulture.</p>
       <div class="pr-sticky">
-        <svg class="pr-gooey-defs" aria-hidden="true" focusable="false">
-          <defs>
-            <filter id="threshold">
-              <feColorMatrix
-                in="SourceGraphic"
-                type="matrix"
-                values="1 0 0 0 0
-                        0 1 0 0 0
-                        0 0 1 0 0
-                        0 0 0 255 -140" />
-            </filter>
-          </defs>
-        </svg>
         <div class="pr-outer pr-box" id="pr-outer"></div>
         <div class="pr-frame pr-f1 pr-box" id="pr-f1">
           <div class="pr-img" aria-hidden="true"></div>
