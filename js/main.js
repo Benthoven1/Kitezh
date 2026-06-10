@@ -335,6 +335,12 @@ const LOOK_AT = new THREE.Vector3(0, 0, 0);
 camera.position.copy(CAM_3D);
 camera.lookAt(LOOK_AT);
 
+// Zoom — FOV-based; 42 is the default. Only active in 3D mode.
+const FOV_DEFAULT = 42;
+const FOV_MIN     = 20;
+const FOV_MAX     = 75;
+let targetFov     = FOV_DEFAULT;
+
 const state = {
   mode: "3d",
   t: 0,
@@ -696,8 +702,38 @@ canvas.addEventListener("keydown", (e) => {
   if ((e.key === "Enter" || e.key === " ") && state.mode === "3d") { goTo2D(); e.preventDefault(); }
 });
 
+// Scroll-wheel zoom (3D mode only)
+canvas.addEventListener("wheel", (e) => {
+  if (state.mode !== "3d") return;
+  e.preventDefault();
+  targetFov = Math.max(FOV_MIN, Math.min(FOV_MAX, targetFov + e.deltaY * 0.04));
+}, { passive: false });
+
+// Pinch-to-zoom (3D mode only)
+{
+  let pinchDist = null;
+  canvas.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      pinchDist = Math.hypot(dx, dy);
+    }
+  }, { passive: true });
+  canvas.addEventListener("touchmove", (e) => {
+    if (state.mode !== "3d" || e.touches.length !== 2 || pinchDist === null) return;
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const newDist = Math.hypot(dx, dy);
+    const delta   = pinchDist - newDist;
+    targetFov     = Math.max(FOV_MIN, Math.min(FOV_MAX, targetFov + delta * 0.08));
+    pinchDist     = newDist;
+  }, { passive: true });
+  canvas.addEventListener("touchend", () => { pinchDist = null; }, { passive: true });
+}
+
 function goTo2D() {
   if (state.mode !== "3d") return;
+  targetFov = FOV_DEFAULT;
   state.mode = "transitioning";
   state.target = 1;
   navbar.classList.add("visible");
@@ -711,6 +747,7 @@ function goTo2D() {
 
 function goTo3D() {
   if (state.mode !== "2d") return;
+  targetFov = FOV_DEFAULT;
   window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
   state.mode = "transitioning";
   state.target = 0;
@@ -731,6 +768,7 @@ function goTo3D() {
 // camera fly. Used when entering IFO via the navbar/footer (loading screen
 // covers the snap); the animated entry is reserved for the direct planet click.
 function jumpToIFO() {
+  targetFov       = FOV_DEFAULT;
   state.t         = 1;
   state.target    = 1;
   state.ifoT      = 1;
@@ -763,6 +801,7 @@ function jumpToIFO() {
 // Instantly snaps all state to the 3D opening view from any mode.
 // Called under cover of the loading screen so the snap is never visible.
 function snapTo3D() {
+  targetFov = FOV_DEFAULT;
   // Reparent IFO planet back to its orbit if it was detached
   if (cofPlanetInScene) {
     scene.remove(ifoOrbit.planet);
@@ -1242,6 +1281,12 @@ function animate() {
   lerpVec(baseCamPos, CAM_IFO, easedIFO, camera.position);
   camera.lookAt(LOOK_AT);
 
+  // Zoom: smoothly lerp FOV toward target (only in 3D mode)
+  if (state.mode === "3d" && Math.abs(camera.fov - targetFov) > 0.01) {
+    camera.fov = camera.fov + (targetFov - camera.fov) * 0.12;
+    camera.updateProjectionMatrix();
+  }
+
   // Expansion: background fades from paper to #060412; star-field fades in
   bgColor.copy(PAPER_COLOR).lerp(NIGHT_COLOR, p1e);
   skyStarMat.uniforms.uTime.value    = performance.now() * 0.001;
@@ -1421,6 +1466,38 @@ window.addEventListener("resize", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
   updatePatronageScroll();
 });
+
+// Cinematic scroll — intercept wheel events and apply smooth inertia
+{
+  let scrollTarget = 0;
+  let scrollRafId  = null;
+
+  function cinematicStep() {
+    const cur  = window.scrollY;
+    const diff = scrollTarget - cur;
+    if (Math.abs(diff) < 0.5) {
+      window.scrollTo(0, scrollTarget);
+      scrollRafId = null;
+      return;
+    }
+    window.scrollBy(0, diff * 0.10);
+    scrollRafId = requestAnimationFrame(cinematicStep);
+  }
+
+  window.addEventListener("wheel", (e) => {
+    // Don't intercept when the 3D canvas has focus (canvas wheel = zoom)
+    if (body.classList.contains("cosmos-only")) return;
+    e.preventDefault();
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    scrollTarget    = Math.max(0, Math.min(maxScroll, scrollTarget + e.deltaY * 1.6));
+    if (!scrollRafId) scrollRafId = requestAnimationFrame(cinematicStep);
+  }, { passive: false });
+
+  // Keep scrollTarget in sync when scrolled by other means (anchor links, etc.)
+  window.addEventListener("scroll", () => {
+    if (!scrollRafId) scrollTarget = window.scrollY;
+  }, { passive: true });
+}
 
 animate();
 

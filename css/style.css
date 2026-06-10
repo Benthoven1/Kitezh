@@ -17,6 +17,12 @@
 
 * { box-sizing: border-box; }
 
+html {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html::-webkit-scrollbar { display: none; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -1533,29 +1539,45 @@ body.night-mode .dropdown a:hover { color: #ffffff; background: rgba(255, 255, 2
 
 /* ---------- Mobile nav: hamburger menu (≤ 720px) ---------- */
 @media (max-width: 720px) {
-  /* Show burger, hide horizontal nav-links */
+  /* Show burger; pill stays at fixed nav-h — never expands */
   .nav-burger { display: flex; }
 
   .navbar {
-    flex-wrap: wrap;
-    height: auto;
-    min-height: var(--nav-h);
-    padding-bottom: 0;
+    height: var(--nav-h);
+    overflow: visible;
   }
   .nav-brand { flex: 1; }
 
+  /* Menu panel drops below the pill as a separate floating card */
   .nav-links {
-    display: none;
-    width: 100%;
+    display: flex;
     flex-direction: column;
     gap: 0;
-    padding: 4px 0 12px;
-    margin-top: 0;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-radius: 10px;
+    padding: 6px 0 10px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity 0.22s ease, transform 0.22s ease;
   }
-  body.night-mode .nav-links { border-top-color: rgba(255, 255, 255, 0.10); }
+  body.night-mode .nav-links {
+    background: rgba(8, 6, 20, 0.97);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+  }
 
-  .navbar.menu-open .nav-links { display: flex; }
+  .navbar.menu-open .nav-links {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
 
   /* Full-width tappable items */
   .nav-trigger {
