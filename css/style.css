@@ -417,7 +417,7 @@ body.night-mode .footer-copy p {
 /* ---------- Patronage scroll reveal ---------- */
 #patronage-section {
   display: none;
-  height: 1000vh;
+  height: 800vh;
   position: relative;
 }
 
