@@ -24,7 +24,7 @@ const STAR_RADIUS = 1.25;
 const ORBITS = [
   {
     id: "ifo",
-    name: "International Festival Orchestra",
+    name: "Music",
     href: "pages/meet-mulvium/international-festival-orchestra.html",
     radius: 3.0,  radius2D: 2.5,  ellipseX: 1,  ringTube: 0.045,
     planetSize: 0.42, planetColor: PASTEL_IFO,
@@ -33,7 +33,7 @@ const ORBITS = [
   },
   {
     id: "castles",
-    name: "Castles",
+    name: "Architecture",
     comingSoon: true,
     radius: 3.8,  radius2D: 4.5,  ellipseX: 1,  ringTube: 0.045,
     planetSize: 0.42,  planetColor: PASTEL_CASTLES,
@@ -42,7 +42,7 @@ const ORBITS = [
   },
   {
     id: "education",
-    name: "Education",
+    name: "Art",
     comingSoon: true,
     radius: 4.5,  radius2D: 6.5,  ellipseX: 1,  ringTube: 0.045,
     planetSize: 0.42, planetColor: PASTEL_EDU,
@@ -51,7 +51,7 @@ const ORBITS = [
   },
   {
     id: "zones",
-    name: "Economic Zones",
+    name: "Horticulture",
     comingSoon: true,
     radius: 5.0,  radius2D: 8.5,  ellipseX: 1,  ringTube: 0.045,
     planetSize: 0.42, planetColor: PASTEL_ZONES,
@@ -430,31 +430,28 @@ window.addEventListener("pointermove", (e) => {
   camDrift.ty = (e.clientY / lsVH) * 2 - 1;
 }, { passive: true });
 
-// ── Hero gooey text + mission phrase handoff ──────────────────────────────────
-// The hero breathes between the brand and the tagline (time-based gooey cycle,
-// same math as the patronage labels). When the user enters the cosmos the hero
-// dissolves with the camera transition (state.t) while "Reimagine Arts
-// Patronage" materializes at the centre — the exact spot where the patronage
-// frames will later trace around it and morph it onward.
-const heroWrap  = document.getElementById("hero-wrap");
-const heroG1    = document.getElementById("hero-g1");
-const heroG2    = document.getElementById("hero-g2");
-const mpText    = document.getElementById("mp-text");
-const mpKicker  = document.getElementById("mp-kicker");
+// ── Hero — brand dissolves on entry, the tagline persists and later
+// parallax-descends to the centre where the patronage frames take it over.
+const heroBrand  = document.getElementById("hero-brand");
+const heroSub    = document.getElementById("hero-sub");
+const heroKicker = document.getElementById("hero-kicker");
+const heroTravel = document.getElementById("hero-travel");
+const heroHalo   = document.getElementById("hero-halo");
 
-const HERO_TEXTS = ["Mulvium", "Reimagine Arts Patronage"];
-const HERO_MORPH = 1.15;  // seconds
-const HERO_COOL  = 3.4;   // seconds settled between morphs
-const heroState  = { idx: 0, morph: 0, cool: 1.6 };
-
-function heroSetText(el, word) {
-  if (el.textContent !== word) {
-    el.textContent = word;
-    el.classList.toggle("hero-brand", word === "Mulvium");
-  }
+// Distance (px) from the tagline's resting spot down to the patronage centre
+// line; measured with the travel transform reset so it is scroll-independent.
+let heroTravelDist = 0;
+function measureHeroTravel() {
+  const prev = heroTravel.style.transform;
+  heroTravel.style.transform = "";
+  const wrapRect = canvasWrap.getBoundingClientRect();
+  const subRect  = heroSub.getBoundingClientRect();
+  const navH     = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--nav-h")) || 72;
+  const restY    = subRect.top + subRect.height / 2 - wrapRect.top;
+  heroTravelDist = (lsVH / 2 + (navH + 12) / 2) - restY;
+  heroTravel.style.transform = prev;
 }
-heroSetText(heroG1, HERO_TEXTS[0]);
-heroSetText(heroG2, HERO_TEXTS[1]);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureHeroTravel);
 
 // Gooey visibility at fraction f (0 hidden → 1 settled); blur only when motion allowed
 function applyGoo(el, f) {
@@ -476,6 +473,7 @@ function resize() {
   renderer.setSize(w, h, false);
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
+  measureHeroTravel();
 }
 resize();
 window.addEventListener("resize", resize);
@@ -1158,7 +1156,7 @@ function updateHover() {
       state.labelStar   = true;
       star.getWorldPosition(worldPos);
       const p = projectToCanvas(worldPos);
-      setLabel("Enter Mulvium", "Begin the journey");
+      setLabel("Enter Mulvium");
       label.style.left = p.x + "px";
       label.style.top  = p.y + "px";
       label.classList.add("visible");
@@ -1429,36 +1427,27 @@ function animate() {
     if (navCap) navCap.style.backgroundColor =
       `rgb(${_r(236,6)},${_r(234,4)},${_r(229,18)})`; }
 
-  // ── Hero ↔ mission phrase choreography ─────────────────────────────────────
-  // heroVis: full in 3D, dissolves over the first half of the 3D→2D camera
-  // transition. mainVis: materializes over the second half, then yields to the
-  // patronage gooey layer once the first frame owns the phrase.
+  // Patronage frames + label morphs (snap animations driven by dt)
+  updatePatronage(dt);
+
+  // ── Hero choreography ───────────────────────────────────────────────────────
+  // MULVIUM dissolves over the first half of the 3D→2D camera transition and
+  // "Our Mission" materializes in its place. The tagline keeps its position,
+  // font, and style, then parallax-descends to the patronage centre line as
+  // the frames approach (prApproach, scroll-driven).
   {
-    const introOn = body.classList.contains("cosmos-intro") ? 1 : 0;
-    const heroVis = Math.max(0, 1 - state.t * 2) * (1 - easedIFO) * introOn;
+    const introOn   = body.classList.contains("cosmos-intro") ? 1 : 0;
+    const brandVis  = Math.max(0, 1 - state.t * 2) * (1 - easedIFO) * introOn;
+    const kickerVis = Math.max(0, state.t * 2 - 1) * (1 - easedIFO) * introOn;
+    const subVis    = introOn * (1 - easedIFO) * (prPhraseOwned ? 0 : 1);
 
-    if (motionOK && heroVis > 0.999 && state.mode === "3d") {
-      if (heroState.cool > 0) {
-        heroState.cool -= dt;
-      } else {
-        heroState.morph += dt;
-        if (heroState.morph >= HERO_MORPH) {
-          heroState.morph = 0;
-          heroState.cool  = HERO_COOL;
-          heroState.idx   = (heroState.idx + 1) % HERO_TEXTS.length;
-          heroSetText(heroG1, HERO_TEXTS[heroState.idx]);
-          heroSetText(heroG2, HERO_TEXTS[(heroState.idx + 1) % HERO_TEXTS.length]);
-        }
-      }
-    }
-    const cycleF = heroState.cool > 0 ? 0 : Math.min(1, heroState.morph / HERO_MORPH);
-    applyGoo(heroG1, (1 - cycleF) * heroVis);
-    applyGoo(heroG2, cycleF * heroVis);
-    heroWrap.style.opacity = String(Math.pow(heroVis, 0.5));
+    applyGoo(heroBrand, brandVis);
+    applyGoo(heroSub, subVis);
+    heroKicker.style.opacity = (Math.pow(kickerVis, 0.6) * (1 - clamp01(prP / 0.08))).toFixed(3);
+    heroHalo.style.opacity   = String((1 - p1e) * introOn);
 
-    const mainVis = Math.max(0, state.t * 2 - 1) * (1 - easedIFO) * (prPhraseOwned ? 0 : 1);
-    applyGoo(mpText, mainVis);
-    mpKicker.style.opacity = (Math.pow(Math.max(0, mainVis), 0.6) * (1 - clamp01(prP / 0.08))).toFixed(3);
+    const travel = heroTravelDist * easeInOut(clamp01(prApproach));
+    heroTravel.style.transform = `translate3d(0, ${travel.toFixed(1)}px, 0)`;
   }
 
   updateHover();
@@ -1507,19 +1496,18 @@ const PR_SIZES = [
   { w: 0.70, h: 0.635 }, // Horticulture
 ];
 const PR_WORDS  = ["Reimagine Arts Patronage", "Music", "Art", "Architecture", "Horticulture"];
-const PR_STARTS = [0.00, 0.19, 0.38, 0.57, 0.76]; // where each frame's window begins on the timeline
-const PR_OPEN   = 0.14;   // timeline fraction over which a frame opens
-const PR_LEAD   = 0.60;   // viewport-heights of head start before the sticky pins,
-                          // so the first frame is already forming as it rises in
+const PR_STARTS = [0.00, 0.19, 0.38, 0.57, 0.76]; // scroll thresholds where each frame snaps open
 
-// Handoff state read by the animate() loop: while the centred mission phrase
-// (#main-phrase) is on screen, the patronage gooey layer stays empty; once the
+// Handoff state read by the animate() loop: while the hero tagline carries
+// "Reimagine Arts Patronage", the patronage gooey layer stays empty; once the
 // first frame starts morphing the phrase into "Music", ownership flips.
 let prP = 0;
+let prApproach = 0;          // 0 at top of the 2D view → 1 when the sticky pins
 let prPhraseOwned = false;
 
 function clamp01(v) { return Math.max(0, Math.min(1, v)); }
-function prEaseOut(t) { return 1 - Math.pow(1 - t, 3); }
+function prEaseRise(t) { return 1 - Math.pow(1 - t, 3); }
+function prEaseSlit(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t); }
 
 // ── Gooey text morphing — ported from the GooeyText React component.
 // Two overlapping spans crossfade under an SVG alpha-threshold filter
@@ -1575,59 +1563,88 @@ function resetGooey() {
   gooeyShade.classList.remove("on");
 }
 
-function updatePatronageScroll() {
-  if (!body.classList.contains("expansion-active")) return;
+// ── Patronage snap engine — driven from animate() every frame ────────────────
+// Scroll position only decides each frame's TARGET (open or closed); the frame
+// then animates to completion on its own clock. Frames can never be parked
+// mid-transition by slow scrolling, so there is nothing to glitch.
+const prFrameP = PR_SIZES.map(() => 0);          // animated open progress per frame
+const PR_SNAP  = 0.9;                            // seconds for a frame to snap open/closed
+const prGoo    = { from: PR_WORDS[0], to: PR_WORDS[0], f: 1 };
+const PR_GOO_SNAP = 0.85;                        // seconds for a label morph
+
+function updatePatronage(dt) {
+  if (!body.classList.contains("expansion-active")) { prApproach = 0; return; }
+
+  // Parallax descent driver: how far the user has scrolled toward the
+  // patronage section pinning (the tagline arrives at centre exactly then)
+  const secTop = patronageSection.offsetTop;
+  prApproach = secTop > 0 ? clamp01(window.scrollY / secTop) : 0;
+
   const rect = patronageSection.getBoundingClientRect();
-  const lead = lsVH * PR_LEAD;
-  const scrolled   = -rect.top + lead;
-  const scrollable = patronageSection.offsetHeight - lsVH + lead;
+  const scrollable = patronageSection.offsetHeight - lsVH;
   if (scrollable <= 0) return;
-  const P = clamp01(scrolled / scrollable);
+  const P = clamp01(-rect.top / scrollable);
+  prP = P;
   const vw = window.innerWidth, vh = window.innerHeight;
 
   let wordIdx = -1;
   for (let i = 0; i < prBoxEls.length; i++) {
-    const q = clamp01((P - PR_STARTS[i]) / PR_OPEN);
-    // Slit character: width leads (done by 30% of the window), height follows
-    const wP = prEaseOut(clamp01(q / 0.30));
-    const hP = prEaseOut(q);
-    // After opening, each frame keeps growing ~5% until the sequence ends.
-    // Earlier frames lead, so the whole stack breathes forward like a slow
-    // dolly-in and the border reveals a sliver of each photograph beneath.
-    const grow = 1 + 0.05 * clamp01((P - (PR_STARTS[i] + PR_OPEN)) / Math.max(1e-4, 1 - PR_STARTS[i] - PR_OPEN));
+    const open = i === 0 ? P > 0.001 : P >= PR_STARTS[i];
+    if (open) wordIdx = i;
+    // Snap toward the target on a fixed clock (reduced motion: instant)
+    const dir = open ? 1 : -1;
+    prFrameP[i] = motionOK ? clamp01(prFrameP[i] + dir * dt / PR_SNAP) : (open ? 1 : 0);
+    const t = prFrameP[i];
+    // Slit character: width snaps first, height reveals with an expo tail
+    const wP = prEaseRise(Math.min(1, t / 0.15));
+    const hP = prEaseSlit(Math.max(0, Math.min(1, (t - 0.08) / 0.92)));
+    // Slow scroll-driven dolly-in after opening — continuous and glitch-free
+    const grow = 1 + 0.05 * clamp01((P - PR_STARTS[i]) / Math.max(1e-4, 1 - PR_STARTS[i]));
     const el = prBoxEls[i];
     el.style.width  = (vw * PR_SIZES[i].w * wP * grow) + "px";
-    el.style.height = (q > 0 ? Math.max(2, vh * PR_SIZES[i].h * hP * grow) : 0) + "px";
-    el.classList.toggle("pr-active", q > 0.01);
-    if (q > 0) wordIdx = i;
+    el.style.height = (t > 0 ? Math.max(2, vh * PR_SIZES[i].h * hP * grow) : 0) + "px";
+    el.classList.toggle("pr-active", t > 0.01);
   }
 
-  // Handoff: the centred #main-phrase carries "Reimagine Arts Patronage" while
-  // the first border frame traces itself around it (wordIdx 0). The patronage
-  // layer only takes over at the first word morph — both render the phrase at
-  // identical position and metrics, so the swap is invisible.
-  prP = P;
-  prPhraseOwned = wordIdx >= 1;
-  if (wordIdx < 1) {
-    gooeyApply("", PR_WORDS[0], 0); // keep this layer empty
+  // Label morph — time-based snap toward the deepest open frame's word.
+  // While the tagline (hero layer) owns the phrase, this layer stays hidden;
+  // ownership flips at the first morph into "Music" and flips back once the
+  // phrase has fully settled again — both layers render the phrase with
+  // identical metrics and position, so the swap is invisible.
+  const targetWord = wordIdx >= 1 ? PR_WORDS[wordIdx] : PR_WORDS[0];
+  if (targetWord !== prGoo.to) {
+    prGoo.from = prGoo.to;
+    prGoo.to   = targetWord;
+    prGoo.f    = 0;
+  }
+  if (prGoo.f < 1) prGoo.f = Math.min(1, prGoo.f + dt / PR_GOO_SNAP);
+
+  if (wordIdx >= 1) prPhraseOwned = true;
+  else if (prGoo.to === PR_WORDS[0] && prGoo.f >= 1) prPhraseOwned = false;
+
+  if (prPhraseOwned) {
+    gooeyApply(prGoo.from, prGoo.to, prGoo.f);
   } else {
-    // Morph scrubbed over the first 55% of the active frame's window —
-    // tight enough that the dissolved midpoint passes in a brief beat of scroll
-    const f = clamp01((P - PR_STARTS[wordIdx]) / (PR_OPEN * 0.55));
-    gooeyApply(PR_WORDS[wordIdx - 1], PR_WORDS[wordIdx], f);
+    gooeyA.style.opacity = "0%";
+    gooeyB.style.opacity = "0%";
   }
   // Shade only behind single-word labels over photographs (not the phrase)
   gooeyShade.classList.toggle("on", wordIdx >= 1);
 }
 
 function resetPatronage() {
-  prBoxEls.forEach((el) => {
+  prBoxEls.forEach((el, i) => {
     el.style.width  = "0";
     el.style.height = "0";
     el.classList.remove("pr-active");
+    prFrameP[i] = 0;
   });
   prP = 0;
+  prApproach = 0;
   prPhraseOwned = false;
+  prGoo.from = PR_WORDS[0];
+  prGoo.to   = PR_WORDS[0];
+  prGoo.f    = 1;
   resetGooey();
 }
 
@@ -1665,12 +1682,10 @@ function resetPatronage() {
 
 window.addEventListener("scroll", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
-  updatePatronageScroll();
 }, { passive: true });
 
 window.addEventListener("resize", () => {
   if (body.classList.contains("expansion-active")) updateExpansionScroll();
-  updatePatronageScroll();
 });
 
 // Cinematic scroll — intercept wheel events and apply smooth inertia

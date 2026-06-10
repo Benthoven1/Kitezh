@@ -72,20 +72,19 @@
           <span class="pl-line" aria-hidden="true"></span>
           <span class="pl-dot" aria-hidden="true"></span>
         </div>
-        <!-- Hero — one gooey text that breathes between the brand and the
-             tagline, floating in a soft paper halo above the cosmos -->
+        <!-- Hero — brand and tagline stacked in a soft paper halo. On entering
+             the cosmos, MULVIUM gooey-dissolves and "Our Mission" takes its
+             place; the tagline stays put, then parallaxes down to centre as
+             the patronage frames approach. -->
         <div class="hero-wrap" id="hero-wrap">
-          <div class="hero-halo" aria-hidden="true"></div>
-          <h1 class="hero-gooey" aria-label="Mulvium — Reimagine Arts Patronage">
-            <span id="hero-g1" class="hero-gooey-text" aria-hidden="true"></span>
-            <span id="hero-g2" class="hero-gooey-text" aria-hidden="true"></span>
-          </h1>
-        </div>
-        <!-- Mission phrase — materializes at centre as the cosmos flattens
-             overhead; the patronage frames later trace around this exact text -->
-        <div id="main-phrase" class="main-phrase" aria-hidden="true">
-          <p class="mp-kicker" id="mp-kicker">Our Mission</p>
-          <p class="mp-goo"><span class="mp-text" id="mp-text">Reimagine Arts Patronage</span></p>
+          <div class="hero-halo" id="hero-halo" aria-hidden="true"></div>
+          <div class="hero-stack">
+            <h1 class="hero-brand-goo"><span class="hero-brand" id="hero-brand">Mulvium</span></h1>
+            <div class="hero-travel" id="hero-travel">
+              <p class="hero-kicker" id="hero-kicker">Our Mission</p>
+              <p class="hero-sub-goo"><span class="hero-sub" id="hero-sub">Reimagine Arts Patronage</span></p>
+            </div>
+          </div>
         </div>
         <div id="cosmos-hint" class="cosmos-hint">
           <p>Click a sphere to explore our offerings and our mission.</p>

@@ -471,11 +471,14 @@ body.night-mode #patronage-section {
   user-select: none;
 }
 
-/* Long phrases ("Reimagine Arts Patronage") render at editorial scale */
+/* The phrase renders with the hero subheader's exact metrics so ownership
+   can pass between the two layers with an invisible swap */
 .pr-gooey-text.pr-gooey-long {
   font-weight: 400;
-  font-size: clamp(24px, 3.6vw, 56px);
-  letter-spacing: 0.06em;
+  font-style: italic;
+  font-size: clamp(20px, 2.6vw, 38px);
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.96);
 }
 
 /* Image frames — concentric, each smaller than the last */
@@ -1719,25 +1722,28 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
    cinematic vignette, and sub-page choreography.
    ===================================================================== */
 
-/* ---------- Hero — gooey text breathing between brand and tagline ---------- */
+/* ---------- Hero — brand and tagline stacked over the cosmos ---------- */
 .hero-wrap {
   position: absolute;
   left: 0;
   right: 0;
   top: clamp(52px, 11vh, 130px);
-  height: clamp(96px, 15vh, 160px);
   pointer-events: none;
   z-index: 2;
-  opacity: 0; /* driven by JS with the camera transition */
+  opacity: 0; /* revealed once the loading sequence completes */
+  transition: opacity 0.8s var(--ease);
 }
 
-/* Soft paper fog behind the text so orbit lines never fight the words */
+body.cosmos-intro .hero-wrap { opacity: 1; }
+
+/* Soft paper fog behind the text so orbit lines never fight the words.
+   Fades away with the night sky (driven by JS). */
 .hero-halo {
   position: absolute;
   left: 50%;
   top: 50%;
   width: min(94vw, 1020px);
-  height: 320%;
+  height: 340%;
   transform: translate(-50%, -50%);
   background: radial-gradient(ellipse 50% 50% at 50% 50%,
     rgba(236, 234, 229, 0.96) 0%,
@@ -1745,23 +1751,30 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
     rgba(236, 234, 229, 0) 74%);
 }
 
-.hero-gooey {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  filter: url(#threshold);
+.hero-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 1.6vh, 18px);
 }
 
-.hero-gooey-text {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+.hero-brand-goo,
+.hero-sub-goo {
+  margin: 0;
+  filter: url(#threshold);
+  text-align: center;
+}
+
+.hero-brand {
+  display: inline-block;
   font-family: "Cormorant Garamond", serif;
-  font-weight: 400;
-  font-style: italic;
-  font-size: clamp(20px, 2.6vw, 38px);
-  letter-spacing: 0.14em;
+  font-weight: 300;
+  font-size: clamp(38px, 6.5vw, 84px);
+  letter-spacing: 0.3em;
+  text-indent: 0.3em; /* recentres tracked text */
+  text-transform: uppercase;
+  line-height: 1.05;
   color: var(--ink);
   white-space: nowrap;
   opacity: 0;
@@ -1769,28 +1782,18 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
   user-select: none;
 }
 
-.hero-gooey-text.hero-brand {
-  font-style: normal;
-  font-weight: 300;
-  font-size: clamp(38px, 6.5vw, 84px);
-  letter-spacing: 0.3em;
-  text-indent: 0.3em; /* recentres tracked text */
-  text-transform: uppercase;
+.hero-travel {
+  position: relative;
+  text-align: center;
+  will-change: transform;
 }
 
-/* ---------- Mission phrase — centred over the cosmos in 2D/expansion ---------- */
-.main-phrase {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.mp-kicker {
+/* "Our Mission" — takes the brand's place when MULVIUM dissolves */
+.hero-kicker {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(50% + (var(--nav-h) + 12px) / 2 - clamp(58px, 9vh, 96px));
+  bottom: calc(100% + clamp(10px, 2vh, 22px));
   text-align: center;
   font-family: "Cormorant SC", serif;
   font-size: clamp(13px, 1.4vw, 16px);
@@ -1801,27 +1804,17 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
   transition: color 0.6s ease;
 }
 
-body.night-mode .mp-kicker { color: rgba(255, 255, 255, 0.6); }
+body.night-mode .hero-kicker { color: rgba(255, 255, 255, 0.6); }
 
-.mp-goo {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(50% + (var(--nav-h) + 12px) / 2); /* matches .pr-gooey-text centre */
-  transform: translateY(-50%);
-  text-align: center;
-  margin: 0;
-  filter: url(#threshold);
-}
-
-/* Metrics identical to .pr-gooey-text.pr-gooey-long so the patronage layer
-   can take over the phrase with an invisible swap */
-.mp-text {
+/* Tagline — identical metrics to .pr-gooey-text.pr-gooey-long so the
+   patronage layer can take over the phrase with an invisible swap */
+.hero-sub {
   display: inline-block;
   font-family: "Cormorant Garamond", serif;
   font-weight: 400;
-  font-size: clamp(24px, 3.6vw, 56px);
-  letter-spacing: 0.06em;
+  font-style: italic;
+  font-size: clamp(20px, 2.6vw, 38px);
+  letter-spacing: 0.14em;
   color: var(--ink);
   white-space: nowrap;
   opacity: 0;
@@ -1830,7 +1823,7 @@ body.night-mode .mp-kicker { color: rgba(255, 255, 255, 0.6); }
   transition: color 0.6s ease;
 }
 
-body.night-mode .mp-text { color: rgba(255, 255, 255, 0.96); }
+body.night-mode .hero-sub { color: rgba(255, 255, 255, 0.96); }
 
 /* ---------- Scroll reveal — content rises in as it enters the viewport ---------- */
 .rv {
