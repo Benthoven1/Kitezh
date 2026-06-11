@@ -1642,7 +1642,7 @@ body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffff
 /* ---------- Reduced motion — settle everything instantly ---------- */
 @media (prefers-reduced-motion: reduce) {
   .rv { opacity: 1; transform: none; transition: none; }
-  .contact-head > *, body.contact-page .card { opacity: 1; animation: none !important; }
+  .ar, body.contact-page .card { opacity: 1; animation: none !important; }
   .letter-sig-img { clip-path: none; transition: none; }
   .page-shell > * { animation: none; }
 }
@@ -1675,23 +1675,36 @@ body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffff
 
 body.contact-page #card-section { pointer-events: auto; }
 
-.contact-head {
+/* Consolidated About sections — People, Careers, Contact Us, top down */
+.about-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  margin-bottom: clamp(24px, 4vh, 44px);
+  width: 100%;
+  padding-bottom: clamp(56px, 9vh, 110px);
+  scroll-margin-top: calc(var(--nav-h) + 36px);
 }
 
-/* Content holds back until the loading screen finishes (body.ls-done) */
-.contact-head > * { opacity: 0; }
-body.ls-done .contact-head > * { animation: pageRise 0.9s var(--ease) both; }
-body.ls-done .contact-head > *:nth-child(2) { animation-delay: 0.12s; }
-body.ls-done .contact-head > *:nth-child(3) { animation-delay: 0.24s; }
+.about-section:last-of-type { padding-bottom: clamp(40px, 6vh, 72px); }
 
-.contact-eyebrow {
-  font-family: "Cormorant SC", serif;
-  font-size: 14px;
-  letter-spacing: 0.3em;
-  color: var(--clay-deep);
-  margin: 0 0 12px;
+.about-text {
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(16px, 1.8vw, 19px);
+  line-height: 1.7;
+  color: var(--ink-soft);
+  max-width: 580px;
+  margin: 14px 0 0;
+}
+
+/* Anchor navigation glides on this page only */
+html:has(body.contact-page) { scroll-behavior: smooth; }
+
+/* Content holds back until the loading screen finishes (body.ls-done) */
+.ar { opacity: 0; }
+body.ls-done .ar {
+  animation: pageRise 0.9s var(--ease) both;
+  animation-delay: var(--ard, 0s);
 }
 
 .contact-title {
@@ -1708,7 +1721,7 @@ body.ls-done .contact-head > *:nth-child(3) { animation-delay: 0.24s; }
   font-style: italic;
   font-size: clamp(15px, 1.8vw, 20px);
   color: var(--ink-soft);
-  margin: 0;
+  margin: 10px 0 clamp(22px, 3.5vh, 36px);
 }
 
 /* The card floats directly on the constellation */
@@ -1725,6 +1738,5 @@ body.contact-page #site-footer {
 }
 
 @media (max-height: 720px) {
-  .contact-shell { padding-top: calc(var(--nav-h) + 32px); }
-  .contact-head { margin-bottom: 18px; }
+  .contact-shell { padding-top: calc(var(--nav-h) + clamp(96px, 17vh, 150px)); }
 }
