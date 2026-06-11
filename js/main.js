@@ -1504,10 +1504,11 @@ function animate() {
 function updateExpansionScroll() {
   if (!body.classList.contains("expansion-active")) return;
   if (cachedScrollTotal <= 0) return;
-  const rawP = Math.max(0, Math.min(1, window.scrollY / cachedScrollTotal));
-
-  // Phase 1 (0–60 %): rings expand outward, star shrinks + goes radiant, night sky fades in
-  state.expansionP1 = Math.min(1, rawP / 0.6);
+  // Rings expand, star goes radiant, night sky fades in — completed over the
+  // first ~half-viewport of scroll so the next act (the phrase descending to
+  // the patronage frames) takes over without a dead stretch
+  const ramp = Math.max(1, Math.min(cachedScrollTotal, 480));
+  state.expansionP1 = Math.max(0, Math.min(1, window.scrollY / ramp));
 
   // Wait until background is halfway dark before flipping night-mode text colours
   if (state.expansionP1 >= 0.5) {
@@ -1534,7 +1535,7 @@ const PR_SIZES = [
   { w: 0.70, h: 0.635 }, // Horticulture
 ];
 const PR_WORDS  = ["Reimagine Arts Patronage", "Music", "Art", "Architecture", "Horticulture"];
-const PR_STARTS = [0.00, 0.19, 0.38, 0.57, 0.76]; // scroll thresholds where each frame snaps open
+const PR_STARTS = [0.00, 0.20, 0.40, 0.60, 0.80]; // scroll thresholds where each frame snaps open
 
 // Handoff state read by the animate() loop: while the hero tagline carries
 // "Reimagine Arts Patronage", the patronage gooey layer stays empty; once the
@@ -1736,7 +1737,7 @@ window.addEventListener("resize", () => {
 // after their programmatic window.scrollTo: it cancels any in-flight inertia
 // so a stale scrollTarget can't drag the page back away from the top.
 let resetCinematicScroll = () => {};
-{
+if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
   let scrollTarget = 0;
   let scrollRafId  = null;
 
