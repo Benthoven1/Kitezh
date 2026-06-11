@@ -1,6 +1,5 @@
 :root {
   --clay: #b87758;
-  --clay-soft: #c88a6c;
   --clay-deep: #8f5a42;
   --purple: #7c5ce8;
   --ink: #1b1613;
@@ -10,7 +9,6 @@
   --hairline: rgba(27, 22, 19, 0.12);
   --nav-h: 72px;
   --ease: cubic-bezier(0.65, 0.05, 0.25, 1);
-  --ease-silk: cubic-bezier(.445, .05, .55, .95);
   /* Pastel hover color — matches center star sphere */
   --pastel-hover: #f0d5bb;
 }
@@ -125,17 +123,16 @@ button {
   100% { transform: translateY(0)    rotate(0deg);  }
 }
 
-.nav-brand a:hover .bl,
-.footer-wordmark:hover .bl {
+.nav-brand a:hover .bl {
   animation: blWiggle 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
-.nav-brand a:hover .bl-1, .footer-wordmark:hover .bl-1 { animation-delay:   0ms; }
-.nav-brand a:hover .bl-2, .footer-wordmark:hover .bl-2 { animation-delay:  45ms; }
-.nav-brand a:hover .bl-3, .footer-wordmark:hover .bl-3 { animation-delay:  90ms; }
-.nav-brand a:hover .bl-4, .footer-wordmark:hover .bl-4 { animation-delay: 135ms; }
-.nav-brand a:hover .bl-5, .footer-wordmark:hover .bl-5 { animation-delay: 180ms; }
-.nav-brand a:hover .bl-6, .footer-wordmark:hover .bl-6 { animation-delay: 225ms; }
-.nav-brand a:hover .bl-7, .footer-wordmark:hover .bl-7 { animation-delay: 270ms; }
+.nav-brand a:hover .bl-1 { animation-delay:   0ms; }
+.nav-brand a:hover .bl-2 { animation-delay:  45ms; }
+.nav-brand a:hover .bl-3 { animation-delay:  90ms; }
+.nav-brand a:hover .bl-4 { animation-delay: 135ms; }
+.nav-brand a:hover .bl-5 { animation-delay: 180ms; }
+.nav-brand a:hover .bl-6 { animation-delay: 225ms; }
+.nav-brand a:hover .bl-7 { animation-delay: 270ms; }
 
 .nav-links {
   display: flex;
@@ -346,12 +343,6 @@ body.night-mode .letter-title {
 
 body.night-mode .letter-sig-img {
   filter: invert(1);
-}
-
-body.night-mode #card-section {
-  background: transparent;
-  position: relative;
-  z-index: 1;
 }
 
 body.night-mode .letter-ornament {
@@ -663,323 +654,118 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   letter-spacing: 0.02em;
 }
 
-/* ========== Greeting Card ========== */
+/* ========== Contact card — an open two-page spread ========== */
 
 #card-section {
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: 80px 24px 120px;
-  background: var(--paper);
-  position: relative;
-  z-index: 1;
 }
 
-/* Scene: perspective container + clip/slide host */
-/* clip-path hides left half; translateX(-25%) centers the visible right half.
-   Transitions are set by JS for asymmetric open/close easing. */
-.card-scene {
-  perspective: 1400px;
-  will-change: transform, clip-path;
-  transform: translateX(-25%);
-  clip-path: inset(0 0 0 50%);
-}
-
-.card-scene.is-open {
-  transform: translateX(0);
-  clip-path: inset(0 0 0 0%);
-}
-
-/* Card wrap: two-page spread, always full open size — no width animation */
-.card-wrap {
-  position: relative;
-  width: min(730px, 94vw);
-  height: 570px;
-  /* scroll-reveal initial state */
-  opacity: 0;
-  transform: translateY(52px);
-  transition:
-    opacity 0.75s var(--ease),
-    transform 0.75s var(--ease);
-}
-
-.card-wrap.card-in {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ---- Cover — right half, hinge at center spine; two-faced (front + back) ---- */
-/* transform transition set by JS for asymmetric open/close feel */
-.card-cover {
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  width: 50%;
-  z-index: 2;
-  transform-origin: left center;
-  transform: rotateY(0deg);
-  transform-style: preserve-3d;
-  -webkit-transform-style: preserve-3d;
-  border-radius: 3px;
-  cursor: pointer;
-  box-shadow:
-    0 2px 6px rgba(0,0,0,0.12),
-    0 10px 30px rgba(0,0,0,0.20),
-    0 30px 80px rgba(0,0,0,0.22),
-    0 60px 120px rgba(0,0,0,0.15);
-  outline: none;
-}
-
-.card-cover:focus-visible {
-  box-shadow:
-    0 2px 6px rgba(0,0,0,0.12),
-    0 10px 30px rgba(0,0,0,0.20),
-    0 0 0 3px var(--purple);
-}
-
-.card-scene.is-open .card-cover {
-  transform: rotateY(-175deg);
-  cursor: default;
-  pointer-events: none;
-  box-shadow: none;
-}
-
-/* Back face is interactive once flipped open */
-.card-scene.is-open .card-face--back {
-  pointer-events: auto;
-}
-
-/* Face layout — both faces share absolute positioning and backface hiding */
-.card-face {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 28px 28px 24px;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  overflow: hidden;
-  border-radius: 3px;
+.card {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  width: min(880px, 94vw);
+  min-height: 470px;
   background: var(--paper-warm);
-}
-
-/* Back face — "Dear Benjamin" + message textarea */
-.card-face--back {
-  align-items: flex-start;
-  padding: 32px 28px;
-  transform: rotateY(180deg);
-}
-
-.card-rose-fig {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
+  border: 1px solid var(--hairline);
   border-radius: 2px;
-  margin: 0;
-  position: relative;
-  background: var(--paper-warm);
-}
-
-.card-rose-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  /* Botanical-illustration treatment: warm, slightly desaturated, high contrast */
-  filter: sepia(0.22) saturate(0.78) contrast(1.10) brightness(1.06);
-  mix-blend-mode: multiply;
-}
-
-/* Soft vignette to give a painted-edge feel */
-.card-rose-fig::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse 105% 105% at 50% 50%,
-    transparent 45%,
-    rgba(240,237,231,0.55) 100%);
-  pointer-events: none;
-}
-
-.card-greeting {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 38px;
-  color: var(--ink);
-  margin: 18px 0 8px;
-  line-height: 1.15;
-  text-align: center;
-}
-
-.card-open-hint {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 10px;
-  letter-spacing: 0.24em;
-  text-transform: none;
-  color: var(--ink-soft);
-  opacity: 0.45;
-  margin: 0;
-}
-
-/* ---- Close button ---- */
-.card-close-btn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 20;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  color: var(--ink-soft);
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0;
-  padding: 0;
-  line-height: 1;
-  transition: opacity 0.18s ease;
-  font-family: "Cormorant Garamond", serif;
-}
-
-.card-scene.is-open .card-close-btn { opacity: 0.4; }
-.card-close-btn:hover { opacity: 0.9 !important; }
-.card-close-btn:focus-visible { outline: 2px solid var(--purple); border-radius: 2px; }
-
-/* Back face is rotateY(180deg) so X-axis is mirrored: right:10px maps to visual top-left */
-.card-face--back .card-close-btn { left: auto; right: 10px; }
-
-/* Mobile close button lives in card-inside; hidden on desktop where back face has the button */
-.card-close-btn--mobile { display: none; }
-
-/* ---- Inside (contact form) — right half only on desktop ---- */
-.card-inside {
-  position: absolute;
-  top: 0; right: 0; bottom: 0;
-  left: auto;
-  width: 50%;
-  z-index: 1;
-  border-radius: 3px;
-  overflow: hidden;
-  background: var(--paper-warm);
   box-shadow:
-    -3px 0 10px rgba(0,0,0,0.10),
-    0 2px 6px rgba(0,0,0,0.12),
-    0 10px 30px rgba(0,0,0,0.20),
-    0 30px 80px rgba(0,0,0,0.22),
-    0 60px 120px rgba(0,0,0,0.15);
-}
-
-/* Two-page spread */
-.card-pages {
-  display: flex;
-  height: 100%;
+    0 1px 2px rgba(27, 22, 19, 0.05),
+    0 12px 32px rgba(27, 22, 19, 0.10),
+    0 32px 80px rgba(27, 22, 19, 0.10);
+  animation: pageRise 0.9s var(--ease) 0.32s both;
 }
 
 .card-page {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 32px 28px;
-  overflow: hidden;
   min-width: 0;
+  position: relative;
+  padding: clamp(26px, 4vw, 44px) clamp(24px, 3.4vw, 40px);
 }
 
-/* Left page + binding hidden on desktop — content lives on the cover's back face */
-.card-page--left { display: none; }
-.card-page-divider { display: none; }
-
-.card-page--right {
-  padding-left: 28px;
-  gap: 14px;
-}
-
-/* Centre binding — hairline with soft shadow on each side */
-.card-page-divider {
-  width: 1px;
-  flex-shrink: 0;
-  background: rgba(27, 22, 19, 0.14);
+/* Centre fold — hairline spine with soft shading on both pages */
+.card-spine {
+  background: rgba(27, 22, 19, 0.12);
   position: relative;
 }
 
-.card-page-divider::before {
+.card-spine::before {
   content: '';
   position: absolute;
   top: 0; bottom: 0; right: 100%;
-  width: 18px;
-  background: linear-gradient(to left, rgba(0,0,0,0.06), transparent);
+  width: 22px;
+  background: linear-gradient(to left, rgba(27, 22, 19, 0.05), transparent);
 }
 
-.card-page-divider::after {
+.card-spine::after {
   content: '';
   position: absolute;
   top: 0; bottom: 0; left: 100%;
-  width: 18px;
-  background: linear-gradient(to right, rgba(0,0,0,0.05), transparent);
+  width: 22px;
+  background: linear-gradient(to right, rgba(27, 22, 19, 0.04), transparent);
 }
 
-/* Salutation on left page */
 .ci-salutation {
   font-family: "Cormorant Garamond", serif;
-  font-size: 30px;
+  font-weight: 400;
+  font-size: clamp(24px, 2.4vw, 30px);
   color: var(--ink);
-  margin: 0 0 14px;
+  margin: 0 0 18px;
   line-height: 1.2;
-  flex-shrink: 0;
 }
 
-/* Message field fills remaining height of left page */
-.ci-field--fill {
-  flex: 1;
+.card-form {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-}
-
-.ci-field--fill .ci-label { flex-shrink: 0; }
-
-.ci-field--fill .ci-textarea {
   flex: 1;
   min-height: 0;
-  resize: none;
-  max-height: none;
-  line-height: 1.7;
 }
 
 .ci-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.ci-field--fill {
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0;
+}
+
+.ci-field--fill .ci-textarea {
+  flex: 1;
+  min-height: 120px;
+  resize: none;
+  line-height: 1.65;
 }
 
 .ci-label {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 9.5px;
-  font-weight: 500;
+  font-family: "Cormorant SC", serif;
+  font-size: 12px;
   letter-spacing: 0.16em;
-  text-transform: none;
   color: var(--ink-soft);
 }
 
 .ci-input {
   font-family: "Cormorant Garamond", serif;
-  font-size: 13px;
+  font-size: 17px;
   color: var(--ink);
   background: transparent;
   border: none;
   border-bottom: 1px solid var(--hairline);
-  padding: 5px 0;
+  border-radius: 0;
+  padding: 6px 0;
   outline: none;
   width: 100%;
-  border-radius: 0;
   -webkit-appearance: none;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.25s ease;
 }
 
-.ci-input:focus { border-bottom-color: var(--purple); }
-.ci-input::placeholder { color: rgba(27,22,19,0.32); }
+.ci-input:focus { border-bottom-color: var(--ink); }
+.ci-input::placeholder { color: rgba(27, 22, 19, 0.30); }
 .ci-input--error { border-bottom-color: #b94040; }
 
 .ci-select {
@@ -990,29 +776,24 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   padding-right: 18px;
 }
 
-.ci-textarea {
-  resize: none;
-  min-height: 68px;
-  line-height: 1.6;
+.ci-actions {
+  margin-top: auto;
+  padding-top: 18px;
 }
 
-.ci-actions { margin-top: auto; padding-top: 16px; }
-
 .ci-submit {
-  font-family: "Cormorant Garamond", serif;
-  font-size: 11px;
-  font-weight: 500;
+  font-family: "Cormorant SC", serif;
+  font-size: 14px;
   letter-spacing: 0.12em;
-  text-transform: none;
   color: var(--ink);
   background: transparent;
-  border: 1px solid rgba(27,22,19,0.25);
-  padding: 9px 18px;
+  border: 1px solid rgba(27, 22, 19, 0.30);
+  border-radius: 1px;
+  padding: 11px 26px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  border-radius: 1px;
+  gap: 12px;
   transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease;
 }
 
@@ -1027,9 +808,12 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .ci-arrow { transition: transform 0.22s ease; }
 .ci-submit:hover:not(:disabled) .ci-arrow { transform: translateX(4px); }
 
-/* ---- Success state — full overlay on card-inside ---- */
+.ci-submit:focus-visible,
+.ci-input:focus-visible { outline: 1px solid var(--ink); outline-offset: 3px; }
+
+/* Success — replaces the right page content */
 .ci-success {
-  display: none; /* JS sets display:flex via inline style on show */
+  display: none; /* JS sets display:flex */
   position: absolute;
   inset: 0;
   background: var(--paper-warm);
@@ -1037,35 +821,27 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 32px 20px;
+  padding: 32px 24px;
   gap: 6px;
-  border-radius: 3px;
 }
 
 .ci-success-icon {
-  font-size: 26px;
-  color: var(--purple);
-  margin-bottom: 10px;
-  animation: ci-pop 0.5s var(--ease) both;
-}
-
-@keyframes ci-pop {
-  from { opacity: 0; transform: scale(0.5); }
-  to   { opacity: 1; transform: scale(1); }
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 8px;
 }
 
 .ci-success-title {
   font-family: "Cormorant Garamond", serif;
   font-weight: 500;
-  font-size: 26px;
+  font-size: 24px;
   color: var(--ink);
   margin: 0;
 }
 
 .ci-success-msg {
   font-family: "Cormorant Garamond", serif;
-  font-weight: 500;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--ink-soft);
   margin: 0;
 }
@@ -1178,32 +954,25 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   .ifo-prose-body p { font-size: 16px; line-height: 1.75; }
 }
 
-/* Card responsive — portrait card on narrow screens */
-@media (max-width: 639px) {
-  /* No clip/slide on mobile: full-width cover handles hiding the inside */
-  .card-scene { transform: none; clip-path: none; }
-  .card-scene.is-open { transform: none; clip-path: none; }
-  /* Revert to portrait: full-width cover, inside pages stack vertically */
-  .card-wrap { width: min(380px, 92vw); height: auto; min-height: 570px; }
-  .card-cover { left: 0; right: auto; width: 100%; height: 570px; bottom: auto; }
-  /* Back face not used on mobile — cover is a simple single-face flip */
-  .card-face--back { display: none; }
-  /* Mobile close button (in card-inside) is used instead */
-  .card-close-btn--mobile { display: flex; }
-  /* Card-inside reverts to full width; left page + divider restored for mobile layout */
-  .card-inside { left: 0; width: auto; box-shadow: none; }
-  .card-page--left { display: flex; padding: 24px 22px 16px; min-height: 220px; }
-  .card-page-divider { display: block; width: auto; height: 1px; flex-shrink: 0; }
-  .card-page-divider::before { top: auto; bottom: 100%; right: 0; left: 0; width: auto; height: 14px;
-    background: linear-gradient(to top, rgba(0,0,0,0.06), transparent); }
-  .card-page-divider::after { bottom: auto; top: 100%; right: 0; left: 0; width: auto; height: 12px;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.05), transparent); }
-  .card-pages { flex-direction: column; }
-  .card-inside { overflow-y: auto; }
-  .card-page--right { padding: 16px 22px 24px; }
-  .ci-field--fill .ci-textarea { min-height: 110px; flex: none; }
-  .ci-actions { margin-top: 16px; padding-top: 0; }
-  .card-greeting { font-size: 32px; }
+/* Card responsive — pages stack on narrow screens */
+@media (max-width: 700px) {
+  .card {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1px auto;
+    min-height: 0;
+  }
+  .card-spine { width: auto; height: 1px; }
+  .card-spine::before {
+    top: auto; bottom: 100%; left: 0; right: 0;
+    width: auto; height: 16px;
+    background: linear-gradient(to top, rgba(27, 22, 19, 0.05), transparent);
+  }
+  .card-spine::after {
+    top: 100%; bottom: auto; left: 0; right: 0;
+    width: auto; height: 14px;
+    background: linear-gradient(to bottom, rgba(27, 22, 19, 0.04), transparent);
+  }
+  .ci-field--fill .ci-textarea { min-height: 140px; flex: none; }
 }
 
 /* Small phone (≤ 480px) */
@@ -1436,7 +1205,6 @@ body.night-mode .dropdown a:hover { color: rgba(255, 255, 255, 0.92); }
 .static-nav .back-home { letter-spacing: 0.04em; }
 .ci-label           { letter-spacing: 0.04em; }
 .ci-submit          { letter-spacing: 0.04em; }
-.card-open-hint     { letter-spacing: 0.04em; }
 
 /* ---------- Accessibility font-size bumps ---------- */
 .nav-trigger          { font-size: 17px; }
@@ -1944,15 +1712,6 @@ body.contact-page #site-footer {
   z-index: 2;
   background: transparent;
   border-top: none;
-}
-
-/* Form fills the right page column */
-.card-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  flex: 1;
-  min-height: 0;
 }
 
 @media (max-height: 720px) {

@@ -38,80 +38,56 @@
     </ul>
   </nav>
 
-  <!-- Living mesh network — the five cosmos spheres as nodes; new satellites
-       join the constellation as the visitor completes each field -->
+  <!-- Mesh network — the five cosmos spheres as graph nodes; new nodes
+       join the network as each field is completed -->
   <canvas id="mesh-bg" aria-hidden="true"></canvas>
 
   <main class="contact-shell">
     <header class="contact-head">
       <p class="contact-eyebrow">About</p>
-      <h1 class="contact-title">Write to Mulvium</h1>
-      <p class="contact-sub">Every note adds a thread to the constellation.</p>
+      <h1 class="contact-title">Contact Us</h1>
+      <p class="contact-sub">Inquiries, partnerships, and press.</p>
     </header>
 
     <section id="card-section">
-      <div class="card-scene" id="card-scene">
-        <div class="card-wrap" id="card-wrap">
-          <div class="card-inside" id="card-inside" aria-hidden="true" style="pointer-events:none">
-            <button class="card-close-btn card-close-btn--mobile" type="button" aria-label="Close card">&times;</button>
-            <div class="card-pages">
-              <div class="card-page card-page--left">
-                <p class="ci-salutation">Dear Mulvium,</p>
-                <div class="ci-field ci-field--fill">
-                  <label class="ci-label" for="ci-message-m">Your message</label>
-                  <textarea class="ci-input ci-textarea" id="ci-message-m" placeholder="Tell us how you find beauty&hellip;"></textarea>
-                </div>
-              </div>
-              <div class="card-page-divider" aria-hidden="true"></div>
-              <div class="card-page card-page--right">
-                <form id="card-form" class="card-form" novalidate>
-                  <div class="ci-field">
-                    <label class="ci-label" for="ci-name">Your name</label>
-                    <input class="ci-input" id="ci-name" name="name" type="text" autocomplete="name" />
-                  </div>
-                  <div class="ci-field">
-                    <label class="ci-label" for="ci-email">Email</label>
-                    <input class="ci-input" id="ci-email" name="email" type="email" autocomplete="email" />
-                  </div>
-                  <div class="ci-field">
-                    <label class="ci-label" for="ci-interest">I am writing about</label>
-                    <select class="ci-input ci-select" id="ci-interest" name="interest">
-                      <option value="" selected disabled hidden></option>
-                      <option>Patronage &amp; Giving</option>
-                      <option>International Festival Orchestra</option>
-                      <option>Partnership</option>
-                      <option>Press</option>
-                      <option>Something else</option>
-                    </select>
-                  </div>
-                  <div class="ci-actions">
-                    <button class="ci-submit" type="submit"><span>Seal &amp; Send</span><span class="ci-arrow">&rarr;</span></button>
-                  </div>
-                </form>
-                <div class="ci-success" id="ci-success" role="status">
-                  <div class="ci-success-icon">&#10022;</div>
-                  <p class="ci-success-title">Sent with love</p>
-                  <p class="ci-success-msg">Your note has joined the constellation. We&rsquo;ll write back soon.</p>
-                </div>
-              </div>
-            </div>
+      <div class="card" id="card">
+        <div class="card-page card-page--left">
+          <p class="ci-salutation">Dear Mulvium,</p>
+          <div class="ci-field ci-field--fill">
+            <label class="ci-label" for="ci-message">Message</label>
+            <textarea class="ci-input ci-textarea" id="ci-message"></textarea>
           </div>
-          <div class="card-cover" id="card-cover" role="button" tabindex="0" aria-expanded="false" aria-label="Open the card">
-            <div class="card-face card-face--front">
-              <figure class="card-rose-fig">
-                <img class="card-rose-img" src="../../rose-flower.jpg" alt="" />
-              </figure>
-              <h2 class="card-greeting">A Note to Mulvium</h2>
-              <p class="card-open-hint">Click to open</p>
+        </div>
+        <div class="card-spine" aria-hidden="true"></div>
+        <div class="card-page card-page--right">
+          <form id="card-form" class="card-form" novalidate>
+            <div class="ci-field">
+              <label class="ci-label" for="ci-name">Name</label>
+              <input class="ci-input" id="ci-name" name="name" type="text" autocomplete="name" />
             </div>
-            <div class="card-face card-face--back">
-              <button class="card-close-btn" id="card-close-btn" type="button" aria-label="Close card">&times;</button>
-              <p class="ci-salutation">Dear Mulvium,</p>
-              <div class="ci-field ci-field--fill">
-                <label class="ci-label" for="ci-message">Your message</label>
-                <textarea class="ci-input ci-textarea" id="ci-message" placeholder="Tell us how you find beauty&hellip;"></textarea>
-              </div>
+            <div class="ci-field">
+              <label class="ci-label" for="ci-email">Email</label>
+              <input class="ci-input" id="ci-email" name="email" type="email" autocomplete="email" />
             </div>
+            <div class="ci-field">
+              <label class="ci-label" for="ci-interest">Subject</label>
+              <select class="ci-input ci-select" id="ci-interest" name="interest">
+                <option value="" selected disabled hidden></option>
+                <option>Patronage</option>
+                <option>International Festival Orchestra</option>
+                <option>Partnership</option>
+                <option>Press</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="ci-actions">
+              <button class="ci-submit" type="submit"><span>Send</span><span class="ci-arrow">&rarr;</span></button>
+            </div>
+          </form>
+          <div class="ci-success" id="ci-success" role="status">
+            <div class="ci-success-icon">&#10022;</div>
+            <p class="ci-success-title">Message sent</p>
+            <p class="ci-success-msg">We will respond shortly.</p>
           </div>
         </div>
       </div>
