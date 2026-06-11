@@ -300,7 +300,7 @@ body.expansion-active #canvas-wrap {
 }
 
 body.expansion-active #expansion-space {
-  height: 200vh;
+  height: 140vh;
 }
 
 /* ---------- Night-mode (phase 2 of expansion) ---------- */
@@ -372,7 +372,7 @@ body.night-mode .footer-copy p {
 /* ---------- Patronage scroll reveal ---------- */
 #patronage-section {
   display: none;
-  height: 800vh;
+  height: 500vh;
   position: relative;
 }
 
