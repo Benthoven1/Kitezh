@@ -475,7 +475,6 @@ const state = {
   labelStar: false,
   clock: new THREE.Clock(),
   expansionP1: 0,
-  expansionP2: 0,
   lsRevealP: 1,
 };
 
@@ -923,7 +922,6 @@ function goTo3D() {
   body.classList.remove("mode-2d", "expansion-active", "night-mode");
   document.querySelectorAll(".nav-item.open").forEach((el) => el.classList.remove("open"));
   state.expansionP1 = 0;
-  state.expansionP2 = 0;
   state.lsRevealP    = 1;
   resetPatronage();
   bgColor.copy(PAPER_COLOR);
@@ -951,7 +949,6 @@ function jumpToIFO() {
   state.labelStar   = false;
 
   state.expansionP1  = 0;
-  state.expansionP2  = 0;
   state.lsRevealP    = 1;
   resetPatronage();
   bgColor.copy(PAPER_COLOR);
@@ -994,7 +991,6 @@ function snapTo3D() {
   state.labelPlanet  = null;
   state.labelStar    = false;
   state.expansionP1  = 0;
-  state.expansionP2  = 0;
   state.lsRevealP    = 1;
   resetPatronage();
   bgColor.copy(PAPER_COLOR);
@@ -1512,8 +1508,6 @@ function updateExpansionScroll() {
 
   // Phase 1 (0–60 %): rings expand outward, star shrinks + goes radiant, night sky fades in
   state.expansionP1 = Math.min(1, rawP / 0.6);
-  // Phase 2 (60–100 %): transition held, dark starfield maintained
-  state.expansionP2 = Math.max(0, Math.min(1, (rawP - 0.6) / 0.4));
 
   // Wait until background is halfway dark before flipping night-mode text colours
   if (state.expansionP1 >= 0.5) {
