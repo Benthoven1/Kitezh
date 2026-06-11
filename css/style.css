@@ -709,9 +709,9 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 .ci-salutation {
   font-family: "Cormorant Garamond", serif;
   font-weight: 400;
-  font-size: clamp(24px, 2.4vw, 30px);
+  font-size: clamp(18px, 1.8vw, 23px);
   color: var(--ink);
-  margin: 0 0 18px;
+  margin: 0 0 12px;
   line-height: 1.2;
 }
 
