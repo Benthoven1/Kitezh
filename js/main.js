@@ -1602,12 +1602,13 @@ function resetGooey() {
   gooeyShade.classList.remove("on");
 }
 
-// ── Patronage snap engine — driven from animate() every frame ────────────────
-// Scroll position only decides each frame's TARGET (open or closed); the frame
-// then animates to completion on its own clock. Frames can never be parked
-// mid-transition by slow scrolling, so there is nothing to glitch.
-const prFrameP = PR_SIZES.map(() => 0);          // animated open progress per frame
-const PR_SNAP  = 0.9;                            // seconds for a frame to snap open/closed
+// ── Patronage scrub engine — driven from animate() every frame ───────────────
+// Frame geometry is a pure function of scroll position: frames open and close
+// at the exact rate of scrolling, in both directions, so no amount of scroll
+// speed can skip one. Only the LABELS run on their own short clock — text can
+// never be parked half-dissolved by stopping mid-window.
+const prFrameP = PR_SIZES.map(() => -1);         // scrubbed open progress per frame
+const PR_OPEN  = 0.16;                           // timeline fraction over which a frame opens
 let prSizedW = 0, prSizedH = 0;                  // viewport the frames were last sized for
 const prGoo    = { from: PR_WORDS[0], to: PR_WORDS[0], f: 1 };
 const PR_GOO_SNAP = 0.85;                        // seconds for a label morph
@@ -1631,27 +1632,28 @@ function updatePatronage(dt) {
 
   let wordIdx = -1;
   for (let i = 0; i < prBoxEls.length; i++) {
-    const open = i === 0 ? P > 0.001 : P >= PR_STARTS[i];
-    if (open) wordIdx = i;
-    // Snap toward the target on a fixed clock (reduced motion: instant)
-    const dir = open ? 1 : -1;
-    const t = motionOK ? clamp01(prFrameP[i] + dir * dt / PR_SNAP) : (open ? 1 : 0);
-    if (!resized && t === prFrameP[i]) continue; // settled — no style writes, no layout work
-    prFrameP[i] = t;
+    // Scrubbed progress — geometry tracks the scroll position exactly
+    const q = i === 0
+      ? clamp01(P / 0.10)
+      : clamp01((P - PR_STARTS[i]) / PR_OPEN);
+    // The label leads once its frame is well open
+    if (i > 0 && q >= 0.35) wordIdx = i;
+    if (!resized && q === prFrameP[i]) continue; // idle — no style writes, no layout work
+    prFrameP[i] = q;
     const el = prBoxEls[i];
     if (i === 0) {
       // First frame: no slit/dot reveal — it simply fades in at full size
       el.style.width   = (vw * PR_SIZES[i].w) + "px";
       el.style.height  = (vh * PR_SIZES[i].h) + "px";
-      el.style.opacity = String(easeInOut(t));
+      el.style.opacity = String(easeInOut(q));
     } else {
-      // Slit character: width snaps first, height reveals with an expo tail
-      const wP = prEaseRise(Math.min(1, t / 0.15));
-      const hP = prEaseSlit(Math.max(0, Math.min(1, (t - 0.08) / 0.92)));
+      // Slit character: width races ahead, height follows with an expo tail
+      const wP = prEaseRise(Math.min(1, q / 0.25));
+      const hP = prEaseSlit(q);
       el.style.width  = (vw * PR_SIZES[i].w * wP) + "px";
-      el.style.height = (t > 0 ? Math.max(2, vh * PR_SIZES[i].h * hP) : 0) + "px";
+      el.style.height = (q > 0 ? Math.max(2, vh * PR_SIZES[i].h * hP) : 0) + "px";
     }
-    el.classList.toggle("pr-active", t > 0.01);
+    el.classList.toggle("pr-active", q > 0.01);
   }
 
   // Label morph — time-based snap toward the deepest open frame's word.
@@ -1686,7 +1688,7 @@ function resetPatronage() {
     el.style.height = "0";
     el.style.opacity = "";
     el.classList.remove("pr-active");
-    prFrameP[i] = 0;
+    prFrameP[i] = -1;
   });
   prP = 0;
   prApproach = 0;
