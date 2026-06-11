@@ -665,7 +665,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
   display: grid;
   grid-template-columns: 1fr 1px 1fr;
   width: min(880px, 94vw);
-  min-height: 470px;
+  min-height: 396px;
   background: var(--paper-warm);
   border: 1px solid var(--hairline);
   border-radius: 2px;
@@ -673,8 +673,10 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
     0 1px 2px rgba(27, 22, 19, 0.05),
     0 12px 32px rgba(27, 22, 19, 0.10),
     0 32px 80px rgba(27, 22, 19, 0.10);
-  animation: pageRise 0.9s var(--ease) 0.32s both;
+  opacity: 0;
 }
+
+body.ls-done .card { animation: pageRise 0.9s var(--ease) 0.28s both; }
 
 .card-page {
   display: flex;
@@ -737,7 +739,7 @@ body.mode-ifo .cosmos-hint { opacity: 0; }
 
 .ci-field--fill .ci-textarea {
   flex: 1;
-  min-height: 120px;
+  min-height: 96px;
   resize: none;
   line-height: 1.65;
 }
@@ -1640,6 +1642,7 @@ body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffff
 /* ---------- Reduced motion — settle everything instantly ---------- */
 @media (prefers-reduced-motion: reduce) {
   .rv { opacity: 1; transform: none; transition: none; }
+  .contact-head > *, body.contact-page .card { opacity: 1; animation: none !important; }
   .letter-sig-img { clip-path: none; transition: none; }
   .page-shell > * { animation: none; }
 }
@@ -1663,18 +1666,25 @@ body.night-mode ::selection { background: rgba(124, 92, 232, 0.45); color: #ffff
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: calc(var(--nav-h) + 48px) 20px 64px;
+  justify-content: flex-start;
+  /* Headroom for the star crowning the page (it is the way home) */
+  padding: calc(var(--nav-h) + clamp(120px, 21vh, 200px)) 20px 56px;
+  /* Let the canvas receive hover/click on the star; interactive children re-enable */
+  pointer-events: none;
 }
+
+body.contact-page #card-section { pointer-events: auto; }
 
 .contact-head {
   text-align: center;
   margin-bottom: clamp(24px, 4vh, 44px);
 }
 
-.contact-head > * { animation: pageRise 0.9s var(--ease) both; }
-.contact-head > *:nth-child(2) { animation-delay: 0.12s; }
-.contact-head > *:nth-child(3) { animation-delay: 0.24s; }
+/* Content holds back until the loading screen finishes (body.ls-done) */
+.contact-head > * { opacity: 0; }
+body.ls-done .contact-head > * { animation: pageRise 0.9s var(--ease) both; }
+body.ls-done .contact-head > *:nth-child(2) { animation-delay: 0.12s; }
+body.ls-done .contact-head > *:nth-child(3) { animation-delay: 0.24s; }
 
 .contact-eyebrow {
   font-family: "Cormorant SC", serif;

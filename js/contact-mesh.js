@@ -78,28 +78,29 @@ function addNode(pos, size, color, isMain) {
   return node;
 }
 
-// Principal vertices — in the side margins so the card never covers them.
-// (Repositioned vertically on narrow viewports — see layoutMains.)
-const star   = addNode(new THREE.Vector3( 0.0, -3.7, -0.8), 0.46, PASTEL_STAR, true);
-const nMusic = addNode(new THREE.Vector3(-5.9,  2.0, -0.4), 0.38, PASTEL_MUSIC, true);
-const nArt   = addNode(new THREE.Vector3( 5.9,  2.0, -0.4), 0.38, PASTEL_ART,  true);
-const nArch  = addNode(new THREE.Vector3(-5.9, -1.9,  0.4), 0.38, PASTEL_ARCH, true);
-const nHort  = addNode(new THREE.Vector3( 5.9, -1.9,  0.4), 0.38, PASTEL_HORT, true);
+// Principal vertices — the star crowns the top of the page (it is also the
+// way home); the pillars hold the side margins where the card never covers
+// them. Repositioned vertically on narrow viewports — see layoutMains.
+const star   = addNode(new THREE.Vector3( 0.0,  3.05, -0.5), 0.44, PASTEL_STAR, true);
+const nMusic = addNode(new THREE.Vector3(-5.9,  1.6, -0.4), 0.38, PASTEL_MUSIC, true);
+const nArt   = addNode(new THREE.Vector3( 5.9,  1.6, -0.4), 0.38, PASTEL_ART,  true);
+const nArch  = addNode(new THREE.Vector3(-5.9, -2.2,  0.4), 0.38, PASTEL_ARCH, true);
+const nHort  = addNode(new THREE.Vector3( 5.9, -2.2,  0.4), 0.38, PASTEL_HORT, true);
 const mains  = [star, nMusic, nArt, nArch, nHort];
 
 function layoutMains(narrow) {
   if (narrow) {
-    star.base.set(0.0, -5.4, -0.8);
-    nMusic.base.set(-1.5,  4.7, -0.4);
-    nArt.base.set( 1.5,  4.7, -0.4);
-    nArch.base.set(-1.5, -4.6,  0.4);
-    nHort.base.set( 1.5, -4.6,  0.4);
+    star.base.set( 0.0,  4.65, -0.5);
+    nMusic.base.set(-1.8,  2.8, -0.4);
+    nArt.base.set( 1.8,  2.8, -0.4);
+    nArch.base.set(-1.8, -4.7,  0.4);
+    nHort.base.set( 1.8, -4.7,  0.4);
   } else {
-    star.base.set( 0.0, -3.7, -0.8);
-    nMusic.base.set(-5.9,  2.0, -0.4);
-    nArt.base.set( 5.9,  2.0, -0.4);
-    nArch.base.set(-5.9, -1.9,  0.4);
-    nHort.base.set( 5.9, -1.9,  0.4);
+    star.base.set( 0.0,  3.05, -0.5);
+    nMusic.base.set(-5.9,  1.6, -0.4);
+    nArt.base.set( 5.9,  1.6, -0.4);
+    nArch.base.set(-5.9, -2.2,  0.4);
+    nHort.base.set( 5.9, -2.2,  0.4);
   }
 }
 
@@ -115,10 +116,12 @@ for (let i = 0; i < SHELL_N; i++) {
   let x = Math.cos(th) * rr * radius * 1.5;
   let y = yy * radius * 0.66;
   let z = Math.sin(th) * rr * radius * 0.4;
-  // Keep-out bands: the card (centre) and the page title (top centre)
-  const inCard  = Math.abs(x) < 4.8 && y > -3.1 && y < 2.7;
-  const inTitle = Math.abs(x) < 3.6 && y >= 2.7;
-  if (inCard || inTitle) {
+  // Keep-out bands: the card (lower centre), the page title (mid centre),
+  // and the star's crown position (top centre)
+  const inCard  = Math.abs(x) < 4.8 && y > -4.0 && y < 1.2;
+  const inTitle = Math.abs(x) < 3.6 && y >= 1.2 && y < 2.5;
+  const inStar  = Math.abs(x) < 2.2 && y >= 2.5;
+  if (inCard || inTitle || inStar) {
     const side = x === 0 ? (i % 2 ? 1 : -1) : Math.sign(x);
     x = side * (5.0 + Math.abs(x) * 0.35);
   }
@@ -171,9 +174,26 @@ addEdge(star, nMusic, 0.5); addEdge(star, nArt, 0.5);
 addEdge(star, nArch, 0.5);  addEdge(star, nHort, 0.5);
 nodes.forEach((n) => connectKNearest(n, 3));
 
-// Entrance stagger
+// Entrance stagger — relative to the loading screen's window opening
 nodes.forEach((n, i) => { n.scaleDelay = 0.12 + i * 0.04; });
 edges.forEach((e, i) => { e.drawDelay = 0.4 + i * 0.024; });
+
+// te (entrance time) starts when the loading screen's hole first opens.
+// ls.js also sets a window flag in case this module loads after the event.
+let entranceT0 = Infinity;
+function startEntrance() {
+  if (isFinite(entranceT0)) return;
+  entranceT0 = clock.getElapsedTime();
+  // Wake pass through the principal vertices once the entrance settles
+  if (motionOK) {
+    setTimeout(() => {
+      mains.forEach((n, i) => setTimeout(() => energize(n, 0.7), i * 90));
+    }, 1700);
+  }
+}
+if (window.__mulvium_ls_hole) startEntrance();
+else document.addEventListener("mulvium:ls-hole", startEntrance);
+setTimeout(startEntrance, 3500); // safety if the overlay is absent
 
 // ── Ambient signal pulses — points travelling the edges at constant rate ─────
 const PULSE_N = motionOK ? 8 : 0;
@@ -258,15 +278,16 @@ function insertVertex(near) {
     (Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5) * 0.4
   ).normalize().multiplyScalar(1.4 + Math.random() * 0.9);
   const pos = near.base.clone().add(dir);
+  const te = clock.getElapsedTime() - (isFinite(entranceT0) ? entranceT0 : 0);
   const v = addNode(pos, 0.09, VERTEX_TINT, false);
-  v.scaleDelay = clock.getElapsedTime() + 0.3; // vertex pops after its edge arrives
+  v.scaleDelay = te + 0.3; // vertex pops after its edge arrives
   const e1 = addEdge(near, v, 0.5);
-  if (e1) e1.drawDelay = clock.getElapsedTime();
+  if (e1) e1.drawDelay = te;
   const nearest = nodes
     .filter((n) => n !== v && n !== near)
     .sort((p, q) => p.base.distanceTo(v.base) - q.base.distanceTo(v.base))[0];
   const e2 = addEdge(v, nearest);
-  if (e2) e2.drawDelay = clock.getElapsedTime() + 0.35;
+  if (e2) e2.drawDelay = te + 0.35;
   energize(near, 1);
 }
 
@@ -303,26 +324,39 @@ document.addEventListener("mulvium:card-sent", () => {
   mains.forEach((n, i) => setTimeout(() => energize(n, 1.4), i * 130));
   setTimeout(() => {
     insertVertex(star);
+    const te = clock.getElapsedTime() - (isFinite(entranceT0) ? entranceT0 : 0);
     const e = addEdge(nMusic, nHort, 0.4);
-    if (e) e.drawDelay = clock.getElapsedTime();
+    if (e) e.drawDelay = te;
     const e2 = addEdge(nArt, nArch, 0.4);
-    if (e2) e2.drawDelay = clock.getElapsedTime() + 0.3;
+    if (e2) e2.drawDelay = te + 0.3;
   }, 600);
 });
 
-// Entrance complete — one wake pass through the principal vertices
-if (motionOK) {
-  setTimeout(() => {
-    mains.forEach((n, i) => setTimeout(() => energize(n, 0.7), i * 90));
-  }, 1800);
-}
-
-// ── Pointer parallax ──────────────────────────────────────────────────────────
+// ── Pointer parallax + star hover ─────────────────────────────────────────────
 const drift = { x: 0, y: 0, tx: 0, ty: 0 };
+const pointerNdc = new THREE.Vector2(-2, -2);
 window.addEventListener("pointermove", (e) => {
   drift.tx = (e.clientX / window.innerWidth) * 2 - 1;
   drift.ty = (e.clientY / window.innerHeight) * 2 - 1;
+  pointerNdc.set(drift.tx, -drift.ty);
 }, { passive: true });
+
+// The star returns the visitor to the home cosmos
+const raycaster = new THREE.Raycaster();
+let starHover = false;
+
+canvas.setAttribute("role", "link");
+canvas.setAttribute("aria-label", "Return to the Mulvium home page via the central star");
+
+function goHome() {
+  // Same exit as page-transition.js: flag the loading screen, fade, navigate
+  sessionStorage.setItem("ls-entering", "1");
+  document.body.style.transition = "opacity 350ms ease";
+  document.body.style.opacity = "0";
+  setTimeout(() => { window.location.href = "../../index.html"; }, 350);
+}
+
+canvas.addEventListener("click", () => { if (starHover) goHome(); });
 
 // ── Resize ────────────────────────────────────────────────────────────────────
 let lastW = 0, lastH = 0;
@@ -353,9 +387,16 @@ function easeOutBack(t) {
 function animate() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.getElapsedTime();
+  const te = t - (isFinite(entranceT0) ? entranceT0 : Infinity);
 
   // Slow oscillation of the whole graph
   if (motionOK) group.rotation.y = Math.sin(t * 0.05) * 0.10;
+
+  // Star hover — pointer affordance and glow; click returns home
+  raycaster.setFromCamera(pointerNdc, camera);
+  starHover = raycaster.intersectObject(star.mesh).length > 0;
+  canvas.style.cursor = starHover ? "pointer" : "default";
+  if (!focusNode) star.glowTarget = starHover ? 1 : 0;
 
   // While a field is focused, charges stream from its vertex continuously
   if (focusNode && motionOK) {
@@ -367,7 +408,7 @@ function animate() {
   }
 
   nodes.forEach((n) => {
-    if (t > n.scaleDelay && n.scaleT < 1) {
+    if (te > n.scaleDelay && n.scaleT < 1) {
       n.scaleT = Math.min(1, n.scaleT + dt / 0.7);
     }
     const pop = motionOK ? easeOutBack(Math.max(0, n.scaleT)) : (n.scaleT > 0 ? 1 : 0);
@@ -386,7 +427,7 @@ function animate() {
 
   edges.forEach((e) => {
     // Edge draw-in: endpoint travels from a to b
-    if (t > e.drawDelay && e.draw < 1) {
+    if (te > e.drawDelay && e.draw < 1) {
       e.draw = motionOK ? Math.min(1, e.draw + dt / 0.6) : 1;
     }
     const pa = e.a.mesh.position;
