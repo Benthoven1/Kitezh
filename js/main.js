@@ -485,6 +485,9 @@ let cachedScrollTotal = 0;
 
 // Reduced-motion preference — gates camera parallax and shooting stars
 const motionOK = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Hover-capable fine pointer (mouse/trackpad) — gates the cinematic wheel
+// system; touch devices scroll natively with CSS snap stops instead
+const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
 // Pointer-driven camera parallax — normalized viewport coords, lerped each frame
 const camDrift = { x: 0, y: 0, tx: 0, ty: 0 };
@@ -1535,7 +1538,11 @@ const PR_SIZES = [
   { w: 0.70, h: 0.635 }, // Horticulture
 ];
 const PR_WORDS  = ["Reimagine Arts Patronage", "Music", "Art", "Architecture", "Horticulture"];
-const PR_STARTS = [0.00, 0.20, 0.40, 0.60, 0.80]; // scroll thresholds where each frame snaps open
+const PR_STARTS = [0.00, 0.20, 0.40, 0.60, 0.80]; // scroll thresholds where each frame opens
+// Rest stops — the scroll positions where each frame sits fully open. One
+// gesture can never travel past a stop (wheel gating on desktop, CSS
+// scroll-snap sentinels on touch — see index.html .pr-stop).
+const PR_STOPS = [0.16, 0.36, 0.56, 0.76, 0.96];
 
 // Handoff state read by the animate() loop: while the hero tagline carries
 // "Reimagine Arts Patronage", the patronage gooey layer stays empty; once the
@@ -1626,6 +1633,15 @@ function updatePatronage(dt) {
   if (scrollable <= 0) return;
   const P = clamp01(-rect.top / scrollable);
   prP = P;
+
+  // Touch devices: CSS scroll-snap (sentinels with scroll-snap-stop: always)
+  // locks native momentum at each frame; only active inside the section so
+  // the rest of the page scrolls freely
+  if (!finePointer) {
+    const lastStop = secTop + PR_STOPS[PR_STOPS.length - 1] * scrollable;
+    const snapOn = window.scrollY > secTop - lsVH * 0.6 && window.scrollY < lastStop + 8;
+    document.documentElement.classList.toggle("pr-snap", snapOn);
+  }
   const vw = window.innerWidth, vh = window.innerHeight;
   const resized = vw !== prSizedW || vh !== prSizedH;
   prSizedW = vw; prSizedH = vh;
@@ -1693,6 +1709,7 @@ function resetPatronage() {
   prP = 0;
   prApproach = 0;
   prPhraseOwned = false;
+  document.documentElement.classList.remove("pr-snap");
   prGoo.from = PR_WORDS[0];
   prGoo.to   = PR_WORDS[0];
   prGoo.f    = 1;
@@ -1739,7 +1756,7 @@ window.addEventListener("resize", () => {
 // after their programmatic window.scrollTo: it cancels any in-flight inertia
 // so a stale scrollTarget can't drag the page back away from the top.
 let resetCinematicScroll = () => {};
-if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+if (finePointer) {
   let scrollTarget = 0;
   let scrollRafId  = null;
 
@@ -1760,12 +1777,41 @@ if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
     scrollRafId = requestAnimationFrame(cinematicStep);
   }
 
+  // A pause in wheel events marks a new gesture; within one gesture the
+  // target may never pass the next patronage stop in the travel direction —
+  // however hard the fling, the screen locks at each frame.
+  let lastWheelTs   = 0;
+  let gestureStartY = 0;
+
   window.addEventListener("wheel", (e) => {
     // Don't intercept when the 3D canvas has focus (canvas wheel = zoom)
     if (body.classList.contains("cosmos-only")) return;
     e.preventDefault();
+    const now = performance.now();
+    // Anchor at the real scroll position: a gesture made while still gliding
+    // toward a stop re-targets that same stop instead of skipping past it
+    if (now - lastWheelTs > 300) gestureStartY = window.scrollY;
+    lastWheelTs = now;
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     scrollTarget    = Math.max(0, Math.min(maxScroll, scrollTarget + e.deltaY * 1.6));
+
+    if (body.classList.contains("expansion-active")) {
+      const span = patronageSection.offsetHeight - window.innerHeight;
+      const top  = patronageSection.offsetTop;
+      if (span > 0 && top > 0) {
+        if (e.deltaY > 0) {
+          for (let i = 0; i < PR_STOPS.length; i++) {
+            const s = top + PR_STOPS[i] * span;
+            if (s > gestureStartY + 4) { scrollTarget = Math.min(scrollTarget, s); break; }
+          }
+        } else if (e.deltaY < 0) {
+          for (let i = PR_STOPS.length - 1; i >= 0; i--) {
+            const s = top + PR_STOPS[i] * span;
+            if (s < gestureStartY - 4) { scrollTarget = Math.max(scrollTarget, s); break; }
+          }
+        }
+      }
+    }
     if (!scrollRafId) scrollRafId = requestAnimationFrame(cinematicStep);
   }, { passive: false });
 
