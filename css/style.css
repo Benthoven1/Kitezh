@@ -384,6 +384,19 @@ body.night-mode #patronage-section {
   z-index: 1;
 }
 
+/* Scroll-stop sentinels — on touch, CSS snap halts momentum at every frame */
+.pr-stop {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 2px;
+  pointer-events: none;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+html.pr-snap { scroll-snap-type: y mandatory; }
+
 .pr-sticky {
   position: sticky;
   top: 0;
